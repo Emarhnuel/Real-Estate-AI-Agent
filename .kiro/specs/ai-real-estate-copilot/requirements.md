@@ -123,18 +123,6 @@ The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed 
 
 ### Requirement 9
 
-**User Story:** As a system administrator, I want the agent to handle API rate limits gracefully, so that the system remains stable under load
-
-#### Acceptance Criteria
-
-1. WHEN THE Tavily_API returns a rate limit error, THE Property_Search_Agent SHALL implement exponential backoff retry logic
-2. WHEN THE Mapbox_API returns a rate limit error, THE Location_Analysis_Agent SHALL implement exponential backoff retry logic
-3. THE Deep_Agent_System SHALL limit concurrent API requests to stay within rate limits
-4. IF RETRIES are exhausted, THEN THE Supervisor_Agent SHALL inform the user and suggest resuming later
-5. THE Deep_Agent_System SHALL log all API errors for monitoring and debugging with langsmith
-
-### Requirement 10
-
 **User Story:** As a new user, I want to sign up or sign in to the application, so that I can access the AI property search features
 
 #### Acceptance Criteria
