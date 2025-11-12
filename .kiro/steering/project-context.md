@@ -12,7 +12,8 @@ ai-real-estate-copilot/
 │   └── index.py       # Single FastAPI file with all endpoints
 ├── src/
 │   ├── agent.py       # All agents + SupervisorState
-│   ├── tools.py       # Tavily, Mapbox, rate limiter
+│   ├── prompts.py     # System prompts for all agents
+│   ├── tools.py       # Tavily, Mapbox tools
 │   ├── models.py      # Pydantic models
 │   └── utils.py       # Helper functions
 ├── pages/
