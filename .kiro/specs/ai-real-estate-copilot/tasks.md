@@ -69,12 +69,13 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 7.1, 8.1, 8.2, 8.3_
   - _Files: src/agent.py, src/prompts.py_
 
-- [ ] 8. Implement human-in-the-loop interrupt
-  - Configure interrupt_on parameter for supervisor agent with "present_properties_for_review" trigger
-  - Implement logic to trigger interrupt after Property Search Agent completes
+- [x] 8. Implement human-in-the-loop interrupt
+  - Configure interrupt_on parameter for supervisor agent with "present_properties_for_review_tool" trigger
+  - Implement present_properties_for_review_tool to trigger interrupt after Property Search Agent completes
   - Implement interrupt payload with property summaries and images
-  - Implement resume logic to accept approved_properties input
-  - Implement re-search logic when properties are rejected
+  - Implement resume logic to accept approved_properties input via Command
+  - Implement re-search logic when properties are rejected in supervisor prompt
+  - _Files: src/agent.py, src/tools.py, src/prompts.py_
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
 - [ ] 9. Implement report compilation
