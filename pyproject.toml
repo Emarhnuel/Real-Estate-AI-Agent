@@ -1,0 +1,16 @@
+[project]
+name = "ai-real-estate-copilot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "deepagents>=0.2.5",
+    "fastapi>=0.121.1",
+    "fastapi-clerk-auth>=0.0.9",
+    "langchain>=1.0.5",
+    "langchain-anthropic>=1.0.2",
+    "langgraph>=1.0.3",
+    "psycopg2-binary>=2.9.11",
+    "tavily-python>=0.7.12",
+]
