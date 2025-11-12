@@ -11,7 +11,7 @@
   - Install psycopg2-binary for PostgreSQL checkpointer with uv add
   - Create requirements.txt from uv dependencies
   - Create .env file from .env.example for API keys
-  - Create directory structure: api/ (index.py), src/ (agent.py, tools.py, models.py, utils.py), pages/, tests/
+  - Create directory structure: api/ (index.py), src/ (agent.py, prompts.py, tools.py, models.py, utils.py), pages/, tests/
   - Run uv sync to create virtual environment and install dependencies
   - _Requirements: All requirements depend on proper setup_
 
@@ -22,6 +22,7 @@
   - Create LocationAnalysis model with POIs, pros, cons, and scores
   - Create PropertyReport model to structure final output
   - _Requirements: 2.1, 4.1, 5.1_
+  - _Files: src/models.py_
 
 - [x] 3. Implement Tavily search tool
   - Create tavily_search_tool function that accepts query, max_results, and search_depth parameters
@@ -29,6 +30,7 @@
   - Implement image URL extraction from search results
   - Add error handling for API failures
   - _Requirements: 2.2, 2.3, 2.4_
+  - _Files: src/tools.py_
 
 - [x] 4. Implement Mapbox location tools
   - Create mapbox_geocode_tool to convert addresses to coordinates
@@ -36,6 +38,7 @@
   - Implement distance calculation utility function
   - Add error handling for geocoding failures
   - _Requirements: 4.2, 4.3, 4.4_
+  - _Files: src/tools.py_
 
 - [x] 5. Implement Property Search Sub-Agent
   - Define property_search_agent configuration with name, description, and system prompt
@@ -44,6 +47,7 @@
   - Implement logic to write each property to separate JSON file in /properties/ directory
   - Implement summary generation of found properties
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 6.2_
+  - _Files: src/agent.py, src/prompts.py_
 
 - [x] 6. Implement Location Analysis Sub-Agent
   - Define location_analysis_agent configuration with name, description, and system prompt
@@ -53,8 +57,9 @@
   - Implement pros/cons analysis logic based on nearby amenities
   - Implement logic to write analysis to /locations/ directory
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
+  - _Files: src/agent.py, src/prompts.py_
 
-- [ ] 7. Implement Supervisor Agent
+- [x] 7. Implement Supervisor Agent
   - Create supervisor agent using create_deep_agent with Claude model
   - Write comprehensive system prompt for conversation management and coordination
   - Configure agent with property_search_agent and location_analysis_agent as subagents
@@ -62,6 +67,7 @@
   - Configure checkpointer (MemorySaver for dev)
   - Define SupervisorState schema with messages, todos, search_criteria, approved_properties, filesystem
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 7.1, 8.1, 8.2, 8.3_
+  - _Files: src/agent.py, src/prompts.py_
 
 - [ ] 8. Implement human-in-the-loop interrupt
   - Configure interrupt_on parameter for supervisor agent with "present_properties_for_review" trigger
