@@ -30,21 +30,14 @@
   - Add error handling for API failures
   - _Requirements: 2.2, 2.3, 2.4_
 
-- [ ] 4. Implement Mapbox location tools
+- [x] 4. Implement Mapbox location tools
   - Create mapbox_geocode_tool to convert addresses to coordinates
   - Create mapbox_nearby_tool to find POIs by category and radius
   - Implement distance calculation utility function
   - Add error handling for geocoding failures
   - _Requirements: 4.2, 4.3, 4.4_
 
-- [ ] 5. Implement rate limit handling
-  - Create RateLimitHandler class with exponential backoff logic
-  - Wrap Tavily API calls with retry logic
-  - Wrap Mapbox API calls with retry logic
-  - Add logging for rate limit events
-  - _Requirements: 9.1, 9.2, 9.3, 9.4_
-
-- [ ] 6. Implement Property Search Sub-Agent
+- [x] 5. Implement Property Search Sub-Agent
   - Define property_search_agent configuration with name, description, and system prompt
   - Write system prompt instructing agent to use Tavily tool and write results to filesystem
   - Configure agent with tavily_search_tool
@@ -52,7 +45,7 @@
   - Implement summary generation of found properties
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 6.2_
 
-- [ ] 7. Implement Location Analysis Sub-Agent
+- [x] 6. Implement Location Analysis Sub-Agent
   - Define location_analysis_agent configuration with name, description, and system prompt
   - Write system prompt instructing agent to use Mapbox tools and analyze locations
   - Configure agent with mapbox_geocode_tool and mapbox_nearby_tool
@@ -61,7 +54,7 @@
   - Implement logic to write analysis to /locations/ directory
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
 
-- [ ] 8. Implement Supervisor Agent
+- [ ] 7. Implement Supervisor Agent
   - Create supervisor agent using create_deep_agent with Claude model
   - Write comprehensive system prompt for conversation management and coordination
   - Configure agent with property_search_agent and location_analysis_agent as subagents
@@ -70,7 +63,7 @@
   - Define SupervisorState schema with messages, todos, search_criteria, approved_properties, filesystem
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 7.1, 8.1, 8.2, 8.3_
 
-- [ ] 9. Implement human-in-the-loop interrupt
+- [ ] 8. Implement human-in-the-loop interrupt
   - Configure interrupt_on parameter for supervisor agent with "present_properties_for_review" trigger
   - Implement logic to trigger interrupt after Property Search Agent completes
   - Implement interrupt payload with property summaries and images
@@ -78,32 +71,31 @@
   - Implement re-search logic when properties are rejected
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-- [ ] 10. Implement report compilation
+- [ ] 9. Implement report compilation
   - Implement logic to read property files from /properties/ directory
   - Implement logic to read location analysis files from /locations/ directory
   - Implement PropertyReport generation combining all data
   - Format report with property details, images, location analysis, pros/cons
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 11. Write integration tests for LangGraph workflow
+- [ ] 10. Write integration tests for LangGraph workflow
   - Write test for complete property search workflow with invoke
   - Write test for human-in-the-loop interrupt and resume
   - Write test for property rejection and re-search flow
   - Write test for error handling with invalid location
   - _Requirements: All requirements_
 
-- [ ]* 12. Write unit tests for core utilities
+- [ ]* 11. Write unit tests for core utilities
   - Write test for search criteria extraction logic
   - Write test for distance calculation utility
-  - Write test for rate limit retry logic
-  - _Requirements: 1.2, 4.4, 9.1_
+  - _Requirements: 1.2, 4.4_
 
-- [ ]* 13. Write trajectory tests with AgentEvals
+- [ ]* 12. Write trajectory tests with AgentEvals
   - Write trajectory match test for expected tool call sequence
   - Write LLM-as-judge test for agent decision quality
   - _Requirements: All requirements_
 
-- [ ] 14. Implement FastAPI server (api/index.py)
+- [ ] 13. Implement FastAPI server (api/index.py)
   - Create api/index.py with FastAPI app
   - Set up ClerkConfig with CLERK_JWKS_URL from environment
   - Create ClerkHTTPBearer guard for authentication
@@ -115,16 +107,15 @@
   - Test API endpoints locally with JWT token
   - _Requirements: 8.1, 8.2, 12.3, 12.4, 13.1, 13.2_
 
-- [ ] 15. Set up LangSmith monitoring for backend
+- [ ] 14. Set up LangSmith monitoring for backend
   - Configure LangSmith API key in environment variables
   - Add tracing to supervisor agent
   - Set up error logging and alerting
   - Create dashboard for monitoring agent performance
-  - _Requirements: 9.5_
 
 ## Frontend: Next.js with Clerk Authentication
 
-- [ ] 16. Create Next.js frontend project with Clerk authentication
+- [ ] 15. Create Next.js frontend project with Clerk authentication
   - Initialize Next.js 14+ project with TypeScript and Pages Router
   - Install @clerk/nextjs package for authentication
   - Install and configure Tailwind CSS
@@ -133,7 +124,7 @@
   - Note: API calls go to /api (same domain, no separate API_URL needed)
   - _Requirements: 10.1, 10.2, 10.3, 13.5, 14.1_
 
-- [ ] 17. Set up Clerk authentication and route protection
+- [ ] 16. Set up Clerk authentication and route protection
   - Wrap application with ClerkProvider in pages/_app.tsx
   - Create middleware.ts with clerkMiddleware for route protection
   - Define protected routes: /agent and /profile
@@ -142,7 +133,7 @@
   - Test authentication flow and route protection
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 13.1, 13.2, 13.3, 13.4_
 
-- [ ] 18. Implement home page and authentication pages
+- [ ] 17. Implement home page and authentication pages
   - Create home page (pages/index.tsx) with hero section and call-to-action
   - Add sign-in and sign-up buttons using Clerk components
   - Create sign-in page (pages/sign-in/[[...index]].tsx) with Clerk SignIn component
@@ -151,7 +142,7 @@
   - Configure Clerk appearance prop for custom styling
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 14.1, 14.2, 14.3, 14.4_
 
-- [ ] 19. Implement navigation component
+- [ ] 18. Implement navigation component
   - Create responsive navigation bar component
   - Add logo and navigation links (Home, Agent, Profile)
   - Integrate Clerk UserButton for authenticated users
@@ -160,7 +151,7 @@
   - Style with Tailwind CSS
   - _Requirements: 11.5, 14.1, 14.2, 14.3, 14.5_
 
-- [ ] 20. Implement profile page
+- [ ] 19. Implement profile page
   - Create profile page (pages/profile/[[...index]].tsx) as protected route
   - Add getServerSideProps for server-side authentication check
   - Integrate Clerk UserProfile component
@@ -169,7 +160,7 @@
   - Style page with Tailwind CSS
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 14.1, 14.2, 14.3_
 
-- [ ] 21. Implement agent interaction page layout
+- [ ] 20. Implement agent interaction page layout
   - Create agent page (pages/agent.tsx) as protected route
   - Add getServerSideProps for server-side authentication check
   - Set up page layout with chat interface area and sidebar
@@ -179,7 +170,7 @@
   - Style page layout with Tailwind CSS
   - _Requirements: 12.1, 12.7, 14.1, 14.2, 14.3_
 
-- [ ] 22. Implement ChatInterface component for agent page
+- [ ] 21. Implement ChatInterface component for agent page
   - Create ChatInterface component with message display
   - Implement useStream hook integration for streaming responses
   - Display agent's task list for progress visibility
@@ -188,7 +179,7 @@
   - Style with Tailwind CSS
   - _Requirements: 12.2, 12.4, 12.5, 12.7, 14.1, 14.2_
 
-- [ ] 23. Implement PropertyReviewPanel component for agent page
+- [ ] 22. Implement PropertyReviewPanel component for agent page
   - Create PropertyReviewPanel component triggered by interrupt
   - Display property cards with images, address, price, bedrooms, bathrooms
   - Add checkboxes for each property for approval/rejection
@@ -197,7 +188,7 @@
   - Style with Tailwind CSS
   - _Requirements: 12.3, 12.7, 14.1, 14.2_
 
-- [ ] 24. Implement PropertyReportView component for agent page
+- [ ] 23. Implement PropertyReportView component for agent page
   - Create PropertyReportView component for final report display
   - Display property details in card format with images
   - Display location analysis with nearby POIs and distances
@@ -206,7 +197,7 @@
   - Style with Tailwind CSS
   - _Requirements: 12.6, 12.7, 14.1, 14.2_
 
-- [ ] 25. Implement frontend-backend integration for agent page
+- [ ] 24. Implement frontend-backend integration for agent page
   - Use useAuth hook to get JWT token with getToken()
   - Create sendMessage function to call /api/invoke with Authorization header
   - Create resumeWithApprovals function to call /api/resume with Authorization header
@@ -216,7 +207,7 @@
   - Test complete workflow from authentication to property report
   - _Requirements: 12.3, 12.4, 12.7_
 
-- [ ]* 26. Write frontend component tests
+- [ ]* 25. Write frontend component tests
   - Write tests for authentication flow with Clerk
   - Write tests for ChatInterface component
   - Write tests for PropertyReviewPanel component
@@ -225,7 +216,7 @@
 
 ## Deployment
 
-- [ ] 27. Deploy to Vercel
+- [ ] 26. Deploy to Vercel
   - Create vercel.json configuration file
   - Create requirements.txt for Python dependencies
   - Set up Vercel Postgres database
@@ -236,10 +227,9 @@
   - Create deployment documentation
   - _Requirements: 8.1, 8.2, 13.5_
 
-- [ ] 28. Set up production monitoring
+- [ ] 27. Set up production monitoring
   - Configure LangSmith monitoring for production agent
   - Set up Vercel Analytics for frontend performance
   - Monitor Vercel function logs
   - Monitor authentication events and user sessions
   - Create monitoring dashboard
-  - _Requirements: 9.5_
