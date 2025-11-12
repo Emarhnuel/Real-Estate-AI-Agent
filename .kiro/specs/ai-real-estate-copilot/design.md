@@ -182,7 +182,6 @@ property_search_agent = {
 - Extract image URLs from listings
 - Write results to filesystem (one file per property)
 - Return summary of found properties to supervisor
-- Handle API rate limits with exponential backoff
 
 **Tool Interface:**
 ```python
@@ -501,32 +500,6 @@ class PropertyReport(BaseModel):
 
 ## Error Handling
 
-### API Rate Limiting
-
-**Strategy:** Exponential backoff with jitter
-
-```python
-class RateLimitHandler:
-    def __init__(self, max_retries=5, base_delay=1.0):
-        self.max_retries = max_retries
-        self.base_delay = base_delay
-    
-    async def call_with_retry(self, api_func, *args, **kwargs):
-        for attempt in range(self.max_retries):
-            try:
-                return await api_func(*args, **kwargs)
-            except RateLimitError as e:
-                if attempt == self.max_retries - 1:
-                    raise
-                delay = self.base_delay * (2 ** attempt) + random.uniform(0, 1)
-                await asyncio.sleep(delay)
-```
-
-**Application:**
-- Property Search Agent wraps all Tavily API calls
-- Location Analysis Agent wraps all Mapbox API calls
-- Supervisor logs rate limit events for monitoring
-
 ### API Failures
 
 **Handling:**
@@ -726,22 +699,6 @@ def test_calculate_distance_between_coordinates():
     coord2 = (47.6101, -122.3421)  # Nearby point
     distance = calculate_distance(coord1, coord2)
     assert 0 < distance < 2000  # meters
-
-def test_rate_limit_retry_logic():
-    """Test exponential backoff implementation"""
-    handler = RateLimitHandler(max_retries=3, base_delay=0.1)
-    
-    call_count = 0
-    def failing_api():
-        nonlocal call_count
-        call_count += 1
-        if call_count < 3:
-            raise RateLimitError()
-        return "success"
-    
-    result = handler.call_with_retry(failing_api)
-    assert result == "success"
-    assert call_count == 3
 ```
 
 ## Deployment Considerations
@@ -858,7 +815,6 @@ def test_rate_limit_retry_logic():
 **Backend Scaling:**
 - LangGraph Platform handles horizontal scaling automatically
 - Database connection pooling for checkpointer
-- API request queuing to manage rate limits
 - Caching for frequently accessed location data
 
 ### Monitoring and Observability
@@ -867,4 +823,4 @@ def test_rate_limit_retry_logic():
 - Vercel Analytics for frontend performance
 - Vercel Logs for API route debugging
 - Set up error tracking with Sentry or similar
-- Configure alerts for API failures and rate limits
+- Configure alerts for API failures
