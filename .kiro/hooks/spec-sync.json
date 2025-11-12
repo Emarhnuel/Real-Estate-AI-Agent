@@ -1,0 +1,13 @@
+{
+  "name": "Spec Sync to Repo",
+  "description": "Automatically commits and pushes spec files when modified",
+  "trigger": {
+    "type": "onFileSave",
+    "filePattern": ".kiro/specs/**/*.md"
+  },
+  "action": {
+    "type": "agentExecution",
+    "prompt": "A spec file has been updated: {{filePath}}\n\nSync this to GitHub:\n1. Stage the file: git add {{filePath}}\n2. Commit with message: git commit -m \"docs: update {{fileName}}\"\n3. Push to GitHub: git push\n\nExecute these commands to keep the spec files in sync with the repository."
+  },
+  "enabled": true
+}

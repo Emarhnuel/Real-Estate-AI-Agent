@@ -1,0 +1,13 @@
+{
+  "name": "Auto-Commit on File Update",
+  "description": "Automatically commits and pushes updated files to GitHub",
+  "trigger": {
+    "type": "onFileSave",
+    "filePattern": "**/*.{py,ts,tsx,js,jsx,json,md,txt,toml}"
+  },
+  "action": {
+    "type": "agentExecution",
+    "prompt": "A file has been saved: {{filePath}}\n\nPerform the following:\n1. Stage the file: git add {{filePath}}\n2. Create a descriptive commit message based on the file changes\n3. Commit: git commit -m \"<your message>\"\n4. Push to GitHub: git push\n\nGenerate a clear, concise commit message that describes what was changed in the file."
+  },
+  "enabled": true
+}
