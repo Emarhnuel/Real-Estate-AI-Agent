@@ -78,12 +78,13 @@
   - _Files: src/agent.py, src/tools.py, src/prompts.py_
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-- [ ] 9. Implement report compilation
+- [x] 9. Implement report compilation
   - Implement logic to read property files from /properties/ directory
   - Implement logic to read location analysis files from /locations/ directory
   - Implement PropertyReport generation combining all data
   - Format report with property details, images, location analysis, pros/cons
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+  - _Files: src/utils.py, src/tools.py, src/agent.py, src/prompts.py_
 
 - [ ] 10. Write integration tests for LangGraph workflow
   - Write test for complete property search workflow with invoke
