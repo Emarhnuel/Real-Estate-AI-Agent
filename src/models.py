@@ -55,20 +55,16 @@ class PointOfInterest(BaseModel):
     )
     distance_meters: float = Field(..., description="Distance from property in meters")
     address: str = Field(..., description="Address of the point of interest")
-    coordinates: tuple[float, float] = Field(
-        ...,
-        description="Latitude and longitude coordinates"
-    )
+    latitude: float = Field(..., description="Latitude coordinate")
+    longitude: float = Field(..., description="Longitude coordinate")
 
 
 class LocationAnalysis(BaseModel):
     """Location analysis for a property including nearby amenities."""
     
     property_id: str = Field(..., description="ID of the property being analyzed")
-    coordinates: tuple[float, float] = Field(
-        ...,
-        description="Property latitude and longitude"
-    )
+    latitude: float = Field(..., description="Property latitude")
+    longitude: float = Field(..., description="Property longitude")
     nearby_pois: list[PointOfInterest] = Field(
         default_factory=list,
         description="List of nearby points of interest"
