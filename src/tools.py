@@ -189,3 +189,24 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     distance = R * c
     
     return distance
+
+
+
+def present_properties_for_review_tool(properties: list[dict]) -> dict:
+    """
+    Present properties to user for review and approval.
+    
+    This tool triggers a human-in-the-loop interrupt, allowing the user
+    to review and approve/reject properties before location analysis.
+    
+    Args:
+        properties: List of property dictionaries with details
+        
+    Returns:
+        Dictionary indicating interrupt triggered
+    """
+    return {
+        "status": "pending_review",
+        "properties": properties,
+        "message": "Properties presented for user review"
+    }
