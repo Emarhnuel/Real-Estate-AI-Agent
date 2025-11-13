@@ -61,6 +61,5 @@ supervisor_agent = create_deep_agent(
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool],
     subagents=[property_search_agent, location_analysis_agent],
-    checkpointer=checkpointer,
-    interrupt_on={"present_properties_for_review_tool": True}
+    checkpointer=checkpointer
 )
