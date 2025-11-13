@@ -7,19 +7,20 @@ for property listings and Mapbox for location services.
 
 import os
 import requests
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List
 from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
+from langchain_core.tools import tool
 
 
+@tool(parse_docstring=True)
 def tavily_search_tool(
     query: str,
     max_results: int = 10,
     search_depth: str = "advanced",
     include_images: bool = True
 ) -> Dict[str, Any]:
-    """
-    Search for property listings using Tavily API.
+    """Search for property listings using Tavily API.
     
     Args:
         query: Search query for property listings
@@ -51,9 +52,9 @@ def tavily_search_tool(
 MAPBOX_BASE_URL = "https://api.mapbox.com"
 
 
+@tool(parse_docstring=True)
 def mapbox_geocode_tool(address: str) -> Dict[str, Any]:
-    """
-    Convert address to coordinates using Mapbox Geocoding API.
+    """Convert address to coordinates using Mapbox Geocoding API.
     
     Args:
         address: Property address to geocode
@@ -97,6 +98,7 @@ def mapbox_geocode_tool(address: str) -> Dict[str, Any]:
         raise Exception(f"Mapbox geocoding failed: {str(e)}")
 
 
+@tool(parse_docstring=True)
 def mapbox_nearby_tool(
     latitude: float,
     longitude: float,
@@ -104,8 +106,7 @@ def mapbox_nearby_tool(
     radius: int = 5000,
     limit: int = 10
 ) -> List[Dict[str, Any]]:
-    """
-    Find nearby points of interest using Mapbox Search Box API.
+    """Find nearby points of interest using Mapbox Search Box API.
     
     Args:
         latitude: Property latitude
@@ -192,9 +193,9 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 
 
+@tool(parse_docstring=True)
 def present_properties_for_review_tool(properties: list[dict]) -> dict:
-    """
-    Present properties to user for review and approval.
+    """Present properties to user for review and approval.
     
     This tool triggers a human-in-the-loop interrupt by using LangGraph's interrupt() function.
     The user will see each property with yes/no options to approve or reject.
