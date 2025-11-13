@@ -9,14 +9,19 @@ from typing import TypedDict, Annotated
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
-from src.tools import (
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+from tools import (
     tavily_search_tool,
     mapbox_geocode_tool,
     mapbox_nearby_tool,
     present_properties_for_review_tool
 )
-from src.models import PropertyReport
-from src.prompts import (
+from models import PropertyReport
+from prompts import (
     PROPERTY_SEARCH_SYSTEM_PROMPT,
     LOCATION_ANALYSIS_SYSTEM_PROMPT,
     SUPERVISOR_SYSTEM_PROMPT
@@ -66,3 +71,16 @@ supervisor_agent = create_deep_agent(
     checkpointer=checkpointer,
     response_format=PropertyReport
 )
+
+
+if __name__ == "__main__":
+    # Test the agent with a sample query
+    config = {"configurable": {"thread_id": "test-agent-001"}}
+    
+    result = supervisor_agent.invoke(
+        {"messages": [{"role": "user", "content": "I want a 2 bedroom property for rent in Ojodu lagos"}]},
+        config=config
+    )
+    
+    # Print the agent's response
+    print(result["messages"][-1].content)
