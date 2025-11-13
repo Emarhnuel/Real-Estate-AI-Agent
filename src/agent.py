@@ -6,6 +6,7 @@ and location analysis using the Deep Agents framework.
 """
 
 from typing import TypedDict, Annotated
+from langchain.chat_models import init_chat_model
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
@@ -27,6 +28,10 @@ from prompts import (
     SUPERVISOR_SYSTEM_PROMPT
 )
 
+model = init_chat_model(
+    model="gpt-5-nano-2025-08-07",
+)
+
 # Property Search Sub-Agent Configuration
 
 property_search_agent = {
@@ -34,7 +39,7 @@ property_search_agent = {
     "description": "Searches for property listings matching user criteria using web search. Returns summary of found properties with data saved to filesystem.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
     "tools": [tavily_search_tool],
-    "model": "gpt-4o"
+    "model": model
 }
 
 
@@ -44,7 +49,7 @@ location_analysis_agent = {
     "description": "Analyzes property locations and finds nearby points of interest. Evaluates location pros and cons based on amenities, transportation, and services.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
     "tools": [mapbox_geocode_tool, mapbox_nearby_tool],
-    "model": "gpt-4o"
+    "model": model 
 }
 
 
@@ -64,7 +69,7 @@ class SupervisorState(TypedDict):
 checkpointer = MemorySaver()
 
 supervisor_agent = create_deep_agent(
-    model="gpt-4o",
+    model=model,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool],
     subagents=[property_search_agent, location_analysis_agent],
