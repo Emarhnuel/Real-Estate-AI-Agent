@@ -19,7 +19,8 @@ from tools import (
     tavily_search_tool,
     mapbox_geocode_tool,
     mapbox_nearby_tool,
-    present_properties_for_review_tool
+    present_properties_for_review_tool,
+    submit_final_report_tool
 )
 from models import PropertyReport
 from prompts import (
@@ -71,21 +72,50 @@ checkpointer = MemorySaver()
 supervisor_agent = create_deep_agent(
     model=model,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
-    tools=[present_properties_for_review_tool],
+    tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent],
     checkpointer=checkpointer,
-    response_format=PropertyReport
+    # response_format=PropertyReport
 )
 
 
 if __name__ == "__main__":
-    # Test the agent with a sample query
-    config = {"configurable": {"thread_id": "test-agent-001"}}
+    # Unique ID for the conversation thread
+    config = {"configurable": {"thread_id": "test-agent-002"}}
     
-    result = supervisor_agent.invoke(
-        {"messages": [{"role": "user", "content": "I want a 2 bedroom property for rent in Ojodu lagos"}]},
-        config=config
-    )
-    
-    # Print the agent's response
-    print(result["messages"][-1].content)
+    # List to store the conversation history
+    messages = []
+
+    while True:
+        # Get input from the user
+        user_input = input("You: ")
+        if user_input.lower() in ["exit", "quit"]:
+            print("Exiting conversation.")
+            break
+
+        # Add the new user message to the history
+        messages.append({"role": "user", "content": user_input})
+
+        # Invoke the agent with the entire conversation history
+        result = supervisor_agent.invoke(
+            {"messages": messages},
+            config=config
+        )
+        
+        # The agent's response is the last message in the list
+        agent_response = result["messages"][-1]
+        
+        # Add the agent's response to the history
+        messages.append(agent_response)
+        
+        # Check if the final tool was called to display the report
+        if agent_response.tool_calls and any(tc['name'] == 'submit_final_report_tool' for tc in agent_response.tool_calls):
+            print("Agent has submitted the final report!")
+            # In a real app, you would now parse the tool call args to get the report
+            final_report_data = next(tc['args']['report'] for tc in agent_response.tool_calls if tc['name'] == 'submit_final_report_tool')
+            print("\n--- FINAL REPORT ---")
+            print(final_report_data)
+            print("--------------------")
+        else:
+            # Print the agent's conversational response
+            print(f"Agent: {agent_response.content}")
