@@ -196,17 +196,25 @@ def present_properties_for_review_tool(properties: list[dict]) -> dict:
     """
     Present properties to user for review and approval.
     
-    This tool triggers a human-in-the-loop interrupt, allowing the user
-    to review and approve/reject properties before location analysis.
+    This tool triggers a human-in-the-loop interrupt by using LangGraph's interrupt() function.
+    The user will see each property with yes/no options to approve or reject.
     
     Args:
-        properties: List of property dictionaries with details
+        properties: List of property dictionaries with details (id, address, price, bedrooms, bathrooms, images)
         
     Returns:
-        Dictionary indicating interrupt triggered
+        Dictionary with approved and rejected property IDs after user review
     """
-    return {
-        "status": "pending_review",
+    from langgraph.types import interrupt
+    
+    # Trigger interrupt with property data
+    # Frontend will receive this in __interrupt__ field
+    user_decisions = interrupt({
+        "type": "property_review",
         "properties": properties,
-        "message": "Properties presented for user review"
-    }
+        "message": "Please review each property and select Yes or No"
+    })
+    
+    # When resumed with Command(resume=...), user_decisions will contain the response
+    # Expected format: {"approved": ["prop_001", "prop_002"], "rejected": ["prop_003"]}
+    return user_decisions
