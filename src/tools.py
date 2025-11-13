@@ -12,6 +12,9 @@ from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
 from langchain_core.tools import tool
 
+# Import the specific Pydantic model for the tool schema
+from models import PropertyForReview
+
 
 @tool(parse_docstring=True)
 def tavily_search_tool(
@@ -183,16 +186,16 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return distance
 
 
-
+# The change is in the function signature below
 @tool(parse_docstring=True)
-def present_properties_for_review_tool(properties: list[dict]) -> dict:
+def present_properties_for_review_tool(properties: List[PropertyForReview]) -> dict:
     """Present properties to user for review and approval.
     
     This tool triggers a human-in-the-loop interrupt by using LangGraph's interrupt() function.
     The user will see each property with yes/no options to approve or reject.
     
     Args:
-        properties: List of property dictionaries with details (id, address, price, bedrooms, bathrooms, images)
+        properties: List of property objects with keys: id, address, price, bedrooms, bathrooms, image_urls
     """
     from langgraph.types import interrupt
     
@@ -200,7 +203,7 @@ def present_properties_for_review_tool(properties: list[dict]) -> dict:
     # Frontend will receive this in __interrupt__ field
     user_decisions = interrupt({
         "type": "property_review",
-        "properties": properties,
+        "properties": [p.dict() for p in properties], # Convert Pydantic models to dicts for the interrupt
         "message": "Please review each property and select Yes or No"
     })
     
