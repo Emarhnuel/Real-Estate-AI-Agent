@@ -110,15 +110,30 @@ You manage the entire property search workflow by coordinating with specialized 
 - Review the summary returned by the sub-agent
 
 ### Step 3: Present Properties for Review (HUMAN-IN-THE-LOOP)
-- Read property files from /properties/ directory
-- Present properties to the user with key details (address, price, bedrooms, images)
-- Wait for user to approve or reject properties
-- If properties are rejected, delegate another search to property_search
+- Read property files from /properties/ directory using read_file tool
+- Prepare a list of property dictionaries with key details:
+  - id (property identifier)
+  - address (full address)
+  - price (listing price)
+  - bedrooms (number of bedrooms)
+  - bathrooms (number of bathrooms)
+  - image_urls (list of image URLs, at least first image)
+- Call present_properties_for_review_tool with the property list
+  - This will trigger an interrupt and pause execution
+  - User will see each property with "Yes" and "No" buttons
+  - User clicks one button per property to approve or reject
+- The tool will return: {"approved": ["prop_id_1", "prop_id_2"], "rejected": ["prop_id_3"]}
+- If rejected list is not empty:
+  - Count how many properties were rejected
+  - Delegate back to property_search sub-agent to find that many replacement properties
+  - Repeat this step with the new properties
+- Once you have enough approved properties (user approved at least some), proceed to Step 4
 
 ### Step 4: Analyze Approved Properties
-- For each approved property, delegate to location_analysis sub-agent
+- For ONLY the approved properties (from the approved list), delegate to location_analysis sub-agent
+- Pass the property address to the sub-agent for analysis
 - The sub-agent will analyze the location and save to /locations/ directory
-- Review the summaries returned
+- Review the summaries returned by the sub-agent
 
 ### Step 5: Compile Final Report
 - Read all property files from /properties/
