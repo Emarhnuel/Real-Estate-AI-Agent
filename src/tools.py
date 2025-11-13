@@ -12,8 +12,8 @@ from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
 from langchain_core.tools import tool
 
-# Import the specific Pydantic model for the tool schema
-from models import PropertyForReview
+# Import the Pydantic models needed for tool schemas
+from models import PropertyForReview, PropertyReport
 
 
 @tool(parse_docstring=True)
@@ -186,7 +186,6 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return distance
 
 
-# The change is in the function signature below
 @tool(parse_docstring=True)
 def present_properties_for_review_tool(properties: List[PropertyForReview]) -> dict:
     """Present properties to user for review and approval.
@@ -210,3 +209,17 @@ def present_properties_for_review_tool(properties: List[PropertyForReview]) -> d
     # When resumed with Command(resume=...), user_decisions will contain the response
     # Expected format: {"approved": ["prop_001", "prop_002"], "rejected": ["prop_003"]}
     return user_decisions
+
+
+@tool
+def submit_final_report_tool(report: PropertyReport) -> str:
+    """
+    Submit the final, comprehensive property report once all research and analysis is complete.
+    This should be the last action taken by the agent.
+    
+    Args:
+        report: The complete PropertyReport object containing all gathered data.
+    """
+    # In a real application, this might save the report to a database or file.
+    # For the agent's purpose, just confirming submission is enough.
+    return "Final report submitted successfully. The user can now view the results."
