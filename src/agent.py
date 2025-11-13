@@ -9,7 +9,12 @@ from typing import TypedDict, Annotated
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
-from src.tools import tavily_search_tool, mapbox_geocode_tool, mapbox_nearby_tool
+from src.tools import (
+    tavily_search_tool,
+    mapbox_geocode_tool,
+    mapbox_nearby_tool,
+    present_properties_for_review_tool
+)
 from src.prompts import (
     PROPERTY_SEARCH_SYSTEM_PROMPT,
     LOCATION_ANALYSIS_SYSTEM_PROMPT,
@@ -54,7 +59,8 @@ checkpointer = MemorySaver()
 supervisor_agent = create_deep_agent(
     model="claude-sonnet-4-5-20250929",
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
+    tools=[present_properties_for_review_tool],
     subagents=[property_search_agent, location_analysis_agent],
     checkpointer=checkpointer,
-    interrupt_on={"present_properties_for_review": True}
+    interrupt_on={"present_properties_for_review_tool": True}
 )
