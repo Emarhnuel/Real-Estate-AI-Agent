@@ -27,9 +27,6 @@ def tavily_search_tool(
         max_results: Maximum number of results to return
         search_depth: Search depth - "basic" or "advanced"
         include_images: Include image URLs from results
-        
-    Returns:
-        Dictionary with search results including images
     """
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
@@ -58,9 +55,6 @@ def mapbox_geocode_tool(address: str) -> Dict[str, Any]:
     
     Args:
         address: Property address to geocode
-        
-    Returns:
-        Dictionary with coordinates and formatted address
     """
     api_key = os.getenv("MAPBOX_API_KEY")
     if not api_key:
@@ -114,9 +108,6 @@ def mapbox_nearby_tool(
         category: POI category (e.g., "restaurant", "cafe", "park", "shopping", "transit")
         radius: Search radius in meters (default 5000m = 5km)
         limit: Maximum number of results
-        
-    Returns:
-        List of nearby POIs with name, category, distance, and coordinates
     """
     api_key = os.getenv("MAPBOX_API_KEY")
     if not api_key:
@@ -202,9 +193,6 @@ def present_properties_for_review_tool(properties: list[dict]) -> dict:
     
     Args:
         properties: List of property dictionaries with details (id, address, price, bedrooms, bathrooms, images)
-        
-    Returns:
-        Dictionary with approved and rejected property IDs after user review
     """
     from langgraph.types import interrupt
     
