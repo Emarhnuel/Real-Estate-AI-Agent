@@ -86,6 +86,18 @@ class LocationAnalysis(BaseModel):
         description="Transit score 0-100 if available"
     )
 
+# The change is in the class below
+class PropertyForReview(BaseModel):
+    """Property data for user review."""
+    
+    id: str = Field(..., description="Property identifier")
+    address: str = Field(..., description="Full property address")
+    price: float = Field(..., description="Listing price")
+    bedrooms: int = Field(..., description="Number of bedrooms")
+    bathrooms: float = Field(..., description="Number of bathrooms")
+    # This field is now required, which will fix the error.
+    image_urls: list[str] = Field(..., description="Property image URLs")
+
 
 class PropertyReport(BaseModel):
     """Final comprehensive property report."""
