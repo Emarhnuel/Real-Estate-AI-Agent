@@ -15,6 +15,7 @@ from src.tools import (
     mapbox_nearby_tool,
     present_properties_for_review_tool
 )
+from src.models import PropertyReport
 from src.prompts import (
     PROPERTY_SEARCH_SYSTEM_PROMPT,
     LOCATION_ANALYSIS_SYSTEM_PROMPT,
@@ -51,6 +52,7 @@ class SupervisorState(TypedDict):
     search_criteria: dict
     approved_properties: list[str]
     filesystem: dict
+    # structured_response will be automatically added by LangChain when response_format is set
 
 
 # Create Supervisor Agent
@@ -61,5 +63,6 @@ supervisor_agent = create_deep_agent(
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool],
     subagents=[property_search_agent, location_analysis_agent],
-    checkpointer=checkpointer
+    checkpointer=checkpointer,
+    response_format=PropertyReport
 )
