@@ -29,7 +29,7 @@ property_search_agent = {
     "description": "Searches for property listings matching user criteria using web search. Returns summary of found properties with data saved to filesystem.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
     "tools": [tavily_search_tool],
-    "model": "claude-sonnet-4-5-20250929"
+    "model": "gpt-4o"
 }
 
 
@@ -39,7 +39,7 @@ location_analysis_agent = {
     "description": "Analyzes property locations and finds nearby points of interest. Evaluates location pros and cons based on amenities, transportation, and services.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
     "tools": [mapbox_geocode_tool, mapbox_nearby_tool],
-    "model": "claude-sonnet-4-5-20250929"
+    "model": "gpt-4o"
 }
 
 
@@ -59,7 +59,7 @@ class SupervisorState(TypedDict):
 checkpointer = MemorySaver()
 
 supervisor_agent = create_deep_agent(
-    model="claude-sonnet-4-5-20250929",
+    model="gpt-4o",
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool],
     subagents=[property_search_agent, location_analysis_agent],
