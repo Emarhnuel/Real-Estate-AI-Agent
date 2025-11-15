@@ -11,7 +11,8 @@ from typing import Dict, Any, List
 from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
 from langchain_core.tools import tool
-from langchain_tavily import TavilyExtract # --- IMPORT FOR THE NEW TOOL ---
+from langchain_tavily import TavilyExtract 
+from langchain_tavily import TavilySearch
 
 # Import the Pydantic models needed for tool schemas
 from models import PropertyForReview, PropertyReport
