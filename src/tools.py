@@ -11,6 +11,7 @@ from typing import Dict, Any, List
 from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
 from langchain_core.tools import tool
+from langchain_tavily import TavilyExtract # --- IMPORT FOR THE NEW TOOL ---
 
 # Import the Pydantic models needed for tool schemas
 from models import PropertyForReview, PropertyReport
@@ -19,17 +20,13 @@ from models import PropertyForReview, PropertyReport
 @tool(parse_docstring=True)
 def tavily_search_tool(
     query: str,
-    max_results: int = 10,
-    search_depth: str = "advanced",
-    include_images: bool = True
+    max_results: int = 10
 ) -> Dict[str, Any]:
-    """Search for property listings using Tavily API.
+    """Search for property listings using Tavily API to find URLs of individual properties.
     
     Args:
-        query: Search query for property listings
-        max_results: Maximum number of results to return
-        search_depth: Search depth - "basic" or "advanced"
-        include_images: Include image URLs from results
+        query: Search query for property listings.
+        max_results: Maximum number of result URLs to return.
     """
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
@@ -40,12 +37,36 @@ def tavily_search_tool(
         response = client.search(
             query=query,
             max_results=max_results,
-            search_depth=search_depth,
-            include_images=include_images
+            search_depth="advanced"
         )
         return response
     except Exception as e:
         raise Exception(f"Tavily search failed: {str(e)}")
+
+
+@tool(parse_docstring=True)
+def tavily_extract_tool(urls: List[str]) -> Dict[str, Any]:
+    """Extract detailed content and images from a list of property URLs using Tavily API.
+    
+    Args:
+        urls: A list of URLs to extract content from.
+    """
+    api_key = os.getenv("TAVILY_API_KEY")
+    if not api_key:
+        raise ValueError("TAVILY_API_KEY environment variable is not set")
+        
+    try:
+        # Instantiate the extractor tool with advanced depth
+        extractor = TavilyExtract(
+            api_key=api_key, 
+            include_images=True, 
+            extract_depth="advanced"
+        )
+        # Invoke it with the provided URLs
+        response = extractor.invoke({"urls": urls})
+        return response
+    except Exception as e:
+        raise Exception(f"Tavily extraction failed: {str(e)}")
 
 
 # Mapbox API configuration
