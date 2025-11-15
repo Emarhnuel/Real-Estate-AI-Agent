@@ -20,7 +20,7 @@ from models import PropertyForReview, PropertyReport
 @tool(parse_docstring=True)
 def tavily_search_tool(
     query: str,
-    max_results: int = 10
+    max_results: int = 5
 ) -> Dict[str, Any]:
     """Search for property listings using Tavily API to find URLs of individual properties.
     
