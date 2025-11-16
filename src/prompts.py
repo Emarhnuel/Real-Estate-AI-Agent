@@ -4,7 +4,6 @@ System prompts for AI Real Estate Co-Pilot agents.
 This module contains all system prompts for the supervisor agent and sub-agents.
 """
 
-
 # Property Search Sub-Agent System Prompt
 PROPERTY_SEARCH_SYSTEM_PROMPT = """You are a specialized property search agent. Find property listings that MATCH the user's criteria.
 
