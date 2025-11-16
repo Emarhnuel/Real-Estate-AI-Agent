@@ -143,6 +143,10 @@ if __name__ == "__main__":
                 image_urls = prop.get('image_urls', [])
                 if image_urls:
                     print(f"Images: {len(image_urls)} available")
+                    for img_idx, img_url in enumerate(image_urls, 1):
+                        print(f"  Image {img_idx}: {img_url}")
+                else:
+                    print("Images: None available")
                 
                 print()
             
