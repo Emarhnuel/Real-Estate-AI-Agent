@@ -31,7 +31,7 @@ from prompts import (
 
 
 model = init_chat_model(
-    model="gpt-5-nano-2025-08-07",
+    model="gpt-5.1-2025-11-13",
 )
 
 # Property Search Sub-Agent Configuration
