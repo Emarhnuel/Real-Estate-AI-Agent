@@ -17,6 +17,7 @@ load_dotenv()
 
 from tools import (
     tavily_search_tool,
+    tavily_extract_tool,
     mapbox_geocode_tool,
     mapbox_nearby_tool,
     present_properties_for_review_tool,
@@ -40,7 +41,7 @@ property_search_agent = {
     "name": "property_search",
     "description": "Searches for property listings matching user criteria using web search. Returns summary of found properties with data saved to filesystem.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool],
+    "tools": [tavily_search_tool, tavily_extract_tool],
     "model": model
 }
 
