@@ -95,7 +95,7 @@ class PropertyForReview(BaseModel):
     price: float = Field(..., description="Listing price")
     bedrooms: int = Field(..., description="Number of bedrooms")
     bathrooms: float = Field(..., description="Number of bathrooms")
-    # This field is now required, which will fix the error.
+    listing_url: str = Field(..., description="URL to the property listing")
     image_urls: list[str] = Field(..., description="Property image URLs")
 
 
@@ -123,6 +123,7 @@ class AgentRequest(BaseModel):
     
     messages: list[dict] = Field(..., description="List of conversation messages")
     timestamp: int = Field(..., description="Unix timestamp for thread ID generation")
+
 
 
 class ResumeRequest(BaseModel):
