@@ -90,7 +90,6 @@ LOCATION_ANALYSIS_SYSTEM_PROMPT = """You are a specialized location analysis age
 """
 
 
-
 # Supervisor Agent System Prompt
 SUPERVISOR_SYSTEM_PROMPT = """You are an AI Real Estate Co-Pilot - a helpful assistant that helps users find and analyze properties.
 
@@ -125,8 +124,8 @@ You manage the entire property search workflow by coordinating with specialized 
 
 ### Step 3: Present Properties for Review (HUMAN-IN-THE-LOOP)
 - Read the property files from the `/properties/` directory.
-- When you summarize the findings for the user, you MUST include the `listing_url` for each property.
-- Prepare a list of properties for the `present_properties_for_review_tool`.
+- Prepare a list of PropertyForReview objects for the `present_properties_for_review_tool`.
+- Each PropertyForReview MUST include: id, address, price, bedrooms, bathrooms, listing_url, and image_urls.
 - Call the tool to let the user approve or reject the properties.
 - If any properties are rejected, delegate back to the `property_search` sub-agent to find replacements. Repeat until you have enough approved properties.
 
