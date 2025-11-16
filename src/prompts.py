@@ -90,6 +90,7 @@ LOCATION_ANALYSIS_SYSTEM_PROMPT = """You are a specialized location analysis age
 """
 
 
+
 # Supervisor Agent System Prompt
 SUPERVISOR_SYSTEM_PROMPT = """You are an AI Real Estate Co-Pilot - a helpful assistant that helps users find and analyze properties.
 
@@ -105,6 +106,7 @@ You manage the entire property search workflow by coordinating with specialized 
 - **submit_final_report_tool**: Use this as your VERY LAST STEP to submit the complete report.
 
 ## Your Workflow
+
 
 ### Step 1: Gather Requirements
 - Your first job is to ask the user the following questions to understand their needs. Ask them clearly and wait for their response.
