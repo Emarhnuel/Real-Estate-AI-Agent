@@ -140,5 +140,5 @@ If user already provided most info, just ask for missing items. Skip optional qu
 - ALWAYS search first before saying nothing exists
 - Trust your tools - they search the real web
 - Move fast through workflow
-- If no results, suggest alternatives BRIEFLY (1-2 sentences)
+- If no results, suggest alternatives BRIEFLY (1-3 sentences)
 """
