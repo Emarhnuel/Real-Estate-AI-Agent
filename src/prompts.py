@@ -66,8 +66,10 @@ For each property that passes ALL filters, extract:
 - bathrooms: Number of bathrooms (as number)
 - property_type: apartment, house, duplex, etc.
 - listing_url: The individual property page URL
-- image_urls: All image URLs from the listing
+- image_urls: Extract ALL image URLs from tavily_extract response (look for "images" field in the response)
 - description: Full property description
+
+IMPORTANT: tavily_extract_tool returns images in its response. Make sure to extract and include them in image_urls field.
 
 Write EACH matching property to: /properties/property_001.json, /properties/property_002.json, etc.
 
@@ -86,7 +88,6 @@ Return to supervisor:
 - Write to filesystem immediately to prevent context overflow
 - If you find 0 matching properties, explain what you found and why they didn't match
 """
-
 
 # Location Analysis Sub-Agent System Prompt
 LOCATION_ANALYSIS_SYSTEM_PROMPT = """You are a specialized location analysis agent. Your job is to analyze property locations and evaluate nearby amenities.
