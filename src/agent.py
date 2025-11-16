@@ -103,24 +103,69 @@ if __name__ == "__main__":
         
         # Check for interrupt (human-in-the-loop)
         if "__interrupt__" in result:
-            print("\n" + "="*50)
-            print("PROPERTY REVIEW NEEDED")
-            print("="*50)
+            print("\n" + "="*60)
+            print("PROPERTY REVIEW - Please approve or reject properties")
+            print("="*60)
             
-            # Simple prompt for approval
-            print("\nThe agent found properties and needs your approval.")
-            print("Enter property IDs to approve (comma-separated, e.g., property_001,property_002)")
-            print("Or type 'all' to approve all\n")
+            # Extract properties from interrupt payload
+            interrupt_data = result["__interrupt__"]
+            properties = []
+            
+            if isinstance(interrupt_data, list) and len(interrupt_data) > 0:
+                # Get the interrupt object
+                interrupt_obj = interrupt_data[0]
+                
+                # Access the value attribute (not dict key)
+                if hasattr(interrupt_obj, 'value'):
+                    interrupt_value = interrupt_obj.value
+                    properties = interrupt_value.get("properties", [])
+            
+            if not properties:
+                print("\nNo properties found in interrupt. Skipping review.")
+                continue
+            
+            # Display each property with details
+            print(f"\nFound {len(properties)} properties:\n")
+            
+            for idx, prop in enumerate(properties, 1):
+                print(f"--- Property {idx} ---")
+                print(f"ID: {prop.get('id', 'N/A')}")
+                print(f"Address: {prop.get('address', 'N/A')}")
+                print(f"Price: ₦{prop.get('price', 0):,.0f}/year")
+                print(f"Bedrooms: {prop.get('bedrooms', 'N/A')}")
+                print(f"Bathrooms: {prop.get('bathrooms', 'N/A')}")
+                
+                # Display image URLs if available
+                image_urls = prop.get('image_urls', [])
+                if image_urls:
+                    print(f"Images: {len(image_urls)} available")
+                
+                print()
+            
+            # Prompt for approval
+            print("Enter property IDs to APPROVE (comma-separated):")
+            print("Example: property_001,property_002")
+            print("Or type 'all' to approve all properties\n")
             
             approval_input = input("Approve: ").strip()
             
             # Parse approvals
             if approval_input.lower() == "all":
-                # Agent will handle "all" in the resume
-                resume_data = {"approved": "all", "rejected": []}
+                approved = [p["id"] for p in properties]
+                rejected = []
             else:
                 approved = [pid.strip() for pid in approval_input.split(",") if pid.strip()]
-                resume_data = {"approved": approved, "rejected": []}
+                all_ids = [p["id"] for p in properties]
+                rejected = [pid for pid in all_ids if pid not in approved]
+            
+            print(f"\n✓ Approved: {len(approved)} properties")
+            print(f"✗ Rejected: {len(rejected)} properties\n")
+            
+            # Resume with the approval decisions
+            resume_data = {
+                "approved": approved,
+                "rejected": rejected
+            }
             
             # Resume the agent
             result = supervisor_agent.invoke(
