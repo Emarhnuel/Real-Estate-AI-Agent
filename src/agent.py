@@ -44,7 +44,6 @@ property_search_agent = {
     "model": model
 }
 
-
 # Location Analysis Sub-Agent Configuration
 location_analysis_agent = {
     "name": "location_analysis",
@@ -134,6 +133,10 @@ if __name__ == "__main__":
                 print(f"Price: ₦{prop.get('price', 0):,.0f}/year")
                 print(f"Bedrooms: {prop.get('bedrooms', 'N/A')}")
                 print(f"Bathrooms: {prop.get('bathrooms', 'N/A')}")
+                
+                # Display listing URL
+                listing_url = prop.get('listing_url', 'N/A')
+                print(f"Listing: {listing_url}")
                 
                 # Display image URLs if available
                 image_urls = prop.get('image_urls', [])
