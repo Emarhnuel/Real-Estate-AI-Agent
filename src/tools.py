@@ -76,23 +76,30 @@ MAPBOX_BASE_URL = "https://api.mapbox.com"
 
 
 @tool(parse_docstring=True)
-def mapbox_geocode_tool(address: str) -> Dict[str, Any]:
-    """Convert address to coordinates using Mapbox Geocoding API.
+def mapbox_geocode_tool(address: str, country: str = None) -> Dict[str, Any]:
+    """Convert address to coordinates using Mapbox Geocoding API v6.
     
     Args:
         address: Property address to geocode
+        country: Optional ISO 3166 alpha-2 country code (e.g., 'NG' for Nigeria, 'US' for USA)
     """
     api_key = os.getenv("MAPBOX_API_KEY")
     if not api_key:
         raise ValueError("MAPBOX_API_KEY environment variable is not set")
     
     try:
-        # Mapbox Geocoding API endpoint
-        url = f"{MAPBOX_BASE_URL}/geocoding/v5/mapbox.places/{requests.utils.quote(address)}.json"
+        # Mapbox Geocoding API v6 forward endpoint
+        url = f"{MAPBOX_BASE_URL}/search/geocode/v6/forward"
         params = {
+            "q": address,
             "access_token": api_key,
-            "limit": 1
+            "limit": 1,
+            "types": "address,place,locality"  # Focus on address-type results
         }
+        
+        # Add country filter if provided for better accuracy
+        if country:
+            params["country"] = country.upper()
         
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
@@ -106,13 +113,15 @@ def mapbox_geocode_tool(address: str) -> Dict[str, Any]:
         
         feature = data["features"][0]
         coordinates = feature["geometry"]["coordinates"]
+        properties = feature.get("properties", {})
         
         return {
             "success": True,
             "longitude": coordinates[0],
             "latitude": coordinates[1],
-            "formatted_address": feature.get("place_name", address),
-            "context": feature.get("context", [])
+            "formatted_address": properties.get("full_address") or properties.get("place_formatted", address),
+            "name": properties.get("name", ""),
+            "context": properties.get("context", {})
         }
     except requests.exceptions.RequestException as e:
         raise Exception(f"Mapbox geocoding failed: {str(e)}")
