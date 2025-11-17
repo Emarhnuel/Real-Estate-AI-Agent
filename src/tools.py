@@ -213,8 +213,6 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     Returns:
         Distance in meters
     """
-    from math import radians, sin, cos, sqrt, atan2
-    
     # Earth radius in meters
     R = 6371000
     
