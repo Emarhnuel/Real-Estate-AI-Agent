@@ -15,7 +15,8 @@ from langchain_tavily import TavilyExtract
 from langchain_tavily import TavilySearch
 
 # Import the Pydantic models needed for tool schemas
-from models import PropertyForReview, PropertyReport
+from src.models import PropertyForReview, PropertyReport
+
 
 
 @tool(parse_docstring=True)
