@@ -17,7 +17,7 @@ load_dotenv()
 
 
 def test_geocode():
-    """Test geocoding a Nigerian address"""
+    """Test geocoding a Lekki address"""
     print("\n" + "="*60)
     print("TEST 1: Geocoding Address")
     print("="*60)
@@ -77,35 +77,42 @@ def test_nearby_pois(latitude, longitude):
             print(f"✗ Error searching {category}: {str(e)}")
 
 
-def test_distance_calculation(latitude, longitude):
-    """Test distance calculation from main address to a reference point"""
+def test_distance_calculation():
+    """Test distance calculation between two points"""
     print("\n" + "="*60)
-    print("TEST 3: Distance Calculation")
+    print("TEST 3: Distance Calculation Between Two Addresses")
     print("="*60)
     
-    if not latitude or not longitude:
-        print("✗ Skipping - no coordinates from geocoding")
-        return
+    # Geocode two different locations in Lagos
+    address1 = "Ikota, Lekki, Lagos, Nigeria"
+    address2 = "Lekki Phase 1, Lagos, Nigeria"
     
-    # Reference location in Lagos for distance comparison
-    reference_address = "Lekki Phase 1, Lagos, Nigeria"
-    
-    print(f"Calculating distance from main address to: {reference_address}")
+    print(f"Address 1: {address1}")
+    print(f"Address 2: {address2}")
     
     try:
-        # Geocode reference address
-        result = mapbox_geocode_tool.invoke({"address": reference_address, "country": "NG"})
-        if not result.get("success"):
-            print(f"✗ Failed to geocode reference address: {result.get('error')}")
+        # Geocode first address
+        result1 = mapbox_geocode_tool.invoke({"address": address1, "country": "NG"})
+        if not result1.get("success"):
+            print(f"✗ Failed to geocode address 1: {result1.get('error')}")
             return
         
-        ref_lat, ref_lon = result['latitude'], result['longitude']
-        print(f"  Reference point: ({ref_lat:.4f}, {ref_lon:.4f})")
+        lat1, lon1 = result1['latitude'], result1['longitude']
+        print(f"  Point 1: ({lat1:.4f}, {lon1:.4f})")
+        
+        # Geocode second address
+        result2 = mapbox_geocode_tool.invoke({"address": address2, "country": "NG"})
+        if not result2.get("success"):
+            print(f"✗ Failed to geocode address 2: {result2.get('error')}")
+            return
+        
+        lat2, lon2 = result2['latitude'], result2['longitude']
+        print(f"  Point 2: ({lat2:.4f}, {lon2:.4f})")
         
         # Calculate distance
-        distance = calculate_distance(latitude, longitude, ref_lat, ref_lon)
+        distance = calculate_distance(lat1, lon1, lat2, lon2)
         distance_km = distance / 1000
-        print(f"\n✓ Distance: {distance:.2f} meters ({distance_km:.2f} km)")
+        print(f"\n✓ Distance between locations: {distance:.2f} meters ({distance_km:.2f} km)")
         
     except Exception as e:
         print(f"✗ Error: {str(e)}")
@@ -124,10 +131,10 @@ def main():
     
     print("✓ MAPBOX_API_KEY found")
     
-    # Run tests - all using coordinates from the main address
+    # Run tests
     lat, lon = test_geocode()
     test_nearby_pois(lat, lon)
-    test_distance_calculation(lat, lon)
+    test_distance_calculation()
     
     print("\n" + "="*60)
     print("TEST SUITE COMPLETE")
