@@ -17,12 +17,12 @@ load_dotenv()
 
 
 def test_geocode():
-    """Test geocoding a Lekki address"""
+    """Test geocoding a nigerian address"""
     print("\n" + "="*60)
     print("TEST 1: Geocoding Address")
     print("="*60)
     
-    address = "12 omotayo ojo street, Lagos, Nigeria"
+    address = "Ikeja city mall, Lagos, Nigeria"
     print(f"Address: {address}")
     
     try:
