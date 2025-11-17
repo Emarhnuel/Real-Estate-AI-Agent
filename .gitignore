@@ -32,7 +32,6 @@ node_modules/
 # Project specific
 Example/
 test/
-tests/
 
 # OS
 .DS_Store
