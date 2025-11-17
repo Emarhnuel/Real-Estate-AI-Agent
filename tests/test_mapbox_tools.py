@@ -22,7 +22,7 @@ def test_geocode():
     print("TEST 1: Geocoding Address")
     print("="*60)
     
-    address = "Ikota, Lekki, Lagos, Nigeria"
+    address = "12 omotayo ojo street, Lagos, Nigeria"
     print(f"Address: {address}")
     
     try:
