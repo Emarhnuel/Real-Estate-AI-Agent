@@ -26,7 +26,8 @@ def test_geocode():
     print(f"Address: {address}")
     
     try:
-        result = mapbox_geocode_tool.invoke({"address": address})
+        # Use country code for better accuracy
+        result = mapbox_geocode_tool.invoke({"address": address, "country": "NG"})
         
         if result.get("success"):
             print(f"✓ Geocoding successful!")
@@ -52,7 +53,8 @@ def test_nearby_pois(latitude, longitude):
         print("✗ Skipping - no coordinates from geocoding")
         return
     
-    categories = ["shopping", "restaurant", "park", "school"]
+    # Use categories that work with Mapbox Search Box API
+    categories = ["shopping", "restaurant", "coffee", "school"]
     
     for category in categories:
         print(f"\nSearching for nearby {category}...")
@@ -62,7 +64,7 @@ def test_nearby_pois(latitude, longitude):
                 "latitude": latitude,
                 "longitude": longitude,
                 "category": category,
-                "radius": 5000,
+                "radius_meters": 5000,
                 "limit": 5
             })
             

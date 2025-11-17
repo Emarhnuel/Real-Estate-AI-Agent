@@ -8,11 +8,11 @@ for property listings and Mapbox for location services.
 import os
 import requests
 from typing import Dict, Any, List
-from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
 from langchain_core.tools import tool
 from langchain_tavily import TavilyExtract 
 from langchain_tavily import TavilySearch
+
 
 # Import the Pydantic models needed for tool schemas
 from src.models import PropertyForReview, PropertyReport
@@ -132,7 +132,7 @@ def mapbox_nearby_tool(
     latitude: float,
     longitude: float,
     category: str,
-    radius: int = 5000,
+    radius_meters: int = 5000,
     limit: int = 10
 ) -> List[Dict[str, Any]]:
     """Find nearby points of interest using Mapbox Search Box API.
@@ -140,9 +140,9 @@ def mapbox_nearby_tool(
     Args:
         latitude: Property latitude
         longitude: Property longitude
-        category: POI category (e.g., "restaurant", "cafe", "park", "shopping", "transit")
-        radius: Search radius in meters (default 5000m = 5km)
-        limit: Maximum number of results
+        category: POI category (e.g., "restaurant", "cafe", "coffee", "park", "shopping", "school", "hospital", "gym")
+        radius_meters: Search radius in meters (default 5000m = 5km) - used to filter results after retrieval
+        limit: Maximum number of results (max 25)
     """
     api_key = os.getenv("MAPBOX_API_KEY")
     if not api_key:
@@ -151,10 +151,19 @@ def mapbox_nearby_tool(
     try:
         # Mapbox Search Box API endpoint for category search
         url = f"{MAPBOX_BASE_URL}/search/searchbox/v1/category/{category}"
+        
+        # Calculate bounding box from radius (approximate)
+        # 1 degree latitude ≈ 111km, longitude varies by latitude
+        lat_offset = (radius_meters / 1000) / 111.0
+        lon_offset = (radius_meters / 1000) / (111.0 * abs(cos(radians(latitude))))
+        
+        bbox = f"{longitude - lon_offset},{latitude - lat_offset},{longitude + lon_offset},{latitude + lat_offset}"
+        
         params = {
             "access_token": api_key,
-            "proximity": f"{longitude},{latitude}",
-            "limit": limit,
+            "proximity": f"{longitude},{latitude}",  # Bias results toward this location
+            "bbox": bbox,  # Limit to bounding box
+            "limit": min(limit, 25),  # API max is 25
             "language": "en"
         }
         
@@ -165,21 +174,25 @@ def mapbox_nearby_tool(
         pois = []
         for feature in data.get("features", []):
             poi_coords = feature["geometry"]["coordinates"]
+            props = feature.get("properties", {})
+            
+            # Calculate actual distance
             distance = calculate_distance(
                 latitude, longitude,
                 poi_coords[1], poi_coords[0]
             )
             
-            # Filter by radius
-            if distance <= radius:
+            # Filter by exact radius
+            if distance <= radius_meters:
                 pois.append({
-                    "name": feature["properties"].get("name", "Unknown"),
+                    "name": props.get("name", "Unknown"),
                     "category": category,
                     "distance_meters": round(distance, 2),
                     "latitude": poi_coords[1],
                     "longitude": poi_coords[0],
-                    "address": feature["properties"].get("full_address", ""),
-                    "maki_icon": feature["properties"].get("maki", "")
+                    "address": props.get("full_address") or props.get("place_formatted", ""),
+                    "maki_icon": props.get("maki", ""),
+                    "poi_categories": props.get("poi_category", [])
                 })
         
         return pois
@@ -200,6 +213,8 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     Returns:
         Distance in meters
     """
+    from math import radians, sin, cos, sqrt, atan2
+    
     # Earth radius in meters
     R = 6371000
     
@@ -208,7 +223,6 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     lat2_rad = radians(lat2)
     delta_lat = radians(lat2 - lat1)
     delta_lon = radians(lon2 - lon1)
-    
     
     # Haversine formula
     a = sin(delta_lat / 2) ** 2 + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon / 2) ** 2
