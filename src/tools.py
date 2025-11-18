@@ -140,6 +140,9 @@ def mapbox_nearby_tool(
 ) -> List[Dict[str, Any]]:
     """Find nearby points of interest using Mapbox Search Box API.
     
+    IMPORTANT: POI coverage is limited to United States, Canada, and Europe.
+    Results may be empty or limited in other regions (Africa, Asia, South America, etc.).
+    
     Args:
         latitude: Property latitude
         longitude: Property longitude
