@@ -4,9 +4,11 @@ An intelligent, conversational AI agent that automates property search and analy
 
 ## Features
 
+
 - Natural language property search
 - Automated property listing discovery with Tavily
 - Location analysis with Mapbox (nearby amenities, POIs)
+  - **Note:** Mapbox POI coverage is limited to US, Canada, and Europe. Results may be limited in other regions.
 - Human-in-the-loop property review
 - Comprehensive property reports
 - Clerk authentication
