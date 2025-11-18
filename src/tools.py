@@ -8,6 +8,7 @@ for property listings and Mapbox for location services.
 import os
 import requests
 from typing import Dict, Any, List
+from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
 from langchain_core.tools import tool
 from langchain_tavily import TavilyExtract 
@@ -80,7 +81,7 @@ def mapbox_geocode_tool(address: str, country: str = None) -> Dict[str, Any]:
     """Convert address to coordinates using Mapbox Geocoding API v6.
     
     Args:
-        address: Property address to geocode
+        address: Property address to geocode (can be address, landmark, or place name)
         country: Optional ISO 3166 alpha-2 country code (e.g., 'NG' for Nigeria, 'US' for USA)
     """
     api_key = os.getenv("MAPBOX_API_KEY")
@@ -88,16 +89,14 @@ def mapbox_geocode_tool(address: str, country: str = None) -> Dict[str, Any]:
         raise ValueError("MAPBOX_API_KEY environment variable is not set")
     
     try:
-        # Mapbox Geocoding API v6 forward endpoint
         url = f"{MAPBOX_BASE_URL}/search/geocode/v6/forward"
         params = {
             "q": address,
             "access_token": api_key,
             "limit": 1,
-            "types": "address,place,locality"  # Focus on address-type results
+            "autocomplete": "false"
         }
         
-        # Add country filter if provided for better accuracy
         if country:
             params["country"] = country.upper()
         
@@ -123,8 +122,12 @@ def mapbox_geocode_tool(address: str, country: str = None) -> Dict[str, Any]:
             "name": properties.get("name", ""),
             "context": properties.get("context", {})
         }
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 404:
+            return {"success": False, "error": "Address not found"}
+        raise Exception(f"Mapbox geocoding API error: {str(e)}")
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Mapbox geocoding failed: {str(e)}")
+        raise Exception(f"Mapbox geocoding request failed: {str(e)}")
 
 
 @tool(parse_docstring=True)
@@ -149,21 +152,21 @@ def mapbox_nearby_tool(
         raise ValueError("MAPBOX_API_KEY environment variable is not set")
     
     try:
-        # Mapbox Search Box API endpoint for category search
         url = f"{MAPBOX_BASE_URL}/search/searchbox/v1/category/{category}"
         
-        # Calculate bounding box from radius (approximate)
+        # Calculate generous bounding box (1.5x radius to avoid edge exclusions)
         # 1 degree latitude ≈ 111km, longitude varies by latitude
-        lat_offset = (radius_meters / 1000) / 111.0
-        lon_offset = (radius_meters / 1000) / (111.0 * abs(cos(radians(latitude))))
+        bbox_radius = radius_meters * 1.5
+        lat_offset = (bbox_radius / 1000) / 111.0
+        lon_offset = (bbox_radius / 1000) / (111.0 * abs(cos(radians(latitude))))
         
         bbox = f"{longitude - lon_offset},{latitude - lat_offset},{longitude + lon_offset},{latitude + lat_offset}"
         
         params = {
             "access_token": api_key,
-            "proximity": f"{longitude},{latitude}",  # Bias results toward this location
-            "bbox": bbox,  # Limit to bounding box
-            "limit": min(limit, 25),  # API max is 25
+            "proximity": f"{longitude},{latitude}",
+            "bbox": bbox,
+            "limit": min(limit, 25),
             "language": "en"
         }
         
@@ -176,13 +179,11 @@ def mapbox_nearby_tool(
             poi_coords = feature["geometry"]["coordinates"]
             props = feature.get("properties", {})
             
-            # Calculate actual distance
             distance = calculate_distance(
                 latitude, longitude,
                 poi_coords[1], poi_coords[0]
             )
             
-            # Filter by exact radius
             if distance <= radius_meters:
                 pois.append({
                     "name": props.get("name", "Unknown"),
@@ -196,8 +197,12 @@ def mapbox_nearby_tool(
                 })
         
         return pois
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 404:
+            return []
+        raise Exception(f"Mapbox nearby search API error: {str(e)}")
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Mapbox nearby search failed: {str(e)}")
+        raise Exception(f"Mapbox nearby search request failed: {str(e)}")
 
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
