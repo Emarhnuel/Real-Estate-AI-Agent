@@ -17,16 +17,15 @@ load_dotenv()
 
 
 def test_geocode():
-    """Test geocoding a nigerian address"""
+    """Test geocoding a Nigerian address"""
     print("\n" + "="*60)
-    print("TEST 1: Geocoding Address")
+    print("TEST 1: Geocoding Street Address")
     print("="*60)
     
     address = "12 omotayo ojo street ikeja, Lagos Nigeria"
     print(f"Address: {address}")
     
     try:
-        # Use country code for better accuracy
         result = mapbox_geocode_tool.invoke({"address": address, "country": "NG"})
         
         if result.get("success"):
@@ -37,6 +36,34 @@ def test_geocode():
             return result['latitude'], result['longitude']
         else:
             print(f"✗ Geocoding failed: {result.get('error')}")
+            return None, None
+    except Exception as e:
+        print(f"✗ Error: {str(e)}")
+        return None, None
+
+
+def test_geocode_landmark():
+    """Test geocoding a landmark/POI"""
+    print("\n" + "="*60)
+    print("TEST 1B: Geocoding Landmark (POI)")
+    print("="*60)
+    
+    address = "Ikeja City Mall, Lagos, Nigeria"
+    print(f"Landmark: {address}")
+    
+    try:
+        result = mapbox_geocode_tool.invoke({"address": address, "country": "NG"})
+        
+        if result.get("success"):
+            print(f"✓ Geocoding successful!")
+            print(f"  Latitude: {result['latitude']}")
+            print(f"  Longitude: {result['longitude']}")
+            print(f"  Formatted: {result['formatted_address']}")
+            print(f"  Name: {result.get('name', 'N/A')}")
+            return result['latitude'], result['longitude']
+        else:
+            print(f"✗ Geocoding failed: {result.get('error')}")
+            print(f"  Note: Some landmarks may not be in Mapbox database")
             return None, None
     except Exception as e:
         print(f"✗ Error: {str(e)}")
@@ -124,8 +151,9 @@ def main():
     
     print("✓ MAPBOX_API_KEY found")
     
-    # Run tests - all using coordinates from the main address
+    # Run tests
     lat, lon = test_geocode()
+    test_geocode_landmark()
     test_nearby_pois(lat, lon)
     test_distance_calculation(lat, lon)
     
