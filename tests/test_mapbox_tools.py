@@ -70,6 +70,66 @@ def test_geocode_landmark():
         return None, None
 
 
+def test_nearby_pois_debug(latitude, longitude):
+    """Debug test to see raw API response"""
+    print("\n" + "="*60)
+    print("DEBUG: Raw API Response Test")
+    print("="*60)
+    
+    if not latitude or not longitude:
+        print("✗ Skipping - no coordinates from geocoding")
+        return
+    
+    import requests
+    from math import radians, cos
+    
+    api_key = os.getenv("MAPBOX_API_KEY")
+    category = "restaurant"
+    
+    # Calculate bbox
+    radius_meters = 10000
+    bbox_radius = radius_meters * 1.5
+    lat_offset = (bbox_radius / 1000) / 111.0
+    lon_offset = (bbox_radius / 1000) / (111.0 * abs(cos(radians(latitude))))
+    bbox = f"{longitude - lon_offset},{latitude - lat_offset},{longitude + lon_offset},{latitude + lat_offset}"
+    
+    url = f"https://api.mapbox.com/search/searchbox/v1/category/{category}"
+    params = {
+        "access_token": api_key,
+        "proximity": f"{longitude},{latitude}",
+        "bbox": bbox,
+        "limit": 10,
+        "language": "en"
+    }
+    
+    print(f"URL: {url}")
+    print(f"Proximity: {longitude},{latitude}")
+    print(f"Bbox: {bbox}")
+    print(f"Radius: {radius_meters}m")
+    
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        print(f"\nStatus Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            features = data.get("features", [])
+            print(f"Features returned: {len(features)}")
+            
+            if len(features) > 0:
+                print("\nFirst feature:")
+                print(f"  Name: {features[0]['properties'].get('name')}")
+                print(f"  Coords: {features[0]['geometry']['coordinates']}")
+                print(f"  Address: {features[0]['properties'].get('full_address')}")
+            else:
+                print("\n⚠ API returned 0 features")
+                print("This suggests limited POI coverage in this geographic area")
+        else:
+            print(f"Error response: {response.text[:200]}")
+    except Exception as e:
+        print(f"✗ Error: {str(e)}")
+
+
 def test_nearby_pois(latitude, longitude):
     """Test finding nearby points of interest"""
     print("\n" + "="*60)
@@ -80,8 +140,10 @@ def test_nearby_pois(latitude, longitude):
         print("✗ Skipping - no coordinates from geocoding")
         return
     
+    print(f"Searching around coordinates: ({latitude:.4f}, {longitude:.4f})")
+    
     # Use categories that work with Mapbox Search Box API
-    categories = ["shopping", "restaurant", "coffee", "school"]
+    categories = ["restaurant", "shopping", "cafe", "school"]
     
     for category in categories:
         print(f"\nSearching for nearby {category}...")
@@ -91,14 +153,18 @@ def test_nearby_pois(latitude, longitude):
                 "latitude": latitude,
                 "longitude": longitude,
                 "category": category,
-                "radius_meters": 5000,
-                "limit": 5
+                "radius_meters": 10000,  # Increased to 10km for testing
+                "limit": 10
             })
             
-            print(f"✓ Found {len(pois)} {category} locations:")
-            for poi in pois[:3]:  # Show first 3
-                distance_km = poi['distance_meters'] / 1000
-                print(f"  - {poi['name']} ({distance_km:.2f}km away)")
+            if len(pois) > 0:
+                print(f"✓ Found {len(pois)} {category} locations:")
+                for poi in pois[:3]:  # Show first 3
+                    distance_km = poi['distance_meters'] / 1000
+                    print(f"  - {poi['name']} ({distance_km:.2f}km away)")
+            else:
+                print(f"⚠ Found 0 {category} locations")
+                print(f"  Note: Search Box API may have limited POI coverage in this area")
                 
         except Exception as e:
             print(f"✗ Error searching {category}: {str(e)}")
@@ -154,6 +220,7 @@ def main():
     # Run tests
     lat, lon = test_geocode()
     test_geocode_landmark()
+    test_nearby_pois_debug(lat, lon)  # Debug test first
     test_nearby_pois(lat, lon)
     test_distance_calculation(lat, lon)
     
