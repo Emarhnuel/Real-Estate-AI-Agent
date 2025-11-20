@@ -149,18 +149,18 @@ def test_nearby_pois(latitude, longitude):
     
     print(f"Searching around coordinates: ({latitude:.4f}, {longitude:.4f})")
     
-    # Use categories that work with Mapbox Search Box API
-    categories = ["restaurant", "shopping", "cafe", "school"]
+    # Use categories that work with Google Places API
+    categories = ["restaurant", "cafe", "shopping_mall", "school", "park", "hospital"]
     
     for category in categories:
         print(f"\nSearching for nearby {category}...")
         
         try:
-            pois = mapbox_nearby_tool.invoke({
+            pois = google_places_nearby_tool.invoke({
                 "latitude": latitude,
                 "longitude": longitude,
                 "category": category,
-                "radius_meters": 10000,  # Increased to 10km for testing
+                "radius_meters": 5000,
                 "limit": 10
             })
             
@@ -168,10 +168,10 @@ def test_nearby_pois(latitude, longitude):
                 print(f"✓ Found {len(pois)} {category} locations:")
                 for poi in pois[:3]:  # Show first 3
                     distance_km = poi['distance_meters'] / 1000
-                    print(f"  - {poi['name']} ({distance_km:.2f}km away)")
+                    rating = poi.get('rating', 'N/A')
+                    print(f"  - {poi['name']} ({distance_km:.2f}km away, rating: {rating})")
             else:
                 print(f"⚠ Found 0 {category} locations")
-                print(f"  Note: Search Box API may have limited POI coverage in this area")
                 
         except Exception as e:
             print(f"✗ Error searching {category}: {str(e)}")
