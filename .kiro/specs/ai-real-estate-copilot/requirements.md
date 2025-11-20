@@ -11,7 +11,7 @@ The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed 
 - **Property_Search_Agent**: A specialized sub-agent responsible for finding property listings using web search tools
 - **Location_Analysis_Agent**: A specialized sub-agent that analyzes nearby points of interest and evaluates location pros and cons
 - **Tavily_API**: The web search API used to find and extract property listing information
-- **Mapbox_API**: The mapping and location data API used to find nearby amenities and points of interest
+- **Google_Places_API**: The location data API used to find nearby attractions and get property reviews
 - **Human_In_The_Loop**: A workflow pattern where the agent pauses execution to allow user review and approval before continuing
 - **Agent_Filesystem**: The internal file storage system used by agents to manage large amounts of data without overflowing context windows
 - **Property_Report**: The final deliverable containing property details, images, location analysis, and recommendations
@@ -61,17 +61,18 @@ The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed 
 
 ### Requirement 4
 
-**User Story:** As a property seeker, I want detailed location analysis for each approved property, so that I can understand the neighborhood and nearby amenities
+**User Story:** As a property seeker, I want detailed location analysis for each approved property, so that I can understand the neighborhood, nearby attractions, and property reviews
 
 #### Acceptance Criteria
 
 1. WHEN THE user approves properties, THE Supervisor_Agent SHALL delegate location analysis to the Location_Analysis_Agent for each approved property
-2. THE Location_Analysis_Agent SHALL use the Mapbox_API to find nearby points of interest within a configurable radius
-3. THE Location_Analysis_Agent SHALL identify and categorize nearby amenities including shopping centers, workplaces, schools, parks, and public transportation
-4. THE Location_Analysis_Agent SHALL calculate distances from the property to each identified point of interest
-5. THE Location_Analysis_Agent SHALL write location data to the Agent_Filesystem to manage context efficiently
-6. THE Location_Analysis_Agent SHALL analyze location pros and cons based on the gathered data
-7. THE Location_Analysis_Agent SHALL return a structured location analysis report to the Supervisor_Agent
+2. THE Location_Analysis_Agent SHALL use the Google_Places_API to find nearby attractive places within a configurable radius
+3. THE Location_Analysis_Agent SHALL identify and categorize nearby places including restaurants, cafes, shopping, parks, entertainment, and tourist attractions
+4. THE Location_Analysis_Agent SHALL fetch reviews for the property if it is listed as an Airbnb, hotel, or shortlet
+5. IF THE property has no reviews available, THE Location_Analysis_Agent SHALL continue without stopping or reporting an error
+6. THE Location_Analysis_Agent SHALL write location data to the Agent_Filesystem to manage context efficiently
+7. THE Location_Analysis_Agent SHALL analyze location pros and cons based on the gathered data
+8. THE Location_Analysis_Agent SHALL return a structured location analysis report to the Supervisor_Agent
 
 ### Requirement 5
 
@@ -82,8 +83,9 @@ The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed 
 1. WHEN ALL sub-agents complete their tasks, THE Supervisor_Agent SHALL compile a Property_Report
 2. THE Property_Report SHALL include property details, images, and location analysis for each approved property
 3. THE Property_Report SHALL present location pros and cons in a clear, structured format
-4. THE Property_Report SHALL include distances to key amenities for each property
-5. THE Supervisor_Agent SHALL deliver the Property_Report to the user through the React frontend
+4. THE Property_Report SHALL include nearby attractive places for each property
+5. THE Property_Report SHALL include property reviews when available (for Airbnb, hotels, shortlets)
+6. THE Supervisor_Agent SHALL deliver the Property_Report to the user through the React frontend
 
 ### Requirement 6
 
