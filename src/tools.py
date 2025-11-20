@@ -238,6 +238,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return distance
 
 
+
 @tool(parse_docstring=True)
 def present_properties_for_review_tool(properties: List[PropertyForReview]) -> dict:
     """Present properties to user for review and approval.
