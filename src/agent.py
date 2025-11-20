@@ -18,8 +18,8 @@ load_dotenv()
 from tools import (
     tavily_search_tool,
     tavily_extract_tool,
-    mapbox_geocode_tool,
-    mapbox_nearby_tool,
+    google_places_geocode_tool,
+    google_places_nearby_tool,
     present_properties_for_review_tool,
     submit_final_report_tool
 )
@@ -45,12 +45,13 @@ property_search_agent = {
     "model": model
 }
 
+
 # Location Analysis Sub-Agent Configuration
 location_analysis_agent = {
     "name": "location_analysis",
     "description": "Analyzes property locations and finds nearby points of interest. Evaluates location pros and cons based on amenities, transportation, and services.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
-    "tools": [mapbox_geocode_tool, mapbox_nearby_tool],
+    "tools": [google_places_geocode_tool, google_places_nearby_tool],
     "model": model 
 }
 
