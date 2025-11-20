@@ -8,6 +8,7 @@ An intelligent, conversational AI agent that automates property search and analy
 - Natural language property search
 - Automated property listing discovery with Tavily
 - Location analysis with Google Places API (nearby amenities, POIs, reviews)
+- Task planning and progress tracking with Deep Agents
 - Human-in-the-loop property review
 - Comprehensive property reports
 - Clerk authentication
