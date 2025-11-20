@@ -4,7 +4,7 @@
 
 The AI Real Estate Co-Pilot is a multi-agent system built on the Deep Agents framework (LangGraph) that automates property search and analysis. The system uses a supervisor pattern where a main agent coordinates two specialized sub-agents: one for property search and one for location analysis. The architecture leverages Deep Agents' built-in capabilities including planning (write_todos), file system management (write_file, read_file), and human-in-the-loop interrupts to create an efficient, user-friendly property search experience.
 
-The system integrates with external APIs (Tavily for web search, Mapbox for location data) and presents results through a React/Next.js frontend that allows users to review and approve properties before detailed analysis.
+The system integrates with external APIs (Tavily for web search, Google Places for location data and reviews) and presents results through a React/Next.js frontend that allows users to review and approve properties before detailed analysis.
 
 ## Architecture
 
@@ -17,7 +17,7 @@ graph TD
     SupervisorAgent -->|Delegate Search| PropertySearchAgent[Property Search Sub-Agent]
     SupervisorAgent -->|Delegate Analysis| LocationAnalysisAgent[Location Analysis Sub-Agent]
     PropertySearchAgent -->|Search Listings| TavilyAPI[Tavily API]
-    LocationAnalysisAgent -->|Get POIs| MapboxAPI[Mapbox API]
+    LocationAnalysisAgent -->|Get Places & Reviews| GooglePlacesAPI[Google Places API]
     SupervisorAgent <-->|Read/Write| Filesystem[Agent Filesystem]
     PropertySearchAgent <-->|Read/Write| Filesystem
     LocationAnalysisAgent <-->|Read/Write| Filesystem
@@ -42,7 +42,7 @@ The system follows the **Tool Calling** multi-agent pattern where:
 - Python 3.11+ - Runtime environment
 - uv - Fast Python package manager and project manager
 - Tavily API - Web search for property listings
-- Mapbox API - Location data and points of interest
+- Google Places API - Location data, nearby attractions, and property reviews
 
 **Frontend:**
 - Next.js 14+ (Pages Router) - React framework
@@ -111,6 +111,7 @@ def get_state(
     state = supervisor_agent.get_state(config)
     return state
 ```
+
 
 **No CORS needed** - Same domain deployment on Vercel
 
@@ -210,9 +211,9 @@ def tavily_search_tool(
 ```python
 location_analysis_agent = {
     "name": "location_analysis",
-    "description": "Analyzes property locations and finds nearby points of interest",
+    "description": "Analyzes property locations, finds nearby attractions, and fetches property reviews",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
-    "tools": [mapbox_geocode_tool, mapbox_nearby_tool],
+    "tools": [google_geocode_tool, google_nearby_places_tool, google_place_reviews_tool],
     "model": "claude-sonnet-4-5-20250929"
 }
 ```
@@ -250,25 +251,32 @@ export default function AgentPage() {
 ```
 
 **Responsibilities:**
-- Geocode property addresses using Mapbox
-- Search for nearby POIs in categories: shopping, schools, transit, parks, workplaces
-- Calculate distances from property to each POI
-- Analyze location pros and cons based on amenities
+- Geocode property addresses using Google Geocoding
+- Search for nearby attractive places: restaurants, cafes, shopping, parks, entertainment, tourist attractions
+- Fetch property reviews if available (Airbnb, hotels, shortlets)
+- Continue gracefully if no reviews are found
+- Analyze location pros and cons based on nearby places
 - Write analysis to filesystem
 - Return structured analysis to supervisor
 
 **Tool Interfaces:**
 ```python
-def mapbox_geocode_tool(address: str) -> dict:
+def google_geocode_tool(address: str) -> dict:
     """Convert address to coordinates"""
 
-def mapbox_nearby_tool(
+def google_nearby_places_tool(
     latitude: float,
     longitude: float,
-    category: str,
+    place_types: list[str],
     radius: int = 5000  # meters
 ) -> list[dict]:
-    """Find nearby points of interest"""
+    """Find nearby attractive places"""
+
+def google_place_reviews_tool(
+    place_name: str,
+    address: str
+) -> dict:
+    """Get reviews for a property (returns empty if not found)"""
 ```
 
 **Filesystem Structure:**
@@ -456,21 +464,27 @@ class Property(BaseModel):
 ### Location Analysis Model
 
 ```python
-class PointOfInterest(BaseModel):
+class NearbyPlace(BaseModel):
     name: str
-    category: str  # shopping, school, transit, park, workplace
-    distance_meters: float
+    types: list[str]  # restaurant, cafe, tourist_attraction, shopping_mall, park, etc.
+    rating: Optional[float]
+    user_ratings_total: Optional[int]
     address: str
     coordinates: tuple[float, float]
+
+class PropertyReview(BaseModel):
+    author_name: str
+    rating: float
+    text: str
+    time: str
 
 class LocationAnalysis(BaseModel):
     property_id: str
     coordinates: tuple[float, float]
-    nearby_pois: list[PointOfInterest]
+    nearby_places: list[NearbyPlace]
+    property_reviews: list[PropertyReview]  # Empty list if no reviews found
     pros: list[str]
     cons: list[str]
-    walkability_score: Optional[int]
-    transit_score: Optional[int]
 ```
 
 ### Search Criteria Model
@@ -801,7 +815,7 @@ def test_calculate_distance_between_coordinates():
 - `NEXT_PUBLIC_LANGGRAPH_API_URL` - LangGraph Platform API endpoint
 - `NEXT_PUBLIC_ASSISTANT_ID` - Assistant/agent ID
 - `TAVILY_API_KEY` - Tavily API key (if using API routes)
-- `MAPBOX_API_KEY` - Mapbox API key (if using API routes)
+- `GOOGLE_MAPS_API_KEY` - Google Maps/Places API key (if using API routes)
 - `LANGCHAIN_API_KEY` - LangSmith API key for monitoring
 
 ### Scaling Strategy
