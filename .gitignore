@@ -41,5 +41,3 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
-tests/
-test_mapbox_tools.py
