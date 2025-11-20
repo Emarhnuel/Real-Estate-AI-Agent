@@ -72,140 +72,148 @@ def tavily_extract_tool(urls: List[str]) -> Dict[str, Any]:
         raise Exception(f"Tavily extraction failed: {str(e)}")
 
 
-# Mapbox API configuration
-MAPBOX_BASE_URL = "https://api.mapbox.com"
+# Google Places API configuration
+GOOGLE_PLACES_BASE_URL = "https://places.googleapis.com/v1"
 
 
 @tool(parse_docstring=True)
-def mapbox_geocode_tool(address: str, country: str = None) -> Dict[str, Any]:
-    """Convert address to coordinates using Mapbox Geocoding API v6.
+def google_places_geocode_tool(address: str, country: str = None) -> Dict[str, Any]:
+    """Convert address to coordinates using Google Places Text Search API.
     
     Args:
         address: Property address to geocode (can be address, landmark, or place name)
         country: Optional ISO 3166 alpha-2 country code (e.g., 'NG' for Nigeria, 'US' for USA)
     """
-    api_key = os.getenv("MAPBOX_API_KEY")
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
     if not api_key:
-        raise ValueError("MAPBOX_API_KEY environment variable is not set")
+        raise ValueError("GOOGLE_MAPS_API_KEY environment variable is not set")
     
     try:
-        url = f"{MAPBOX_BASE_URL}/search/geocode/v6/forward"
-        params = {
-            "q": address,
-            "access_token": api_key,
-            "limit": 1,
-            "autocomplete": "false"
+        url = f"{GOOGLE_PLACES_BASE_URL}/places:searchText"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": api_key,
+            "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location"
+        }
+        
+        body = {
+            "textQuery": address
         }
         
         if country:
-            params["country"] = country.upper()
+            body["regionCode"] = country.upper()
         
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.post(url, headers=headers, json=body, timeout=10)
         response.raise_for_status()
         data = response.json()
         
-        if not data.get("features"):
+        if not data.get("places") or len(data["places"]) == 0:
             return {
                 "success": False,
                 "error": "Address not found"
             }
         
-        feature = data["features"][0]
-        coordinates = feature["geometry"]["coordinates"]
-        properties = feature.get("properties", {})
+        place = data["places"][0]
+        location = place.get("location", {})
         
         return {
             "success": True,
-            "longitude": coordinates[0],
-            "latitude": coordinates[1],
-            "formatted_address": properties.get("full_address") or properties.get("place_formatted", address),
-            "name": properties.get("name", ""),
-            "context": properties.get("context", {})
+            "latitude": location.get("latitude"),
+            "longitude": location.get("longitude"),
+            "formatted_address": place.get("formattedAddress", address),
+            "name": place.get("displayName", {}).get("text", ""),
+            "place_id": place.get("id", "")
         }
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             return {"success": False, "error": "Address not found"}
-        raise Exception(f"Mapbox geocoding API error: {str(e)}")
+        raise Exception(f"Google Places geocoding API error: {str(e)}")
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Mapbox geocoding request failed: {str(e)}")
+        raise Exception(f"Google Places geocoding request failed: {str(e)}")
 
 
 @tool(parse_docstring=True)
-def mapbox_nearby_tool(
+def google_places_nearby_tool(
     latitude: float,
     longitude: float,
     category: str,
     radius_meters: int = 5000,
     limit: int = 10
 ) -> List[Dict[str, Any]]:
-    """Find nearby points of interest using Mapbox Search Box API.
-    
-    IMPORTANT: POI coverage is limited to United States, Canada, and Europe.
-    Results may be empty or limited in other regions (Africa, Asia, South America, etc.).
+    """Find nearby points of interest using Google Places Nearby Search API.
     
     Args:
         latitude: Property latitude
         longitude: Property longitude
-        category: POI category (e.g., "restaurant", "cafe", "coffee", "park", "shopping", "school", "hospital", "gym")
-        radius_meters: Search radius in meters (default 5000m = 5km) - used to filter results after retrieval
-        limit: Maximum number of results (max 25)
+        category: POI category (e.g., "restaurant", "cafe", "park", "school", "hospital", "gym", "shopping_mall", "transit_station")
+        radius_meters: Search radius in meters (default 5000m = 5km, max 50000m)
+        limit: Maximum number of results (max 20)
     """
-    api_key = os.getenv("MAPBOX_API_KEY")
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
     if not api_key:
-        raise ValueError("MAPBOX_API_KEY environment variable is not set")
+        raise ValueError("GOOGLE_MAPS_API_KEY environment variable is not set")
     
     try:
-        url = f"{MAPBOX_BASE_URL}/search/searchbox/v1/category/{category}"
+        url = f"{GOOGLE_PLACES_BASE_URL}/places:searchNearby"
         
-        # Calculate generous bounding box (1.5x radius to avoid edge exclusions)
-        # 1 degree latitude ≈ 111km, longitude varies by latitude
-        bbox_radius = radius_meters * 1.5
-        lat_offset = (bbox_radius / 1000) / 111.0
-        lon_offset = (bbox_radius / 1000) / (111.0 * abs(cos(radians(latitude))))
-        
-        bbox = f"{longitude - lon_offset},{latitude - lat_offset},{longitude + lon_offset},{latitude + lat_offset}"
-        
-        params = {
-            "access_token": api_key,
-            "proximity": f"{longitude},{latitude}",
-            "bbox": bbox,
-            "limit": min(limit, 25),
-            "language": "en"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": api_key,
+            "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount"
         }
         
-        response = requests.get(url, params=params, timeout=10)
+        body = {
+            "includedTypes": [category],
+            "maxResultCount": min(limit, 20),
+            "locationRestriction": {
+                "circle": {
+                    "center": {
+                        "latitude": latitude,
+                        "longitude": longitude
+                    },
+                    "radius": min(radius_meters, 50000.0)
+                }
+            }
+        }
+        
+        response = requests.post(url, headers=headers, json=body, timeout=10)
         response.raise_for_status()
         data = response.json()
         
         pois = []
-        for feature in data.get("features", []):
-            poi_coords = feature["geometry"]["coordinates"]
-            props = feature.get("properties", {})
+        for place in data.get("places", []):
+            place_location = place.get("location", {})
+            place_lat = place_location.get("latitude")
+            place_lon = place_location.get("longitude")
+            
+            if place_lat is None or place_lon is None:
+                continue
             
             distance = calculate_distance(
                 latitude, longitude,
-                poi_coords[1], poi_coords[0]
+                place_lat, place_lon
             )
             
-            if distance <= radius_meters:
-                pois.append({
-                    "name": props.get("name", "Unknown"),
-                    "category": category,
-                    "distance_meters": round(distance, 2),
-                    "latitude": poi_coords[1],
-                    "longitude": poi_coords[0],
-                    "address": props.get("full_address") or props.get("place_formatted", ""),
-                    "maki_icon": props.get("maki", ""),
-                    "poi_categories": props.get("poi_category", [])
-                })
+            pois.append({
+                "name": place.get("displayName", {}).get("text", "Unknown"),
+                "category": category,
+                "distance_meters": round(distance, 2),
+                "latitude": place_lat,
+                "longitude": place_lon,
+                "address": place.get("formattedAddress", ""),
+                "rating": place.get("rating"),
+                "user_ratings_total": place.get("userRatingCount", 0),
+                "place_id": place.get("id", "")
+            })
         
         return pois
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             return []
-        raise Exception(f"Mapbox nearby search API error: {str(e)}")
+        raise Exception(f"Google Places nearby search API error: {str(e)}")
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Mapbox nearby search request failed: {str(e)}")
+        raise Exception(f"Google Places nearby search request failed: {str(e)}")
 
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
