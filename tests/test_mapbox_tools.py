@@ -202,6 +202,7 @@ def test_distance_calculation(latitude, longitude):
         ref_lat, ref_lon = result['latitude'], result['longitude']
         print(f"  Reference point: ({ref_lat:.4f}, {ref_lon:.4f})")
         
+        
         # Calculate distance
         distance = calculate_distance(latitude, longitude, ref_lat, ref_lon)
         distance_km = distance / 1000
