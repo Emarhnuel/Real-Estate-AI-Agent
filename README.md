@@ -2,13 +2,12 @@
 
 An intelligent, conversational AI agent that automates property search and analysis using Deep Agents (LangGraph).
 
-## Features
 
+## Features
 
 - Natural language property search
 - Automated property listing discovery with Tavily
-- Location analysis with Mapbox (nearby amenities, POIs)
-  - **Note:** Mapbox POI coverage is limited to US, Canada, and Europe. Results may be limited in other regions.
+- Location analysis with Google Places API (nearby amenities, POIs, reviews)
 - Human-in-the-loop property review
 - Comprehensive property reports
 - Clerk authentication
@@ -21,7 +20,7 @@ An intelligent, conversational AI agent that automates property search and analy
 - FastAPI - API endpoint (Vercel serverless function)
 - Vercel Postgres - State persistence
 - Tavily API - Property search
-- Mapbox API - Location data
+- Google Places API - Location data and reviews
 
 **Frontend:**
 - Next.js (Pages Router)
@@ -59,7 +58,7 @@ npm run dev
 ├── api/index.py          # FastAPI serverless function
 ├── src/
 │   ├── agent.py          # Deep Agents (supervisor + sub-agents)
-│   ├── tools.py          # Tavily, Mapbox tools
+│   ├── tools.py          # Tavily, Google Places tools
 │   ├── models.py         # Pydantic models
 │   └── utils.py          # Helper functions
 ├── pages/                # Next.js pages
