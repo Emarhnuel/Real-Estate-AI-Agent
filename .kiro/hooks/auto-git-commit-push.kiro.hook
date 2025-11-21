@@ -5,7 +5,11 @@
   "version": "1",
   "when": {
     "type": "fileEdited",
-    "patterns": ["**/*"]
+    "patterns": [
+      "**/*",
+      "md",
+      "txt"
+    ]
   },
   "then": {
     "type": "askAgent",
