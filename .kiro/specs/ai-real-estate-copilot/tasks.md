@@ -103,7 +103,7 @@
   - Write LLM-as-judge test for agent decision quality
   - _Requirements: All requirements_
 
-- [ ] 13. Implement FastAPI server (api/index.py)
+- [x] 13. Implement FastAPI server (api/index.py)
   - Create api/index.py with FastAPI app
   - Set up ClerkConfig with CLERK_JWKS_URL from environment
   - Create ClerkHTTPBearer guard for authentication
@@ -115,11 +115,12 @@
   - Test API endpoints locally with JWT token
   - _Requirements: 8.1, 8.2, 12.3, 12.4, 13.1, 13.2_
 
-- [ ] 14. Set up LangSmith monitoring for backend
+- [ ]* 14. Set up LangSmith monitoring for backend
   - Configure LangSmith API key in environment variables
   - Add tracing to supervisor agent
   - Set up error logging and alerting
   - Create dashboard for monitoring agent performance
+
 
 ## Frontend: Next.js with Clerk Authentication
 
