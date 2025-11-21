@@ -26,10 +26,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # Clerk authentication configuration
 clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
 clerk_guard = ClerkHTTPBearer(clerk_config)
+
 
 
 @app.post("/api/invoke")
