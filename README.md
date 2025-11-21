@@ -11,7 +11,7 @@ An intelligent, conversational AI agent that automates property search and analy
 - Task planning and progress tracking with Deep Agents
 - Human-in-the-loop property review
 - Comprehensive property reports
-- Clerk authentication
+- Clerk JWT authentication on all API endpoints
 - Deployed on Vercel
 
 ## Tech Stack
@@ -53,14 +53,32 @@ npm install
 npm run dev
 ```
 
+## API Endpoints
+
+All endpoints require Clerk JWT authentication via `Authorization: Bearer <token>` header.
+
+- `POST /api/invoke` - Start or continue agent conversation
+- `POST /api/resume` - Resume agent after human-in-the-loop interrupt
+- `GET /api/state` - Get current agent state for a thread
+- `GET /health` - Health check endpoint
+
+### Authentication Flow
+
+1. User authenticates with Clerk on frontend
+2. Frontend obtains JWT token with `getToken()`
+3. Token sent in Authorization header to API
+4. FastAPI validates JWT and extracts user_id
+5. Thread ID format: `{user_id}-{timestamp}`
+
 ## Project Structure
 
 ```
-├── api/index.py          # FastAPI serverless function
+├── api/index.py          # FastAPI serverless function with all endpoints
 ├── src/
 │   ├── agent.py          # Deep Agents (supervisor + sub-agents)
 │   ├── tools.py          # Tavily, Google Places tools
-│   ├── models.py         # Pydantic models
+│   ├── models.py         # Pydantic models (includes AgentRequest, ResumeRequest)
+│   ├── prompts.py        # System prompts for agents
 │   └── utils.py          # Helper functions
 ├── pages/                # Next.js pages
 ├── components/           # React components
