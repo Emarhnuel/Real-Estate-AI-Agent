@@ -87,10 +87,22 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 
 ## Deployment
 
-Deploy to Vercel:
+### Environment Variables
+
+Configure these environment variables in Vercel:
+- `ANTHROPIC_API_KEY` - Anthropic API key for Claude
+- `CLERK_JWKS_URL` - Clerk JWKS URL for JWT validation
+- `TAVILY_API_KEY` - Tavily API key for property search
+- `MAPBOX_ACCESS_TOKEN` - Mapbox API token for location services
+- `POSTGRES_URL` - Vercel Postgres connection string
+
+### Deploy
+
 ```bash
 vercel --prod
 ```
+
+The `vercel.json` configuration automatically routes `/api/*` requests to the FastAPI serverless function.
 
 ## License
 
