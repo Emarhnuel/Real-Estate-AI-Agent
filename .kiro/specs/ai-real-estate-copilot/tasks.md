@@ -210,7 +210,7 @@
   - _Files: frontend/src/components/PropertyReportView.tsx, frontend/src/pages/agent.tsx_
 
 
-- [ ] 24. Implement frontend-backend integration for agent page
+- [x] 24. Implement frontend-backend integration for agent page
   - Use useAuth hook to get JWT token with getToken()
   - Create sendMessage function to call /api/invoke with Authorization header
   - Create resumeWithApprovals function to call /api/resume with Authorization header
@@ -219,6 +219,7 @@
   - Add error handling and user feedback for API failures
   - Test complete workflow from authentication to property report
   - _Requirements: 12.3, 12.4, 12.7_
+  - _Files: frontend/src/pages/agent.tsx_
 
 - [ ]* 25. Write frontend component tests
   - Write tests for authentication flow with Clerk
