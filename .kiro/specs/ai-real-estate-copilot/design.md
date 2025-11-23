@@ -37,7 +37,7 @@ The system follows the **Tool Calling** multi-agent pattern where:
 **Backend:**
 - Deep Agents (deepagents library) - Agent framework with planning and file system capabilities
 - LangGraph - Underlying graph execution and state management
-- FastAPI - Single API file deployed as Vercel serverless function
+- FastAPI - REST API server
 - fastapi-clerk-auth - Clerk authentication for FastAPI
 - Python 3.11+ - Runtime environment
 - uv - Fast Python package manager and project manager
@@ -51,20 +51,17 @@ The system follows the **Tool Calling** multi-agent pattern where:
 - @clerk/nextjs - Authentication and user management
 - @langchain/langgraph-sdk - LangGraph client for streaming
 - useStream() hook - Handles streaming, state management, and interrupts
-- Vercel - Deployment platform with edge CDN and serverless functions
 
 **Infrastructure:**
-- FastAPI Server - REST API deployed as Vercel API routes
-- LangGraph Checkpointer (MemorySaver for dev, Vercel Postgres for production) - State persistence
+- FastAPI Server - REST API
+- LangGraph Checkpointer (MemorySaver) - State persistence
 - Agent Filesystem (StateBackend for short-term, StoreBackend for long-term memory)
-- Vercel Postgres - Database for checkpointer in production
-- Vercel - Single platform deployment for frontend and backend
 
 ## Components and Interfaces
 
 ### 1. FastAPI Server (api/index.py)
 
-**Purpose:** Single API file deployed as Vercel serverless function at `/api`
+**Purpose:** REST API server at `/api`
 
 **File Structure:**
 ```python
@@ -113,7 +110,7 @@ def get_state(
 ```
 
 
-**No CORS needed** - Same domain deployment on Vercel
+**CORS configured** - Allows frontend to communicate with backend
 
 ### 2. Supervisor Agent
 
