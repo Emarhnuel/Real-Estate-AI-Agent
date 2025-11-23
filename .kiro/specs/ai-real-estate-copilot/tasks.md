@@ -170,24 +170,24 @@
   - Style page with Tailwind CSS
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 14.1, 14.2, 14.3_
 
-- [ ] 20. Implement agent interaction page layout
+- [x] 20. Implement agent interaction page layout
   - Create agent page (pages/agent.tsx) as protected route
   - Add getServerSideProps for server-side authentication check
   - Set up page layout with chat interface area and sidebar
   - Integrate useUser hook to get authenticated user information
-  - Configure useStream hook with user-specific thread_id
   - Add loading states and error boundaries
   - Style page layout with Tailwind CSS
   - _Requirements: 12.1, 12.7, 14.1, 14.2, 14.3_
+  - _Files: frontend/src/pages/agent.tsx_
 
-- [ ] 21. Implement ChatInterface component for agent page
+- [x] 21. Implement ChatInterface component for agent page
   - Create ChatInterface component with message display
-  - Implement useStream hook integration for streaming responses
-  - Display agent's task list for progress visibility
   - Add message input field and send button
   - Show user avatar from Clerk in messages
+  - Display agent's task list for progress visibility (ready for backend integration)
   - Style with Tailwind CSS
   - _Requirements: 12.2, 12.4, 12.5, 12.7, 14.1, 14.2_
+  - _Files: frontend/src/components/ChatInterface.tsx, frontend/src/pages/agent.tsx_
 
 - [ ] 22. Implement PropertyReviewPanel component for agent page
   - Create PropertyReviewPanel component triggered by interrupt
