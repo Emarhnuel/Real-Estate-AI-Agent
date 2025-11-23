@@ -189,7 +189,7 @@
   - _Requirements: 12.2, 12.4, 12.5, 12.7, 14.1, 14.2_
   - _Files: frontend/src/components/ChatInterface.tsx, frontend/src/pages/agent.tsx_
 
-- [ ] 22. Implement PropertyReviewPanel component for agent page
+- [x] 22. Implement PropertyReviewPanel component for agent page
   - Create PropertyReviewPanel component triggered by interrupt
   - Display property cards with images, address, price, bedrooms, bathrooms
   - Add checkboxes for each property for approval/rejection
@@ -197,8 +197,9 @@
   - Add loading state during resume
   - Style with Tailwind CSS
   - _Requirements: 12.3, 12.7, 14.1, 14.2_
+  - _Files: frontend/src/components/PropertyReviewPanel.tsx, frontend/src/pages/agent.tsx_
 
-- [ ] 23. Implement PropertyReportView component for agent page
+- [x] 23. Implement PropertyReportView component for agent page
   - Create PropertyReportView component for final report display
   - Display property details in card format with images
   - Display location analysis with nearby POIs and distances
@@ -206,6 +207,7 @@
   - Add export or print functionality
   - Style with Tailwind CSS
   - _Requirements: 12.6, 12.7, 14.1, 14.2_
+  - _Files: frontend/src/components/PropertyReportView.tsx, frontend/src/pages/agent.tsx_
 
 
 - [ ] 24. Implement frontend-backend integration for agent page
