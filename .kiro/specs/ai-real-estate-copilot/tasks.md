@@ -143,7 +143,7 @@
   - Test authentication flow and route protection
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 13.1, 13.2, 13.3, 13.4_
 
-- [ ] 17. Implement home page and authentication pages
+- [x] 17. Implement home page and authentication pages
   - Create home page (pages/index.tsx) with hero section and call-to-action
   - Add sign-in and sign-up buttons using Clerk components
   - Create sign-in page (pages/sign-in/[[...index]].tsx) with Clerk SignIn component
@@ -152,7 +152,7 @@
   - Configure Clerk appearance prop for custom styling
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 14.1, 14.2, 14.3, 14.4_
 
-- [ ] 18. Implement navigation component
+- [x] 18. Implement navigation component
   - Create responsive navigation bar component
   - Add logo and navigation links (Home, Agent, Profile)
   - Integrate Clerk UserButton for authenticated users
