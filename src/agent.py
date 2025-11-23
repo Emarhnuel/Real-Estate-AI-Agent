@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from tools import (
+from src.tools import (
     tavily_search_tool,
     tavily_extract_tool,
     google_places_geocode_tool,
@@ -23,8 +23,8 @@ from tools import (
     present_properties_for_review_tool,
     submit_final_report_tool
 )
-from models import PropertyReport
-from prompts import (
+from src.models import PropertyReport
+from src.prompts import (
     PROPERTY_SEARCH_SYSTEM_PROMPT,
     LOCATION_ANALYSIS_SYSTEM_PROMPT,
     SUPERVISOR_SYSTEM_PROMPT
