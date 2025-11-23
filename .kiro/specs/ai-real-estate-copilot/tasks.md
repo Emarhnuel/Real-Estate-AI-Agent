@@ -207,6 +207,7 @@
   - Style with Tailwind CSS
   - _Requirements: 12.6, 12.7, 14.1, 14.2_
 
+
 - [ ] 24. Implement frontend-backend integration for agent page
   - Use useAuth hook to get JWT token with getToken()
   - Create sendMessage function to call /api/invoke with Authorization header
@@ -226,20 +227,16 @@
 
 ## Deployment
 
-- [ ] 26. Deploy to Vercel
-  - Create vercel.json configuration file
-  - Create requirements.txt for Python dependencies
-  - Set up Vercel Postgres database
-  - Configure environment variables: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY, CLERK_JWKS_URL, ANTHROPIC_API_KEY, TAVILY_API_KEY, MAPBOX_API_KEY, DATABASE_URL, LANGSMITH_API_KEY
-  - Configure Clerk production instance and get JWKS URL
-  - Deploy to Vercel (frontend pages + api/index.py serverless function)
-  - Test end-to-end workflow in production
-  - Create deployment documentation
+- [ ] 26. Prepare for deployment
+  - Document local setup instructions in README
+  - Create demo video showing application functionality
+  - Ensure .kiro directory is committed to repository
+  - Test complete workflow locally
+  - Create deployment documentation for future production deployment
   - _Requirements: 8.1, 8.2, 13.5_
 
-- [ ] 27. Set up production monitoring
-  - Configure LangSmith monitoring for production agent
-  - Set up Vercel Analytics for frontend performance
-  - Monitor Vercel function logs
+- [ ] 27. Set up monitoring
+  - Configure LangSmith monitoring for agent
+  - Set up error tracking
   - Monitor authentication events and user sessions
   - Create monitoring dashboard
