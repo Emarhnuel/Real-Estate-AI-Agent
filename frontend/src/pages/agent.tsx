@@ -1,15 +1,11 @@
 import { GetServerSideProps } from 'next';
 import { getAuth } from '@clerk/nextjs/server';
-import { UserButton } from '@clerk/nextjs';
-
+import Navigation from '@/components/Navigation';
 
 export default function AgentPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      {/* User Menu in Top Right */}
-      <div className="absolute top-4 right-4">
-        <UserButton showName={true} />
-      </div>
+      <Navigation />
 
       <div className="container mx-auto px-4 py-12">
         <header className="text-center mb-12">
