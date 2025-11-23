@@ -8,7 +8,12 @@
     "patterns": [
       "**/*",
       "md",
-      "txt"
+      "txt",
+      "json",
+      "tsx",
+      "css",
+      "ts",
+      "mjs"
     ]
   },
   "then": {
