@@ -4,10 +4,21 @@ import { GetServerSideProps } from 'next';
 import { getAuth } from '@clerk/nextjs/server';
 import Navigation from '@/components/Navigation';
 import ChatInterface from '@/components/ChatInterface';
+import PropertyReviewPanel from '@/components/PropertyReviewPanel';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface PropertyForReview {
+  id: string;
+  address: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  listing_url: string;
+  image_urls: string[];
 }
 
 export default function AgentPage() {
@@ -17,6 +28,13 @@ export default function AgentPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Interrupt state
+  const [interrupt, setInterrupt] = useState<{
+    properties: PropertyForReview[];
+    threadId: string;
+  } | null>(null);
+  const [resumeLoading, setResumeLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -58,14 +76,41 @@ export default function AgentPage() {
 
       const result = await response.json();
       
-      // Extract assistant message from result
-      if (result.messages && result.messages.length > 0) {
-        const lastMessage = result.messages[result.messages.length - 1];
-        if (lastMessage.content) {
-          setMessages(prev => [...prev, { 
-            role: 'assistant', 
-            content: lastMessage.content 
-          }]);
+      // Check for interrupt (human-in-the-loop for property review)
+      if (result.__interrupt__) {
+        const interruptData = result.__interrupt__;
+        
+        // Extract properties from interrupt
+        if (Array.isArray(interruptData) && interruptData.length > 0) {
+          const interruptValue = interruptData[0]?.value;
+          
+          if (interruptValue?.type === 'property_review' && interruptValue.properties) {
+            // Generate thread_id from user_id and timestamp
+            const userId = jwt ? JSON.parse(atob(jwt.split('.')[1])).sub : '';
+            const threadId = `${userId}-${Date.now()}`;
+            
+            setInterrupt({
+              properties: interruptValue.properties,
+              threadId: threadId
+            });
+            
+            // Add system message about property review
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: `I found ${interruptValue.properties.length} properties that match your criteria. Please review them below and select which ones you'd like me to analyze further.`
+            }]);
+          }
+        }
+      } else {
+        // Extract assistant message from result
+        if (result.messages && result.messages.length > 0) {
+          const lastMessage = result.messages[result.messages.length - 1];
+          if (lastMessage.content) {
+            setMessages(prev => [...prev, { 
+              role: 'assistant', 
+              content: lastMessage.content 
+            }]);
+          }
         }
       }
       
