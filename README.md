@@ -3,6 +3,7 @@
 An intelligent, conversational AI agent that automates property search and analysis using Deep Agents (LangGraph).
 
 
+
 ## Features
 
 - Natural language property search
@@ -25,7 +26,7 @@ An intelligent, conversational AI agent that automates property search and analy
 
 **Frontend:**
 - Next.js (Pages Router)
-- Clerk - Authentication
+- Clerk - Authentication with middleware route protection
 - Tailwind CSS - Styling
 
 ## Setup
@@ -65,10 +66,11 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 ### Authentication Flow
 
 1. User authenticates with Clerk on frontend
-2. Frontend obtains JWT token with `getToken()`
-3. Token sent in Authorization header to API
-4. FastAPI validates JWT and extracts user_id
-5. Thread ID format: `{user_id}-{timestamp}`
+2. Clerk middleware protects `/agent` and `/profile` routes
+3. Frontend obtains JWT token with `getToken()`
+4. Token sent in Authorization header to API
+5. FastAPI validates JWT and extracts user_id
+6. Thread ID format: `{user_id}-{timestamp}`
 
 ## Project Structure
 
@@ -80,8 +82,10 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 │   ├── models.py         # Pydantic models (includes AgentRequest, ResumeRequest)
 │   ├── prompts.py        # System prompts for agents
 │   └── utils.py          # Helper functions
-├── pages/                # Next.js pages
-├── components/           # React components
+├── frontend/
+│   ├── middleware.ts     # Clerk route protection
+│   ├── src/pages/        # Next.js pages
+│   └── components/       # React components
 └── tests/                # Integration tests
 ```
 
