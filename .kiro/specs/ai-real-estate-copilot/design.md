@@ -109,7 +109,6 @@ def get_state(
     return state
 ```
 
-
 **CORS configured** - Allows frontend to communicate with backend
 
 ### 2. Supervisor Agent
@@ -716,39 +715,24 @@ def test_calculate_distance_between_coordinates():
 
 ### Development Environment
 
-- Use MemorySaver checkpointer for local development
+- Use MemorySaver checkpointer for development
 - Use StateBackend filesystem (in-memory)
 - Mock API responses for faster iteration
-- Use LangGraph CLI dev mode with hot reloading
-- Run Next.js dev server locally with `npm run dev`
+- Run FastAPI server locally with `uvicorn api.index:app --reload`
+- Run Next.js dev server locally with `cd frontend && npm run dev`
 
-### Production Environment - Vercel Deployment
+### Production Environment
 
-**Frontend Deployment (Vercel):**
-- Deploy Next.js frontend to Vercel with automatic CI/CD from Git
-- Configure environment variables in Vercel dashboard:
-  - `NEXT_PUBLIC_LANGGRAPH_API_URL` - Backend API endpoint
-  - `NEXT_PUBLIC_ASSISTANT_ID` - LangGraph assistant ID
-- Vercel automatically handles:
-  - Edge CDN for global distribution
-  - Automatic HTTPS
-  - Serverless function optimization
-  - Image optimization
+**Deployment Options:**
+- Docker container deployment (Railway, Render, AWS App Runner)
+- Frontend and backend can be deployed together or separately
+- Use PostgreSQL checkpointer for production state persistence
 
-**Backend Deployment Options:**
-
-**Vercel Deployment:**
-- Deploy FastAPI as Vercel API routes in `/pages/api/agent/` directory
-- Deploy Next.js frontend pages to Vercel
-- Use Vercel Postgres for checkpointer
-- No CORS needed (same domain)
-- Clerk authentication protects both pages and API routes
-
-### Recommended Architecture
+### Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│   Vercel (All-in-One Deployment)                    │
+│   Application Architecture                          │
 │                                                      │
 │  ┌──────────────────────────────────────────────┐  │
 │  │   Next.js Frontend (Pages Router)            │  │
@@ -763,7 +747,7 @@ def test_calculate_distance_between_coordinates():
 │                 │ JWT Bearer Token                   │
 │                 ↓                                    │
 │  ┌──────────────────────────────────────────────┐  │
-│  │   FastAPI Serverless Function                │  │
+│  │   FastAPI Server                             │  │
 │  │   api/index.py                               │  │
 │  │   - POST /api/invoke                         │  │
 │  │   - POST /api/resume                         │  │
@@ -784,54 +768,16 @@ def test_calculate_distance_between_coordinates():
 │                 │ checkpointer                       │
 │                 ↓                                    │
 │  ┌──────────────────────────────────────────────┐  │
-│  │   Vercel Postgres                            │  │
+│  │   MemorySaver (Development)                  │  │
 │  │   - Agent State Persistence                  │  │
 │  │   - Thread Storage                           │  │
 │  └──────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────┘
 ```
 
-### Vercel Configuration Files
-
-**vercel.json:**
-```json
-{
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_LANGGRAPH_API_URL": "@langgraph-api-url",
-    "NEXT_PUBLIC_ASSISTANT_ID": "@assistant-id"
-  }
-}
-```
-
-**Environment Variables (Vercel Dashboard):**
-- `NEXT_PUBLIC_LANGGRAPH_API_URL` - LangGraph Platform API endpoint
-- `NEXT_PUBLIC_ASSISTANT_ID` - Assistant/agent ID
-- `TAVILY_API_KEY` - Tavily API key (if using API routes)
-- `GOOGLE_MAPS_API_KEY` - Google Maps/Places API key (if using API routes)
-- `LANGCHAIN_API_KEY` - LangSmith API key for monitoring
-
-### Scaling Strategy
-
-**Frontend Scaling (Automatic via Vercel):**
-- Edge CDN for global distribution
-- Automatic scaling based on traffic
-- Image optimization and caching
-- Static page generation where possible
-
-**Backend Scaling:**
-- LangGraph Platform handles horizontal scaling automatically
-- Database connection pooling for checkpointer
-- Caching for frequently accessed location data
-
 ### Monitoring and Observability
 
 - Use LangSmith for agent execution tracing and monitoring
-- Vercel Analytics for frontend performance
-- Vercel Logs for API route debugging
 - Set up error tracking with Sentry or similar
 - Configure alerts for API failures
+- Monitor application logs
