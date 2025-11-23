@@ -12,6 +12,8 @@ from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCr
 from langgraph.types import Command
 
 # Import agent and models
+import sys
+sys.path.append('..')
 from src.agent import supervisor_agent
 from src.models import AgentRequest, ResumeRequest
 
