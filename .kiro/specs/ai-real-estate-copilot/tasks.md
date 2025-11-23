@@ -133,7 +133,8 @@
   - Note: API calls go to /api (same domain, no separate API_URL needed)
   - _Requirements: 10.1, 10.2, 10.3, 13.5, 14.1_
 
-- [ ] 16. Set up Clerk authentication and route protection
+
+- [x] 16. Set up Clerk authentication and route protection
   - Wrap application with ClerkProvider in pages/_app.tsx
   - Create middleware.ts with clerkMiddleware for route protection
   - Define protected routes: /agent and /profile
