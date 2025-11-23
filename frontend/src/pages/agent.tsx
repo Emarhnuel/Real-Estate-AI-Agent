@@ -1,29 +1,106 @@
+import { useState, FormEvent } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { GetServerSideProps } from 'next';
 import { getAuth } from '@clerk/nextjs/server';
 import Navigation from '@/components/Navigation';
+import ChatInterface from '@/components/ChatInterface';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export default function AgentPage() {
+  const { getToken } = useAuth();
+
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    setLoading(true);
+
+    // Add user message to chat
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+
+    const jwt = await getToken();
+    if (!jwt) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Authentication required. Please sign in again.' 
+      }]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/invoke', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: userMessage }],
+          timestamp: Date.now()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Extract assistant message from result
+      if (result.messages && result.messages.length > 0) {
+        const lastMessage = result.messages[result.messages.length - 1];
+        if (lastMessage.content) {
+          setMessages(prev => [...prev, { 
+            role: 'assistant', 
+            content: lastMessage.content 
+          }]);
+        }
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Sorry, there was an error processing your request.' 
+      }]);
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-12">
-        <header className="text-center mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
             AI Real Estate Co-Pilot
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <p className="text-gray-600 dark:text-gray-400">
             Your intelligent property search assistant
           </p>
         </header>
 
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 backdrop-blur-lg bg-opacity-95">
-            <p className="text-gray-700 dark:text-gray-300">
-              Agent interaction interface coming soon...
-            </p>
-          </div>
-        </div>
+        <ChatInterface
+          messages={messages}
+          input={input}
+          loading={loading}
+          onInputChange={setInput}
+          onSubmit={handleSubmit}
+        />
       </div>
     </main>
   );
