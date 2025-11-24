@@ -1,5 +1,5 @@
 import { GetServerSideProps } from 'next';
-import { getAuth } from '@clerk/nextjs/server';
+import { getAuth, buildClerkProps } from '@clerk/nextjs/server';
 import { UserProfile } from '@clerk/nextjs';
 import Navigation from '@/components/Navigation';
 
@@ -35,5 +35,9 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     };
   }
   
-  return { props: {} };
+  return { 
+    props: {
+      ...buildClerkProps(ctx.req)
+    } 
+  };
 };
