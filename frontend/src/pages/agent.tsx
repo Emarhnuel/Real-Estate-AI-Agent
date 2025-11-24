@@ -72,7 +72,7 @@ export default function AgentPage() {
     }
 
     try {
-      const response = await fetch('/api/invoke', {
+      const response = await fetch('http://localhost:8000/api/invoke', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +171,7 @@ export default function AgentPage() {
     }
 
     try {
-      const response = await fetch('/api/resume', {
+      const response = await fetch('http://localhost:8000/api/resume', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
