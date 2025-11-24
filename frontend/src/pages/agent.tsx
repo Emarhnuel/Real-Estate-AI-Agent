@@ -37,6 +37,9 @@ export default function AgentPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // Thread ID tracking - persist across the entire conversation
+  const [threadId, setThreadId] = useState<string | null>(null);
+  
   // Interrupt state
   const [interrupt, setInterrupt] = useState<{
     properties: PropertyForReview[];
@@ -71,6 +74,14 @@ export default function AgentPage() {
       return;
     }
 
+    // Generate or reuse thread_id
+    let currentThreadId = threadId;
+    if (!currentThreadId) {
+      const userId = jwt ? JSON.parse(atob(jwt.split('.')[1])).sub : '';
+      currentThreadId = `${userId}-${Date.now()}`;
+      setThreadId(currentThreadId);
+    }
+
     try {
       const response = await fetch('http://localhost:8000/api/invoke', {
         method: 'POST',
@@ -99,13 +110,10 @@ export default function AgentPage() {
           const interruptValue = interruptData[0]?.value;
           
           if (interruptValue?.type === 'property_review' && interruptValue.properties) {
-            // Generate thread_id from user_id and timestamp
-            const userId = jwt ? JSON.parse(atob(jwt.split('.')[1])).sub : '';
-            const threadId = `${userId}-${Date.now()}`;
-            
+            // Use the SAME thread_id from the current conversation
             setInterrupt({
               properties: interruptValue.properties,
-              threadId: threadId
+              threadId: currentThreadId!
             });
             
             // Add system message about property review
@@ -153,6 +161,7 @@ export default function AgentPage() {
     setMessages([]);
     setReport(null);
     setInterrupt(null);
+    setThreadId(null); // Reset thread ID for new conversation
   }
 
   async function handlePropertyReview(approvedIds: string[]) {
@@ -275,6 +284,7 @@ export default function AgentPage() {
               onClick={() => {
                 setReport(null);
                 setMessages([]);
+                setThreadId(null); // Reset thread ID for new conversation
               }}
               className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
             >
