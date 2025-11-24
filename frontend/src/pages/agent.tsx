@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { GetServerSideProps } from 'next';
-import { getAuth } from '@clerk/nextjs/server';
+import { getAuth, buildClerkProps } from '@clerk/nextjs/server';
 import Navigation from '@/components/Navigation';
 import ChatInterface from '@/components/ChatInterface';
 import PropertyReviewPanel from '@/components/PropertyReviewPanel';
@@ -46,6 +46,9 @@ export default function AgentPage() {
   
   // Report state
   const [report, setReport] = useState<PropertyReport | null>(null);
+  
+  // Error state
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -135,12 +138,21 @@ export default function AgentPage() {
       setLoading(false);
     } catch (error) {
       console.error('Fetch error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Failed to connect to the agent: ${errorMessage}`);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'Sorry, there was an error processing your request.' 
+        content: '❌ Sorry, I encountered an error. Please check your connection and try again.' 
       }]);
       setLoading(false);
     }
+  }
+
+  function handleRetry() {
+    setError(null);
+    setMessages([]);
+    setReport(null);
+    setInterrupt(null);
   }
 
   async function handlePropertyReview(approvedIds: string[]) {
@@ -207,11 +219,14 @@ export default function AgentPage() {
       setResumeLoading(false);
     } catch (error) {
       console.error('Resume error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Failed to resume analysis: ${errorMessage}`);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, there was an error processing your selections.'
+        content: '❌ Sorry, I encountered an error while analyzing your selections. Please try again.'
       }]);
       setResumeLoading(false);
+      setInterrupt(null);
     }
   }
 
@@ -228,6 +243,29 @@ export default function AgentPage() {
             Your intelligent property search assistant
           </p>
         </header>
+
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <span className="text-red-600 dark:text-red-400 text-xl">⚠️</span>
+                <div>
+                  <h3 className="font-semibold text-red-800 dark:text-red-300 mb-1">
+                    Connection Error
+                  </h3>
+                  <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleRetry}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Show PropertyReportView if report is available */}
         {report ? (
@@ -275,5 +313,9 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     };
   }
   
-  return { props: {} };
+  return { 
+    props: {
+      ...buildClerkProps(ctx.req)
+    } 
+  };
 };
