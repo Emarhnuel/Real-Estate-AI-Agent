@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
@@ -21,19 +23,31 @@ export default function Navigation() {
             <SignedIn>
               <Link 
                 href="/" 
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className={`transition-colors ${
+                  router.pathname === '/' 
+                    ? 'text-blue-600 dark:text-blue-400 font-semibold' 
+                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                }`}
               >
                 Home
               </Link>
               <Link 
                 href="/agent" 
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className={`transition-colors ${
+                  router.pathname === '/agent' 
+                    ? 'text-blue-600 dark:text-blue-400 font-semibold' 
+                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                }`}
               >
                 Agent
               </Link>
               <Link 
                 href="/profile" 
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className={`transition-colors ${
+                  router.pathname.startsWith('/profile') 
+                    ? 'text-blue-600 dark:text-blue-400 font-semibold' 
+                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                }`}
               >
                 Profile
               </Link>
