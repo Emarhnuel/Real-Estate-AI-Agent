@@ -12,9 +12,8 @@
   
   --background: var(--halloween-black);
   --foreground: var(--halloween-ghost-white);
-}
-
-@theme inline {
+  
+  /* Tailwind theme variables */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-halloween-orange: var(--halloween-orange);
