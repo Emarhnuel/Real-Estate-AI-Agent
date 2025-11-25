@@ -21,12 +21,16 @@ from src.tools import (
     google_places_geocode_tool,
     google_places_nearby_tool,
     present_properties_for_review_tool,
-    submit_final_report_tool
+    submit_final_report_tool,
+    analyze_property_images_tool,
+    search_halloween_decorations_tool,
+    generate_decorated_image_tool
 )
 from src.models import PropertyReport
 from src.prompts import (
     PROPERTY_SEARCH_SYSTEM_PROMPT,
     LOCATION_ANALYSIS_SYSTEM_PROMPT,
+    HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
     SUPERVISOR_SYSTEM_PROMPT
 )
 
@@ -56,6 +60,16 @@ location_analysis_agent = {
 }
 
 
+# Halloween Decorator Sub-Agent Configuration
+halloween_decorator_agent = {
+    "name": "halloween_decorator",
+    "description": "Analyzes property images and creates Halloween decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
+    "system_prompt": HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
+    "tools": [analyze_property_images_tool, search_halloween_decorations_tool, generate_decorated_image_tool],
+    "model": model
+}
+
+
 
 # Supervisor Agent State Schema
 class SupervisorState(TypedDict):
@@ -75,7 +89,7 @@ supervisor_agent = create_deep_agent(
     model=model,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool, submit_final_report_tool],
-    subagents=[property_search_agent, location_analysis_agent],
+    subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
     checkpointer=checkpointer,
     # response_format=PropertyReport
 )
