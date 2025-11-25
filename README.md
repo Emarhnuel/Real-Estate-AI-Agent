@@ -6,8 +6,9 @@ An intelligent, conversational AI agent that automates property search and analy
 
 ## Features
 
-- Natural language property search
+- Natural language property search with purpose-based filtering (rent, sale, shortlet)
 - Automated property listing discovery with Tavily
+- Purpose-specific search strategies for different property types
 - Location analysis with Google Places API (nearby amenities, POIs, reviews)
 - Task planning and progress tracking with Deep Agents
 - Human-in-the-loop property review
@@ -21,7 +22,7 @@ An intelligent, conversational AI agent that automates property search and analy
 - Deep Agents (LangGraph) - Multi-agent orchestration
 - FastAPI - API endpoint (Vercel serverless function)
 - Vercel Postgres - State persistence
-- Tavily API - Property search
+- Tavily API - Property search (rent, sale, shortlet)
 - Google Places API - Location data and reviews
 
 **Frontend:**
