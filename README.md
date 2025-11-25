@@ -10,6 +10,10 @@ An intelligent, conversational AI agent that automates property search and analy
 - Automated property listing discovery with Tavily
 - Purpose-specific search strategies for different property types
 - Location analysis with Google Places API (nearby amenities, POIs, reviews)
+- **Halloween Decorator** - AI-powered property decoration visualization with Gemini Vision
+  - Analyze property images to identify decoration opportunities
+  - Search e-commerce sites for Halloween decoration products
+  - Generate AI-decorated images showing properties with Halloween themes
 - Task planning and progress tracking with Deep Agents
 - Human-in-the-loop property review
 - Comprehensive property reports
@@ -24,6 +28,7 @@ An intelligent, conversational AI agent that automates property search and analy
 - Vercel Postgres - State persistence
 - Tavily API - Property search (rent, sale, shortlet)
 - Google Places API - Location data and reviews
+- Google Gemini API - Image analysis and AI-generated decoration visualizations
 
 **Frontend:**
 - Next.js (Pages Router)
@@ -95,10 +100,11 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 ### Environment Variables
 
 Configure these environment variables in Vercel:
-- `ANTHROPIC_API_KEY` - Anthropic API key for Claude
+- `OPENAI_API_KEY` - OpenAI API key for GPT models
 - `CLERK_JWKS_URL` - Clerk JWKS URL for JWT validation
 - `TAVILY_API_KEY` - Tavily API key for property search
-- `MAPBOX_ACCESS_TOKEN` - Mapbox API token for location services
+- `GOOGLE_MAPS_API_KEY` - Google Maps API key for location services
+- `GEMINI_API_KEY` - Google Gemini API key for image analysis and generation (optional, for Halloween Decorator feature)
 - `POSTGRES_URL` - Vercel Postgres connection string
 
 ### Deploy
