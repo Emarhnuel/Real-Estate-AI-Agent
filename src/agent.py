@@ -7,7 +7,6 @@ and location analysis using the Deep Agents framework.
 
 from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
@@ -34,10 +33,6 @@ from src.prompts import (
     HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
     SUPERVISOR_SYSTEM_PROMPT
 )
-
-
-model = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite")
 
 
 model = init_chat_model(
