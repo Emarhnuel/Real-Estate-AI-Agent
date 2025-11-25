@@ -95,115 +95,115 @@ supervisor_agent = create_deep_agent(
 )
 
 
-if __name__ == "__main__":
-    from langgraph.types import Command
+# if __name__ == "__main__":
+#     from langgraph.types import Command
     
-    # Unique ID for the conversation thread
-    config = {"configurable": {"thread_id": "test-agent-004"}}
+#     # Unique ID for the conversation thread
+#     config = {"configurable": {"thread_id": "test-agent-004"}}
 
-    print("Real Estate AI Agent - Type 'exit' or 'quit' to end the conversation\n")
+#     print("Real Estate AI Agent - Type 'exit' or 'quit' to end the conversation\n")
 
-    while True:
-        # Get input from the user
-        user_input = input("You: ")
-        if user_input.lower() in ["exit", "quit"]:
-            print("Exiting conversation.")
-            break
+#     while True:
+#         # Get input from the user
+#         user_input = input("You: ")
+#         if user_input.lower() in ["exit", "quit"]:
+#             print("Exiting conversation.")
+#             break
 
-        # Invoke the agent with the user message
-        result = supervisor_agent.invoke(
-            {"messages": [{"role": "user", "content": user_input}]},
-            config=config
-        )
+#         # Invoke the agent with the user message
+#         result = supervisor_agent.invoke(
+#             {"messages": [{"role": "user", "content": user_input}]},
+#             config=config
+#         )
         
-        # Check for interrupt (human-in-the-loop)
-        if "__interrupt__" in result:
-            print("\n" + "="*60)
-            print("PROPERTY REVIEW - Please approve or reject properties")
-            print("="*60)
+#         # Check for interrupt (human-in-the-loop)
+#         if "__interrupt__" in result:
+#             print("\n" + "="*60)
+#             print("PROPERTY REVIEW - Please approve or reject properties")
+#             print("="*60)
             
-            # Extract properties from interrupt payload
-            interrupt_data = result["__interrupt__"]
-            properties = []
+#             # Extract properties from interrupt payload
+#             interrupt_data = result["__interrupt__"]
+#             properties = []
             
-            if isinstance(interrupt_data, list) and len(interrupt_data) > 0:
-                # Get the interrupt object
-                interrupt_obj = interrupt_data[0]
+#             if isinstance(interrupt_data, list) and len(interrupt_data) > 0:
+#                 # Get the interrupt object
+#                 interrupt_obj = interrupt_data[0]
                 
-                # Access the value attribute (not dict key)
-                if hasattr(interrupt_obj, 'value'):
-                    interrupt_value = interrupt_obj.value
-                    properties = interrupt_value.get("properties", [])
+#                 # Access the value attribute (not dict key)
+#                 if hasattr(interrupt_obj, 'value'):
+#                     interrupt_value = interrupt_obj.value
+#                     properties = interrupt_value.get("properties", [])
             
-            if not properties:
-                print("\nNo properties found in interrupt. Skipping review.")
-                continue
+#             if not properties:
+#                 print("\nNo properties found in interrupt. Skipping review.")
+#                 continue
             
-            # Display each property with details
-            print(f"\nFound {len(properties)} properties:\n")
+#             # Display each property with details
+#             print(f"\nFound {len(properties)} properties:\n")
             
-            for idx, prop in enumerate(properties, 1):
-                print(f"--- Property {idx} ---")
-                print(f"ID: {prop.get('id', 'N/A')}")
-                print(f"Address: {prop.get('address', 'N/A')}")
-                print(f"Price: ₦{prop.get('price', 0):,.0f}/year")
-                print(f"Bedrooms: {prop.get('bedrooms', 'N/A')}")
-                print(f"Bathrooms: {prop.get('bathrooms', 'N/A')}")
+#             for idx, prop in enumerate(properties, 1):
+#                 print(f"--- Property {idx} ---")
+#                 print(f"ID: {prop.get('id', 'N/A')}")
+#                 print(f"Address: {prop.get('address', 'N/A')}")
+#                 print(f"Price: ₦{prop.get('price', 0):,.0f}/year")
+#                 print(f"Bedrooms: {prop.get('bedrooms', 'N/A')}")
+#                 print(f"Bathrooms: {prop.get('bathrooms', 'N/A')}")
                 
-                # Display listing URL
-                listing_url = prop.get('listing_url', 'N/A')
-                print(f"Listing: {listing_url}")
+#                 # Display listing URL
+#                 listing_url = prop.get('listing_url', 'N/A')
+#                 print(f"Listing: {listing_url}")
                 
-                # Display image URLs if available
-                image_urls = prop.get('image_urls', [])
-                if image_urls:
-                    print(f"Images: {len(image_urls)} available")
-                    for img_idx, img_url in enumerate(image_urls, 1):
-                        print(f"  Image {img_idx}: {img_url}")
-                else:
-                    print("Images: None available")
+#                 # Display image URLs if available
+#                 image_urls = prop.get('image_urls', [])
+#                 if image_urls:
+#                     print(f"Images: {len(image_urls)} available")
+#                     for img_idx, img_url in enumerate(image_urls, 1):
+#                         print(f"  Image {img_idx}: {img_url}")
+#                 else:
+#                     print("Images: None available")
                 
-                print()
+#                 print()
             
-            # Prompt for approval
-            print("Enter property IDs to APPROVE (comma-separated):")
-            print("Example: property_001,property_002")
-            print("Or type 'all' to approve all properties\n")
+#             # Prompt for approval
+#             print("Enter property IDs to APPROVE (comma-separated):")
+#             print("Example: property_001,property_002")
+#             print("Or type 'all' to approve all properties\n")
             
-            approval_input = input("Approve: ").strip()
+#             approval_input = input("Approve: ").strip()
             
-            # Parse approvals
-            if approval_input.lower() == "all":
-                approved = [p["id"] for p in properties]
-                rejected = []
-            else:
-                approved = [pid.strip() for pid in approval_input.split(",") if pid.strip()]
-                all_ids = [p["id"] for p in properties]
-                rejected = [pid for pid in all_ids if pid not in approved]
+#             # Parse approvals
+#             if approval_input.lower() == "all":
+#                 approved = [p["id"] for p in properties]
+#                 rejected = []
+#             else:
+#                 approved = [pid.strip() for pid in approval_input.split(",") if pid.strip()]
+#                 all_ids = [p["id"] for p in properties]
+#                 rejected = [pid for pid in all_ids if pid not in approved]
             
-            print(f"\n✓ Approved: {len(approved)} properties")
-            print(f"✗ Rejected: {len(rejected)} properties\n")
+#             print(f"\n✓ Approved: {len(approved)} properties")
+#             print(f"✗ Rejected: {len(rejected)} properties\n")
             
-            # Resume with the approval decisions
-            resume_data = {
-                "approved": approved,
-                "rejected": rejected
-            }
+#             # Resume with the approval decisions
+#             resume_data = {
+#                 "approved": approved,
+#                 "rejected": rejected
+#             }
             
-            # Resume the agent
-            result = supervisor_agent.invoke(
-                Command(resume=resume_data),
-                config=config
-            )
+#             # Resume the agent
+#             result = supervisor_agent.invoke(
+#                 Command(resume=resume_data),
+#                 config=config
+#             )
         
-        # Get the agent's response
-        if "messages" in result and len(result["messages"]) > 0:
-            agent_response = result["messages"][-1]
+#         # Get the agent's response
+#         if "messages" in result and len(result["messages"]) > 0:
+#             agent_response = result["messages"][-1]
             
-            # Print the agent's conversational response
-            if hasattr(agent_response, 'content') and agent_response.content:
-                print(f"\nAgent: {agent_response.content}\n")
-            else:
-                print("\nAgent: [Processing...]\n")
-        else:
-            print("\nAgent: [No response]\n")
+#             # Print the agent's conversational response
+#             if hasattr(agent_response, 'content') and agent_response.content:
+#                 print(f"\nAgent: {agent_response.content}\n")
+#             else:
+#                 print("\nAgent: [Processing...]\n")
+#         else:
+#             print("\nAgent: [No response]\n")
