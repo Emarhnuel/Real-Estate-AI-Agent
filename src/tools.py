@@ -2,7 +2,7 @@
 Tools for AI Real Estate Co-Pilot.
 
 This module provides external API integrations including Tavily search
-for property listings and Mapbox for location services.
+for property listings, Google Places for location services, and Gemini for Halloween decorations.
 """
 
 import os
