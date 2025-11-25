@@ -11,7 +11,7 @@ The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed 
 - **Property_Search_Agent**: A specialized sub-agent responsible for finding property listings using web search tools
 - **Location_Analysis_Agent**: A specialized sub-agent that analyzes nearby points of interest and evaluates location pros and cons
 - **Tavily_API**: The web search API used to find and extract property listing information
-- **Google_Places_API**: The location data API used to find nearby attractions and get property reviews
+- **Google_Places_API**: The location data API used to geocode addresses, find nearby points of interest, and analyze locations
 - **Human_In_The_Loop**: A workflow pattern where the agent pauses execution to allow user review and approval before continuing
 - **Agent_Filesystem**: The internal file storage system used by agents to manage large amounts of data without overflowing context windows
 - **Property_Report**: The final deliverable containing property details, images, location analysis, and recommendations
