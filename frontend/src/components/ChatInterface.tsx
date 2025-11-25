@@ -30,9 +30,9 @@ export default function ChatInterface({
         {messages.length === 0 && (
           <div className="text-center text-gray-500 dark:text-gray-400 mt-20">
             <p className="text-lg mb-4">👋 Welcome, {user?.firstName || 'there'}!</p>
-            <p>Start by telling me what kind of property you're looking for.</p>
+            <p>Start by telling me what kind of property you are looking for.</p>
             <p className="text-sm mt-2">
-              Example: "Find me a 3-bedroom apartment in Lagos under ₦3M per year"
+              Example: Find me a 3-bedroom apartment in Lagos under ₦3M per year
             </p>
           </div>
         )}
