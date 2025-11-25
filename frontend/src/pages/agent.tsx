@@ -239,7 +239,22 @@ export default function AgentPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] relative">
+    <main className="min-h-screen relative">
+      {/* Background Image with Dark Overlay */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: 'url(https://images.unsplash.com/photo-1509557965875-b88c97052f0e?q=80&w=2070&auto=format&fit=crop)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        }}
+      >
+        <div className="absolute inset-0 bg-black/85"></div>
+      </div>
+      
+      {/* Content */}
+      <div className="relative z-10">
       {/* Floating bats */}
       <div className="fixed top-20 left-10 animate-bounce" style={{ animationDuration: '3s' }}>
         <span className="text-4xl opacity-30">🦇</span>
@@ -310,6 +325,7 @@ export default function AgentPage() {
             </button>
           </div>
         )}
+      </div>
       </div>
     </main>
   );
