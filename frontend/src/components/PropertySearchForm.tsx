@@ -13,7 +13,7 @@ export interface PropertySearchData {
   bathrooms?: number;
   moveInDate?: string;
   leaseLength?: number;
-  propertyType?: string;
+  propertyTypes?: string[];
   locationPriorities?: string;
 }
 
@@ -26,7 +26,7 @@ export default function PropertySearchForm({ onSubmit, loading }: PropertySearch
     bathrooms: undefined,
     moveInDate: '',
     leaseLength: undefined,
-    propertyType: '',
+    propertyTypes: [],
     locationPriorities: '',
   });
 
@@ -59,7 +59,7 @@ export default function PropertySearchForm({ onSubmit, loading }: PropertySearch
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof PropertySearchData, value: string | number | undefined) => {
+  const handleChange = (field: keyof PropertySearchData, value: string | number | string[] | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error for this field
     if (errors[field]) {
@@ -221,24 +221,50 @@ export default function PropertySearchForm({ onSubmit, loading }: PropertySearch
           </div>
         </div>
 
-        {/* Property Type - Optional */}
+        {/* Property Types - Optional (Multi-select) */}
         <div>
-          <label className="block text-sm font-bold text-[#8B00FF] mb-2">
-            🏚️ Property Type <span className="text-[#E0E0E0]/50">(Optional)</span>
+          <label className="block text-sm font-bold text-[#8B00FF] mb-3">
+            🏚️ Property Types <span className="text-[#E0E0E0]/50">(Optional - Select Multiple)</span>
           </label>
-          <select
-            value={formData.propertyType || ''}
-            onChange={(e) => handleChange('propertyType', e.target.value)}
-            disabled={loading}
-            className="w-full px-4 py-3 border-2 border-[#8B00FF] rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] bg-[#0A0A0A] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <option value="">Any haunted dwelling</option>
-            <option value="apartment">🏢 Apartment</option>
-            <option value="house">🏠 House</option>
-            <option value="duplex">🏘️ Duplex</option>
-            <option value="flat">🏬 Flat</option>
-            <option value="studio">🏭 Studio</option>
-          </select>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { value: 'apartment', label: '🏢 Apartment', icon: '🏢' },
+              { value: 'house', label: '🏠 House', icon: '🏠' },
+              { value: 'duplex', label: '🏘️ Duplex', icon: '🏘️' },
+              { value: 'flat', label: '🏬 Flat', icon: '🏬' },
+              { value: 'studio', label: '🏭 Studio', icon: '🏭' },
+              { value: 'condo', label: '🏛️ Condo', icon: '🏛️' },
+            ].map((type) => {
+              const isSelected = formData.propertyTypes?.includes(type.value) || false;
+              return (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => {
+                    const currentTypes = formData.propertyTypes || [];
+                    const newTypes = isSelected
+                      ? currentTypes.filter((t) => t !== type.value)
+                      : [...currentTypes, type.value];
+                    handleChange('propertyTypes', newTypes);
+                  }}
+                  disabled={loading}
+                  className={`px-4 py-3 rounded-lg border-2 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isSelected
+                      ? 'border-[#FF6B00] bg-[#FF6B00]/20 text-[#FF6B00] shadow-[0_0_15px_rgba(255,107,0,0.4)]'
+                      : 'border-[#8B00FF]/30 bg-[#0A0A0A] text-[#E0E0E0] hover:border-[#8B00FF] hover:bg-[#8B00FF]/10'
+                  }`}
+                >
+                  <span className="text-xl mb-1 block">{type.icon}</span>
+                  <span className="text-sm">{type.label.replace(type.icon + ' ', '')}</span>
+                </button>
+              );
+            })}
+          </div>
+          {formData.propertyTypes && formData.propertyTypes.length > 0 && (
+            <p className="mt-2 text-sm text-[#00FF41] font-semibold">
+              ✓ Selected: {formData.propertyTypes.join(', ')}
+            </p>
+          )}
         </div>
 
         {/* Location Priorities - Optional */}
