@@ -125,7 +125,7 @@ LOCATION_ANALYSIS_SYSTEM_PROMPT = """You are a specialized location analysis age
    - school: Schools and educational institutions
    - hospital: Healthcare facilities
    - gym: Fitness centers and gyms
-3. For each category, use google_places_nearby_tool to find up to 10 nearby locations
+3. For each category, use google_places_nearby_tool to find up to 6 nearby locations
 4. Calculate and note the distance to each POI (distance is included in results)
 5. Analyze the location based on findings:
    - PROS: What makes this location attractive? (e.g., "Close to 3 parks within 1km", "Excellent transit access with 2 metro stations nearby")
