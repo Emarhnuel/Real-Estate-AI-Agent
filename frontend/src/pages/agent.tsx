@@ -17,9 +17,39 @@ interface PropertyForReview {
   image_urls: string[];
 }
 
+interface LocationAnalysis {
+  property_id: string;
+  nearby_pois: Array<{
+    name: string;
+    category: string;
+    distance_meters: number;
+    address: string;
+  }>;
+  pros: string[];
+  cons: string[];
+  walkability_score?: number;
+  transit_score?: number;
+}
+
+interface Property {
+  id: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  square_feet: number;
+  property_type: string;
+  listing_url: string;
+  image_urls: string[];
+  description: string;
+}
+
 interface PropertyReport {
-  properties: any[];
-  location_analyses: Record<string, any>;
+  properties: Property[];
+  location_analyses: Record<string, LocationAnalysis>;
   summary: string;
   generated_at: string;
 }
@@ -32,9 +62,6 @@ export default function AgentPage() {
   // Workflow state
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('form');
   const [loading, setLoading] = useState(false);
-  
-  // Thread ID tracking - persist across the entire conversation
-  const [threadId, setThreadId] = useState<string | null>(null);
   
   // Interrupt state
   const [interrupt, setInterrupt] = useState<{
@@ -63,7 +90,6 @@ export default function AgentPage() {
     // Generate thread_id
     const userId = jwt ? JSON.parse(atob(jwt.split('.')[1])).sub : '';
     const currentThreadId = `${userId}-${Date.now()}`;
-    setThreadId(currentThreadId);
 
     // Build search message from form data
     const searchMessage = buildSearchMessage(formData);
@@ -148,14 +174,12 @@ export default function AgentPage() {
     setError(null);
     setReport(null);
     setInterrupt(null);
-    setThreadId(null);
     setCurrentStep('form');
   }
 
   function handleNewSearch() {
     setReport(null);
     setInterrupt(null);
-    setThreadId(null);
     setCurrentStep('form');
     setError(null);
   }
@@ -211,37 +235,45 @@ export default function AgentPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <main className="min-h-screen bg-[#0A0A0A] relative">
+      {/* Floating bats */}
+      <div className="fixed top-20 left-10 animate-bounce" style={{ animationDuration: '3s' }}>
+        <span className="text-4xl opacity-30">🦇</span>
+      </div>
+      <div className="fixed top-40 right-20 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }}>
+        <span className="text-4xl opacity-30">🦇</span>
+      </div>
+      
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="container mx-auto px-4 py-8 max-w-5xl relative z-10">
         <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-            AI Real Estate Co-Pilot
+          <h1 className="text-5xl font-bold mb-2 glitch" style={{ fontFamily: "'Creepster', cursive", color: '#FF6B00', textShadow: '0 0 20px rgba(255,107,0,0.8)' }}>
+            👻 Spirit Guide Portal
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Your intelligent property search assistant
+          <p className="text-[#E0E0E0] text-lg">
+            Your <span className="text-[#8B00FF] font-bold">supernatural</span> property search assistant
           </p>
         </header>
 
         {/* Error Banner */}
         {error && (
-          <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="mb-6 bg-[#1a1a1a] border-2 border-[#8B0000] rounded-lg p-4 shadow-[0_0_20px_rgba(139,0,0,0.5)]">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
-                <span className="text-red-600 dark:text-red-400 text-xl">⚠️</span>
+                <span className="text-[#8B0000] text-2xl">💀</span>
                 <div>
-                  <h3 className="font-semibold text-red-800 dark:text-red-300 mb-1">
-                    Connection Error
+                  <h3 className="font-semibold text-[#8B0000] mb-1" style={{ fontFamily: "'Creepster', cursive" }}>
+                    Curse Detected!
                   </h3>
-                  <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                  <p className="text-sm text-[#E0E0E0]">{error}</p>
                 </div>
               </div>
               <button
                 onClick={handleRetry}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-[#8B0000] hover:bg-[#a00000] text-white text-sm font-bold rounded-lg transition-all shadow-[0_0_10px_rgba(139,0,0,0.6)]"
               >
-                Retry
+                🔮 Retry Spell
               </button>
             </div>
           </div>
@@ -267,9 +299,10 @@ export default function AgentPage() {
             <PropertyReportView report={report} />
             <button
               onClick={handleNewSearch}
-              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+              className="w-full px-6 py-3 bg-[#FF6B00] hover:bg-[#ff8533] text-white font-bold rounded-lg transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[0_0_20px_rgba(255,107,0,0.8)] uppercase tracking-wider"
+              style={{ fontFamily: "'Creepster', cursive" }}
             >
-              Start New Search
+              🎃 Summon New Properties
             </button>
           </div>
         )}

@@ -46,14 +46,13 @@ export default function PropertyReviewPanel({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+    <div className="bg-[#1a1a1a] rounded-2xl shadow-[0_0_30px_rgba(255,107,0,0.3)] p-6 border-2 border-[#FF6B00]">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          Review Properties
+        <h2 className="text-3xl font-bold text-[#FF6B00] mb-2 glitch" style={{ fontFamily: "'Creepster', cursive" }}>
+          🏚️ Choose Your Haunted Homes
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Select the properties you'd like to analyze further. I'll provide detailed location
-          analysis for your approved selections.
+        <p className="text-[#E0E0E0]">
+          Select the cursed properties you would like to investigate further. Our spirits will provide detailed paranormal analysis for your approved selections.
         </p>
       </div>
 
@@ -62,19 +61,19 @@ export default function PropertyReviewPanel({
         <button
           onClick={selectAll}
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
+          className="px-4 py-2 text-sm font-bold text-[#00FF41] hover:text-[#33ff66] disabled:opacity-50 transition-colors"
         >
-          Select All
+          ✓ Curse All
         </button>
         <button
           onClick={deselectAll}
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 disabled:opacity-50"
+          className="px-4 py-2 text-sm font-bold text-[#8B00FF] hover:text-[#a333ff] disabled:opacity-50 transition-colors"
         >
-          Deselect All
+          ✗ Banish All
         </button>
-        <div className="ml-auto text-sm text-gray-600 dark:text-gray-400">
-          {selectedIds.size} of {properties.length} selected
+        <div className="ml-auto text-sm text-[#E0E0E0] font-semibold">
+          👻 {selectedIds.size} of {properties.length} haunted
         </div>
       </div>
 
@@ -85,8 +84,8 @@ export default function PropertyReviewPanel({
             key={property.id}
             className={`border-2 rounded-lg p-4 transition-all cursor-pointer ${
               selectedIds.has(property.id)
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                ? 'border-[#FF6B00] bg-[#FF6B00]/10 shadow-[0_0_15px_rgba(255,107,0,0.5)]'
+                : 'border-[#8B00FF]/30 hover:border-[#8B00FF] hover:shadow-[0_0_10px_rgba(139,0,255,0.3)]'
             }`}
             onClick={() => toggleProperty(property.id)}
           >
@@ -97,7 +96,7 @@ export default function PropertyReviewPanel({
                   type="checkbox"
                   checked={selectedIds.has(property.id)}
                   onChange={() => toggleProperty(property.id)}
-                  className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-5 h-5 text-[#FF6B00] rounded focus:ring-2 focus:ring-[#FF6B00] bg-[#0A0A0A] border-2 border-[#8B00FF]"
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
@@ -119,24 +118,24 @@ export default function PropertyReviewPanel({
 
               {/* Property Details */}
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 truncate">
-                  {property.address}
+                <h3 className="font-semibold text-[#E0E0E0] mb-1 truncate">
+                  🏚️ {property.address}
                 </h3>
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  <span className="font-semibold text-blue-600 dark:text-blue-400">
+                <div className="flex flex-wrap gap-4 text-sm text-[#E0E0E0] mb-2">
+                  <span className="font-bold text-[#FF6B00]">
                     ₦{property.price.toLocaleString()}/year
                   </span>
-                  <span>{property.bedrooms} bed</span>
-                  <span>{property.bathrooms} bath</span>
+                  <span>🛏️ {property.bedrooms} bed</span>
+                  <span>🚿 {property.bathrooms} bath</span>
                 </div>
                 <a
                   href={property.listing_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+                  className="text-sm text-[#00FF41] hover:text-[#33ff66] hover:underline font-semibold"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  View Listing →
+                  👁️ View Cursed Listing →
                 </a>
               </div>
             </div>
@@ -149,7 +148,8 @@ export default function PropertyReviewPanel({
         <button
           onClick={handleSubmit}
           disabled={loading || selectedIds.size === 0}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-[#8B00FF] hover:bg-[#a333ff] disabled:bg-[#8B00FF]/40 text-white font-bold rounded-lg transition-all duration-200 disabled:cursor-not-allowed shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[0_0_20px_rgba(139,0,255,0.8)] uppercase tracking-wider"
+          style={{ fontFamily: "'Creepster', cursive" }}
         >
           {loading ? (
             <span className="flex items-center gap-2">
@@ -169,10 +169,10 @@ export default function PropertyReviewPanel({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              Processing...
+              Summoning Spirits...
             </span>
           ) : (
-            `Analyze ${selectedIds.size} ${selectedIds.size === 1 ? 'Property' : 'Properties'}`
+            `🔮 Investigate ${selectedIds.size} ${selectedIds.size === 1 ? 'Haunt' : 'Haunts'}`
           )}
         </button>
       </div>

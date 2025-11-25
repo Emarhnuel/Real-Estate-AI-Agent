@@ -116,7 +116,7 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
           return (
             <div
               key={property.id}
-              className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+              className="border-2 border-[#8B00FF] rounded-xl overflow-hidden shadow-[0_0_20px_rgba(139,0,255,0.3)]"
             >
               {/* Property Header */}
               <div className="bg-[#0A0A0A] p-4 border-b-2 border-[#FF6B00]">
@@ -203,30 +203,30 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
 
                 {/* Location Analysis */}
                 {locationAnalysis && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                    <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                      Location Analysis
+                  <div className="border-t-2 border-[#8B00FF] pt-6">
+                    <h5 className="font-semibold text-[#8B00FF] mb-4 text-xl" style={{ fontFamily: "'Creepster', cursive" }}>
+                      🔮 Paranormal Investigation
                     </h5>
 
                     {/* Scores */}
                     {(locationAnalysis.walkability_score || locationAnalysis.transit_score) && (
                       <div className="grid grid-cols-2 gap-4 mb-6">
                         {locationAnalysis.walkability_score && (
-                          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                              Walkability Score
+                          <div className="bg-[#00FF41]/10 p-4 rounded-lg border-2 border-[#00FF41]">
+                            <p className="text-sm text-[#E0E0E0] mb-1">
+                              🚶 Walkability Curse
                             </p>
-                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                            <p className="text-2xl font-bold text-[#00FF41]">
                               {locationAnalysis.walkability_score}/100
                             </p>
                           </div>
                         )}
                         {locationAnalysis.transit_score && (
-                          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                              Transit Score
+                          <div className="bg-[#8B00FF]/10 p-4 rounded-lg border-2 border-[#8B00FF]">
+                            <p className="text-sm text-[#E0E0E0] mb-1">
+                              🚇 Transit Hex
                             </p>
-                            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                            <p className="text-2xl font-bold text-[#8B00FF]">
                               {locationAnalysis.transit_score}/100
                             </p>
                           </div>
@@ -238,17 +238,17 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
                     <div className="grid md:grid-cols-2 gap-6 mb-6">
                       {/* Pros */}
                       {locationAnalysis.pros && locationAnalysis.pros.length > 0 && (
-                        <div>
-                          <h6 className="font-semibold text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
-                            <span className="text-xl">✓</span> Advantages
+                        <div className="bg-[#00FF41]/5 p-4 rounded-lg border-2 border-[#00FF41]">
+                          <h6 className="font-semibold text-[#00FF41] mb-3 flex items-center gap-2">
+                            <span className="text-xl">✓</span> Blessed Grounds
                           </h6>
                           <ul className="space-y-2">
                             {locationAnalysis.pros.map((pro, idx) => (
                               <li
                                 key={idx}
-                                className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2"
+                                className="text-sm text-[#E0E0E0] flex items-start gap-2"
                               >
-                                <span className="text-green-500 mt-1">•</span>
+                                <span className="text-[#00FF41] mt-1">🌟</span>
                                 <span>{pro}</span>
                               </li>
                             ))}
@@ -258,17 +258,17 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
 
                       {/* Cons */}
                       {locationAnalysis.cons && locationAnalysis.cons.length > 0 && (
-                        <div>
-                          <h6 className="font-semibold text-orange-600 dark:text-orange-400 mb-3 flex items-center gap-2">
-                            <span className="text-xl">⚠</span> Considerations
+                        <div className="bg-[#8B0000]/10 p-4 rounded-lg border-2 border-[#8B0000]">
+                          <h6 className="font-semibold text-[#8B0000] mb-3 flex items-center gap-2">
+                            <span className="text-xl">⚠</span> Cursed Warnings
                           </h6>
                           <ul className="space-y-2">
                             {locationAnalysis.cons.map((con, idx) => (
                               <li
                                 key={idx}
-                                className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2"
+                                className="text-sm text-[#E0E0E0] flex items-start gap-2"
                               >
-                                <span className="text-orange-500 mt-1">•</span>
+                                <span className="text-[#8B0000] mt-1">💀</span>
                                 <span>{con}</span>
                               </li>
                             ))}
@@ -280,26 +280,26 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
                     {/* Nearby Points of Interest */}
                     {Object.keys(groupedPOIs).length > 0 && (
                       <div>
-                        <h6 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                          Nearby Amenities
+                        <h6 className="font-semibold text-[#FF6B00] mb-3 text-lg">
+                          🗺️ Nearby Haunts & Amenities
                         </h6>
                         <div className="grid md:grid-cols-2 gap-4">
                           {Object.entries(groupedPOIs).map(([category, pois]) => (
                             <div
                               key={category}
-                              className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg"
+                              className="bg-[#0A0A0A] p-4 rounded-lg border border-[#8B00FF]/30"
                             >
-                              <h6 className="font-medium text-gray-900 dark:text-gray-100 mb-2 capitalize">
+                              <h6 className="font-medium text-[#8B00FF] mb-2 capitalize">
                                 {category} ({pois.length})
                               </h6>
                               <ul className="space-y-1">
                                 {pois.slice(0, 3).map((poi, idx) => (
                                   <li
                                     key={idx}
-                                    className="text-sm text-gray-600 dark:text-gray-400 flex justify-between"
+                                    className="text-sm text-[#E0E0E0] flex justify-between"
                                   >
                                     <span className="truncate mr-2">{poi.name}</span>
-                                    <span className="text-blue-600 dark:text-blue-400 font-medium flex-shrink-0">
+                                    <span className="text-[#00FF41] font-medium flex-shrink-0">
                                       {formatDistance(poi.distance_meters)}
                                     </span>
                                   </li>

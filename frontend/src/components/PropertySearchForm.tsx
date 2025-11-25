@@ -59,7 +59,7 @@ export default function PropertySearchForm({ onSubmit, loading }: PropertySearch
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof PropertySearchData, value: any) => {
+  const handleChange = (field: keyof PropertySearchData, value: string | number | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error for this field
     if (errors[field]) {
