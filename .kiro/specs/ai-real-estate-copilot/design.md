@@ -17,7 +17,7 @@ graph TD
     SupervisorAgent -->|Delegate Search| PropertySearchAgent[Property Search Sub-Agent]
     SupervisorAgent -->|Delegate Analysis| LocationAnalysisAgent[Location Analysis Sub-Agent]
     PropertySearchAgent -->|Search Listings| TavilyAPI[Tavily API]
-    LocationAnalysisAgent -->|Get Places & Reviews| GooglePlacesAPI[Google Places API]
+    LocationAnalysisAgent -->|Geocode & Find POIs| GooglePlacesAPI[Google Places API]
     SupervisorAgent <-->|Read/Write| Filesystem[Agent Filesystem]
     PropertySearchAgent <-->|Read/Write| Filesystem
     LocationAnalysisAgent <-->|Read/Write| Filesystem
@@ -42,7 +42,7 @@ The system follows the **Tool Calling** multi-agent pattern where:
 - Python 3.11+ - Runtime environment
 - uv - Fast Python package manager and project manager
 - Tavily API - Web search for property listings
-- Google Places API - Location data, nearby attractions, and property reviews
+- Google Places API - Location data, geocoding, and nearby points of interest
 
 **Frontend:**
 - Next.js 14+ (Pages Router) - React framework
@@ -128,7 +128,7 @@ checkpointer = PostgresSaver.from_conn_string(
 )
 
 supervisor_agent = create_deep_agent(
-    model="claude-sonnet-4-5-20250929",
+    model=model,  # Any LLM (GPT-4, Claude, etc.)
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[],  # No external tools, uses sub-agents
     subagents=[property_search_agent, location_analysis_agent],
@@ -167,8 +167,8 @@ property_search_agent = {
     "name": "property_search",
     "description": "Searches for property listings matching user criteria using web search",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool],
-    "model": "claude-sonnet-4-5-20250929"
+    "tools": [tavily_search_tool, tavily_extract_tool],
+    "model": model  # Any LLM (GPT-4, Claude, etc.)
 }
 ```
 
@@ -207,10 +207,10 @@ def tavily_search_tool(
 ```python
 location_analysis_agent = {
     "name": "location_analysis",
-    "description": "Analyzes property locations, finds nearby attractions, and fetches property reviews",
+    "description": "Analyzes property locations and finds nearby points of interest",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
-    "tools": [google_geocode_tool, google_nearby_places_tool, google_place_reviews_tool],
-    "model": "claude-sonnet-4-5-20250929"
+    "tools": [google_places_geocode_tool, google_places_nearby_tool],
+    "model": model  # Any LLM (GPT-4, Claude, etc.)
 }
 ```
 
@@ -247,32 +247,26 @@ export default function AgentPage() {
 ```
 
 **Responsibilities:**
-- Geocode property addresses using Google Geocoding
-- Search for nearby attractive places: restaurants, cafes, shopping, parks, entertainment, tourist attractions
-- Fetch property reviews if available (Airbnb, hotels, shortlets)
-- Continue gracefully if no reviews are found
-- Analyze location pros and cons based on nearby places
+- Geocode property addresses using Google Places Text Search API
+- Search for nearby points of interest by category: restaurants, cafes, shopping, parks, schools, hospitals, gyms, transit stations
+- Calculate distances to nearby POIs
+- Analyze location pros and cons based on nearby amenities
 - Write analysis to filesystem
 - Return structured analysis to supervisor
 
 **Tool Interfaces:**
 ```python
-def google_geocode_tool(address: str) -> dict:
-    """Convert address to coordinates"""
+def google_places_geocode_tool(address: str, country: str = None) -> dict:
+    """Convert address to coordinates using Google Places Text Search API"""
 
-def google_nearby_places_tool(
+def google_places_nearby_tool(
     latitude: float,
     longitude: float,
-    place_types: list[str],
-    radius: int = 5000  # meters
+    category: str,
+    radius_meters: int = 5000,
+    limit: int = 10
 ) -> list[dict]:
-    """Find nearby attractive places"""
-
-def google_place_reviews_tool(
-    place_name: str,
-    address: str
-) -> dict:
-    """Get reviews for a property (returns empty if not found)"""
+    """Find nearby points of interest by category"""
 ```
 
 **Filesystem Structure:**
@@ -460,27 +454,25 @@ class Property(BaseModel):
 ### Location Analysis Model
 
 ```python
-class NearbyPlace(BaseModel):
+class PointOfInterest(BaseModel):
     name: str
-    types: list[str]  # restaurant, cafe, tourist_attraction, shopping_mall, park, etc.
+    category: str  # restaurant, cafe, park, shopping_mall, school, hospital, gym, transit_station
+    distance_meters: float
+    address: str
+    latitude: float
+    longitude: float
     rating: Optional[float]
     user_ratings_total: Optional[int]
-    address: str
-    coordinates: tuple[float, float]
-
-class PropertyReview(BaseModel):
-    author_name: str
-    rating: float
-    text: str
-    time: str
 
 class LocationAnalysis(BaseModel):
     property_id: str
-    coordinates: tuple[float, float]
-    nearby_places: list[NearbyPlace]
-    property_reviews: list[PropertyReview]  # Empty list if no reviews found
+    latitude: float
+    longitude: float
+    nearby_pois: list[PointOfInterest]
     pros: list[str]
     cons: list[str]
+    walkability_score: Optional[int]
+    transit_score: Optional[int]
 ```
 
 ### Search Criteria Model
