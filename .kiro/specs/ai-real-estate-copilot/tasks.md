@@ -7,7 +7,7 @@
   - Create pyproject.toml with project metadata
   - Install deepagents, langgraph, langchain packages with uv add
   - Install FastAPI and fastapi-clerk-auth packages with uv add
-  - Install Tavily and Mapbox SDK packages with uv add
+  - Install Tavily SDK package with uv add
   - Install psycopg2-binary for PostgreSQL checkpointer with uv add
   - Create requirements.txt from uv dependencies
   - Create .env file from .env.example for API keys
@@ -32,11 +32,11 @@
   - _Requirements: 2.2, 2.3, 2.4_
   - _Files: src/tools.py_
 
-- [x] 4. Implement Mapbox location tools
-  - Create mapbox_geocode_tool to convert addresses to coordinates
-  - Create mapbox_nearby_tool to find POIs by category and radius
-  - Implement distance calculation utility function
-  - Add error handling for geocoding failures
+- [x] 4. Implement Google Places location tools
+  - Create google_places_geocode_tool to convert addresses to coordinates using Text Search API
+  - Create google_places_nearby_tool to find POIs by category and radius using Nearby Search API
+  - Implement distance calculation utility function using Haversine formula
+  - Add error handling for geocoding and API failures
   - _Requirements: 4.2, 4.3, 4.4_
   - _Files: src/tools.py_
 
@@ -51,16 +51,16 @@
 
 - [x] 6. Implement Location Analysis Sub-Agent
   - Define location_analysis_agent configuration with name, description, and system prompt
-  - Write system prompt instructing agent to use Mapbox tools and analyze locations
-  - Configure agent with mapbox_geocode_tool and mapbox_nearby_tool
-  - Implement logic to search for POIs in categories: shopping, schools, transit, parks, workplaces
+  - Write system prompt instructing agent to use Google Places tools and analyze locations
+  - Configure agent with google_places_geocode_tool and google_places_nearby_tool
+  - Implement logic to search for POIs in categories: restaurant, cafe, park, shopping_mall, transit_station, school, hospital, gym
   - Implement pros/cons analysis logic based on nearby amenities
   - Implement logic to write analysis to /locations/ directory
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
   - _Files: src/agent.py, src/prompts.py_
 
 - [x] 7. Implement Supervisor Agent
-  - Create supervisor agent using create_deep_agent with Claude model
+  - Create supervisor agent using create_deep_agent with any LLM model (GPT-4, Claude, etc.)
   - Write comprehensive system prompt for conversation management and coordination
   - Configure agent with property_search_agent and location_analysis_agent as subagents
   - Implement search criteria extraction from natural language
