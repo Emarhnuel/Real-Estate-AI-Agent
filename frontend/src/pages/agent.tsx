@@ -149,7 +149,11 @@ export default function AgentPage() {
                       formData.purpose === 'shortlet' ? 'per night' : 
                       'total';
     
-    let message = `I am looking for a ${formData.bedrooms} bedroom ${formData.propertyType || 'apartment'} ${purposeText} in ${formData.location} with a maximum budget of ₦${formData.maxBudget.toLocaleString()} ${budgetText}.`;
+    const propertyTypeText = formData.propertyTypes && formData.propertyTypes.length > 0
+      ? formData.propertyTypes.join(' or ')
+      : 'apartment';
+    
+    let message = `I am looking for a ${formData.bedrooms} bedroom ${propertyTypeText} ${purposeText} in ${formData.location} with a maximum budget of ₦${formData.maxBudget.toLocaleString()} ${budgetText}.`;
     
     if (formData.bathrooms) {
       message += ` Minimum ${formData.bathrooms} bathrooms.`;
