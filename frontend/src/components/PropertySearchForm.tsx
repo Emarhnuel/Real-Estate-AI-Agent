@@ -6,6 +6,7 @@ interface PropertySearchFormProps {
 }
 
 export interface PropertySearchData {
+  purpose: string;
   location: string;
   bedrooms: number;
   maxBudget: number;
@@ -18,6 +19,7 @@ export interface PropertySearchData {
 
 export default function PropertySearchForm({ onSubmit, loading }: PropertySearchFormProps) {
   const [formData, setFormData] = useState<PropertySearchData>({
+    purpose: 'rent',
     location: '',
     bedrooms: 2,
     maxBudget: 0,
@@ -81,6 +83,23 @@ export default function PropertySearchForm({ onSubmit, loading }: PropertySearch
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Purpose - Required */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Purpose <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.purpose}
+            onChange={(e) => handleChange('purpose', e.target.value)}
+            disabled={loading}
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="rent">For Rent</option>
+            <option value="buy">For Sale/Buy</option>
+            <option value="shortlet">Shortlet</option>
+          </select>
+        </div>
+
         {/* Location - Required */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -143,7 +162,7 @@ export default function PropertySearchForm({ onSubmit, loading }: PropertySearch
         {/* Maximum Budget - Required */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Maximum Annual Budget (₦) <span className="text-red-500">*</span>
+            Maximum Budget (₦) <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -161,7 +180,11 @@ export default function PropertySearchForm({ onSubmit, loading }: PropertySearch
             <p className="mt-1 text-sm text-red-500">{errors.maxBudget}</p>
           )}
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {formData.maxBudget > 0 && `₦${formData.maxBudget.toLocaleString()} per year`}
+            {formData.maxBudget > 0 && `₦${formData.maxBudget.toLocaleString()} ${
+              formData.purpose === 'rent' ? 'per year' : 
+              formData.purpose === 'shortlet' ? 'per night' : 
+              'total'
+            }`}
           </p>
         </div>
 
