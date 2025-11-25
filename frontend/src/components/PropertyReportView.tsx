@@ -65,14 +65,19 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+    <div className="bg-[#1a1a1a] rounded-2xl shadow-[0_0_40px_rgba(255,107,0,0.4)] overflow-hidden border-2 border-[#FF6B00]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
-        <div className="flex justify-between items-start">
+      <div className="bg-gradient-to-r from-[#FF6B00] to-[#8B00FF] p-6 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 left-0 w-full h-full" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px)' }}></div>
+        </div>
+        <div className="flex justify-between items-start relative z-10">
           <div>
-            <h2 className="text-3xl font-bold mb-2">Property Analysis Report</h2>
-            <p className="text-blue-100">
-              Generated on {new Date(report.generated_at).toLocaleDateString('en-US', {
+            <h2 className="text-4xl font-bold mb-2 glitch" style={{ fontFamily: "'Creepster', cursive" }}>
+              💀 Paranormal Investigation Report
+            </h2>
+            <p className="text-white/90">
+              🕯️ Summoned on {new Date(report.generated_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
@@ -83,19 +88,19 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
           </div>
           <button
             onClick={handlePrint}
-            className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium print:hidden"
+            className="px-4 py-2 bg-white text-[#FF6B00] rounded-lg hover:bg-[#E0E0E0] transition-colors font-bold print:hidden shadow-[0_0_10px_rgba(255,255,255,0.5)]"
           >
-            Print Report
+            📜 Print Scroll
           </button>
         </div>
       </div>
 
       {/* Summary */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-          Executive Summary
+      <div className="p-6 border-b-2 border-[#8B00FF]">
+        <h3 className="text-2xl font-bold text-[#00FF41] mb-3" style={{ fontFamily: "'Creepster', cursive" }}>
+          👁️ Spectral Summary
         </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+        <p className="text-[#E0E0E0] leading-relaxed">
           {report.summary}
         </p>
       </div>
@@ -114,23 +119,23 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
               className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
             >
               {/* Property Header */}
-              <div className="bg-gray-50 dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="bg-[#0A0A0A] p-4 border-b-2 border-[#FF6B00]">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                      Property {index + 1}: {property.address}
+                    <h4 className="text-xl font-bold text-[#FF6B00]" style={{ fontFamily: "'Creepster', cursive" }}>
+                      🏚️ Haunt {index + 1}: {property.address}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {property.city}, {property.state} {property.zip_code}
+                    <p className="text-sm text-[#E0E0E0]">
+                      📍 {property.city}, {property.state} {property.zip_code}
                     </p>
                   </div>
                   <a
                     href={property.listing_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors print:hidden"
+                    className="px-4 py-2 bg-[#8B00FF] hover:bg-[#a333ff] text-white text-sm font-bold rounded-lg transition-all print:hidden shadow-[0_0_10px_rgba(139,0,255,0.6)]"
                   >
-                    View Listing →
+                    👁️ View Curse →
                   </a>
                 </div>
               </div>
@@ -158,40 +163,40 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
 
                 {/* Property Details */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Price</p>
-                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                  <div className="bg-[#FF6B00]/10 p-4 rounded-lg border-2 border-[#FF6B00]">
+                    <p className="text-sm text-[#E0E0E0] mb-1">💰 Price</p>
+                    <p className="text-xl font-bold text-[#FF6B00]">
                       ₦{property.price.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">per year</p>
+                    <p className="text-xs text-[#E0E0E0]/70">per year</p>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Bedrooms</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="bg-[#8B00FF]/10 p-4 rounded-lg border-2 border-[#8B00FF]">
+                    <p className="text-sm text-[#E0E0E0] mb-1">🛏️ Bedrooms</p>
+                    <p className="text-xl font-bold text-[#8B00FF]">
                       {property.bedrooms}
                     </p>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Bathrooms</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="bg-[#00FF41]/10 p-4 rounded-lg border-2 border-[#00FF41]">
+                    <p className="text-sm text-[#E0E0E0] mb-1">🚿 Bathrooms</p>
+                    <p className="text-xl font-bold text-[#00FF41]">
                       {property.bathrooms}
                     </p>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Size</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="bg-[#8B0000]/20 p-4 rounded-lg border-2 border-[#8B0000]">
+                    <p className="text-sm text-[#E0E0E0] mb-1">📏 Size</p>
+                    <p className="text-xl font-bold text-[#8B0000]">
                       {property.square_feet.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">sq ft</p>
+                    <p className="text-xs text-[#E0E0E0]/70">sq ft</p>
                   </div>
                 </div>
 
                 {/* Description */}
                 <div className="mb-6">
-                  <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    Description
+                  <h5 className="font-semibold text-[#FF6B00] mb-2 text-lg">
+                    📖 Cursed Chronicles
                   </h5>
-                  <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                  <p className="text-[#E0E0E0] text-sm leading-relaxed">
                     {property.description}
                   </p>
                 </div>
