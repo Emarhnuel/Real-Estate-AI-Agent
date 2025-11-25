@@ -1,16 +1,11 @@
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { GetServerSideProps } from 'next';
 import { getAuth, buildClerkProps } from '@clerk/nextjs/server';
 import Navigation from '@/components/Navigation';
-import ChatInterface from '@/components/ChatInterface';
+import PropertySearchForm, { PropertySearchData } from '@/components/PropertySearchForm';
 import PropertyReviewPanel from '@/components/PropertyReviewPanel';
 import PropertyReportView from '@/components/PropertyReportView';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
 
 interface PropertyForReview {
   id: string;
@@ -29,12 +24,13 @@ interface PropertyReport {
   generated_at: string;
 }
 
+type WorkflowStep = 'form' | 'review' | 'report';
+
 export default function AgentPage() {
   const { getToken } = useAuth();
 
-  // Chat state
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  // Workflow state
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>('form');
   const [loading, setLoading] = useState(false);
   
   // Thread ID tracking - persist across the entire conversation
@@ -53,34 +49,24 @@ export default function AgentPage() {
   // Error state
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
-
-    const userMessage = input.trim();
-    setInput('');
+  async function handleFormSubmit(formData: PropertySearchData) {
     setLoading(true);
-
-    // Add user message to chat
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setError(null);
 
     const jwt = await getToken();
     if (!jwt) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'Authentication required. Please sign in again.' 
-      }]);
+      setError('Authentication required. Please sign in again.');
       setLoading(false);
       return;
     }
 
-    // Generate or reuse thread_id
-    let currentThreadId = threadId;
-    if (!currentThreadId) {
-      const userId = jwt ? JSON.parse(atob(jwt.split('.')[1])).sub : '';
-      currentThreadId = `${userId}-${Date.now()}`;
-      setThreadId(currentThreadId);
-    }
+    // Generate thread_id
+    const userId = jwt ? JSON.parse(atob(jwt.split('.')[1])).sub : '';
+    const currentThreadId = `${userId}-${Date.now()}`;
+    setThreadId(currentThreadId);
+
+    // Build search message from form data
+    const searchMessage = buildSearchMessage(formData);
 
     try {
       const response = await fetch('http://localhost:8000/api/invoke', {
@@ -90,7 +76,7 @@ export default function AgentPage() {
           Authorization: `Bearer ${jwt}`,
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: userMessage }],
+          messages: [{ role: 'user', content: searchMessage }],
           timestamp: Date.now()
         }),
       });
@@ -110,35 +96,11 @@ export default function AgentPage() {
           const interruptValue = interruptData[0]?.value;
           
           if (interruptValue?.type === 'property_review' && interruptValue.properties) {
-            // Use the SAME thread_id from the current conversation
             setInterrupt({
               properties: interruptValue.properties,
-              threadId: currentThreadId!
+              threadId: currentThreadId
             });
-            
-            // Add system message about property review
-            setMessages(prev => [...prev, {
-              role: 'assistant',
-              content: `I found ${interruptValue.properties.length} properties that match your criteria. Please review them below and select which ones you'd like me to analyze further.`
-            }]);
-          }
-        }
-      } else if (result.structured_response) {
-        // Check if this is a final report with structured_response
-        setReport(result.structured_response);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: 'Analysis complete! Here is your comprehensive property report.'
-        }]);
-      } else {
-        // Extract assistant message from result
-        if (result.messages && result.messages.length > 0) {
-          const lastMessage = result.messages[result.messages.length - 1];
-          if (lastMessage.content) {
-            setMessages(prev => [...prev, { 
-              role: 'assistant', 
-              content: lastMessage.content 
-            }]);
+            setCurrentStep('review');
           }
         }
       }
@@ -148,20 +110,54 @@ export default function AgentPage() {
       console.error('Fetch error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setError(`Failed to connect to the agent: ${errorMessage}`);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: '❌ Sorry, I encountered an error. Please check your connection and try again.' 
-      }]);
       setLoading(false);
     }
   }
 
+  function buildSearchMessage(formData: PropertySearchData): string {
+    const purposeText = formData.purpose === 'rent' ? 'for rent' : 
+                       formData.purpose === 'buy' ? 'for sale' : 
+                       'for shortlet';
+    
+    const budgetText = formData.purpose === 'rent' ? 'per year' : 
+                      formData.purpose === 'shortlet' ? 'per night' : 
+                      'total';
+    
+    let message = `I am looking for a ${formData.bedrooms} bedroom ${formData.propertyType || 'apartment'} ${purposeText} in ${formData.location} with a maximum budget of ₦${formData.maxBudget.toLocaleString()} ${budgetText}.`;
+    
+    if (formData.bathrooms) {
+      message += ` Minimum ${formData.bathrooms} bathrooms.`;
+    }
+    
+    if (formData.moveInDate) {
+      message += ` Move-in date: ${formData.moveInDate}.`;
+    }
+    
+    if (formData.leaseLength && formData.purpose === 'rent') {
+      message += ` Lease length: ${formData.leaseLength} year${formData.leaseLength > 1 ? 's' : ''}.`;
+    }
+    
+    if (formData.locationPriorities) {
+      message += ` Location priorities: ${formData.locationPriorities}.`;
+    }
+    
+    return message;
+  }
+
   function handleRetry() {
     setError(null);
-    setMessages([]);
     setReport(null);
     setInterrupt(null);
-    setThreadId(null); // Reset thread ID for new conversation
+    setThreadId(null);
+    setCurrentStep('form');
+  }
+
+  function handleNewSearch() {
+    setReport(null);
+    setInterrupt(null);
+    setThreadId(null);
+    setCurrentStep('form');
+    setError(null);
   }
 
   async function handlePropertyReview(approvedIds: string[]) {
@@ -171,10 +167,7 @@ export default function AgentPage() {
     
     const jwt = await getToken();
     if (!jwt) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Authentication required. Please sign in again.'
-      }]);
+      setError('Authentication required. Please sign in again.');
       setResumeLoading(false);
       return;
     }
@@ -201,28 +194,10 @@ export default function AgentPage() {
       // Clear interrupt
       setInterrupt(null);
       
-      // Add confirmation message
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `Great! I'm now analyzing the ${approvedIds.length} properties you selected. This will take a moment...`
-      }]);
-      
       // Check if this is a final report
       if (result.structured_response) {
         setReport(result.structured_response);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: 'Analysis complete! Here is your comprehensive property report.'
-        }]);
-      } else if (result.messages && result.messages.length > 0) {
-        // Extract assistant message from result
-        const lastMessage = result.messages[result.messages.length - 1];
-        if (lastMessage.content) {
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: lastMessage.content
-          }]);
-        }
+        setCurrentStep('report');
       }
       
       setResumeLoading(false);
@@ -230,10 +205,6 @@ export default function AgentPage() {
       console.error('Resume error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setError(`Failed to resume analysis: ${errorMessage}`);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: '❌ Sorry, I encountered an error while analyzing your selections. Please try again.'
-      }]);
       setResumeLoading(false);
       setInterrupt(null);
     }
@@ -276,35 +247,31 @@ export default function AgentPage() {
           </div>
         )}
 
-        {/* Show PropertyReportView if report is available */}
-        {report ? (
-          <div className="space-y-6">
-            <PropertyReportView report={report} />
-            <button
-              onClick={() => {
-                setReport(null);
-                setMessages([]);
-                setThreadId(null); // Reset thread ID for new conversation
-              }}
-              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-            >
-              Start New Search
-            </button>
-          </div>
-        ) : interrupt ? (
+        {/* Step 1: Property Search Form */}
+        {currentStep === 'form' && (
+          <PropertySearchForm onSubmit={handleFormSubmit} loading={loading} />
+        )}
+
+        {/* Step 2: Property Review */}
+        {currentStep === 'review' && interrupt && (
           <PropertyReviewPanel
             properties={interrupt.properties}
             onSubmit={handlePropertyReview}
             loading={resumeLoading}
           />
-        ) : (
-          <ChatInterface
-            messages={messages}
-            input={input}
-            loading={loading}
-            onInputChange={setInput}
-            onSubmit={handleSubmit}
-          />
+        )}
+
+        {/* Step 3: Final Report */}
+        {currentStep === 'report' && report && (
+          <div className="space-y-6">
+            <PropertyReportView report={report} />
+            <button
+              onClick={handleNewSearch}
+              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              Start New Search
+            </button>
+          </div>
         )}
       </div>
     </main>
