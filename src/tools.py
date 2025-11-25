@@ -246,6 +246,174 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return distance
 
 
+# Halloween Decorator Tools
+
+@tool(parse_docstring=True)
+def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
+    """Analyze property images using Gemini Vision to identify rooms and decoration opportunities.
+    
+    Args:
+        image_url: URL of the property image to analyze
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable is not set")
+    
+    try:
+        import google.generativeai as genai
+        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        # Download image
+        response = requests.get(image_url, timeout=10)
+        response.raise_for_status()
+        
+        from PIL import Image
+        import io
+        image = Image.open(io.BytesIO(response.content))
+        
+        prompt = """Analyze this property image for Halloween decoration opportunities.
+        
+        Identify:
+        1. Room type (living room, bedroom, porch, entryway, etc.)
+        2. Available spaces for decorations (walls, corners, windows, doorways)
+        3. Existing furniture and layout
+        4. Style and color scheme
+        5. Specific decoration suggestions (where to place items)
+        
+        Return a JSON object with: room_type, decoration_spaces, style_notes, suggestions"""
+        
+        response = model.generate_content([prompt, image])
+        
+        return {
+            "success": True,
+            "analysis": response.text,
+            "image_url": image_url
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Image analysis failed: {str(e)}"
+        }
+
+
+@tool(parse_docstring=True)
+def search_halloween_decorations_tool(
+    room_type: str,
+    decoration_needs: str,
+    max_results: int = 10
+) -> Dict[str, Any]:
+    """Search e-commerce sites for Halloween decoration products.
+    
+    Args:
+        room_type: Type of room (living room, bedroom, porch, etc.)
+        decoration_needs: Description of what decorations are needed
+        max_results: Maximum number of products to return
+    """
+    api_key = os.getenv("TAVILY_API_KEY")
+    if not api_key:
+        raise ValueError("TAVILY_API_KEY environment variable is not set")
+    
+    try:
+        client = TavilyClient(api_key=api_key)
+        
+        # Search for Halloween decorations
+        query = f"Halloween decorations for {room_type} {decoration_needs} site:amazon.com OR site:walmart.com OR site:target.com"
+        
+        response = client.search(
+            query=query,
+            max_results=max_results,
+            search_depth="advanced",
+            include_raw_content=True
+        )
+        
+        products = []
+        for result in response.get('results', []):
+            products.append({
+                "name": result.get('title', ''),
+                "url": result.get('url', ''),
+                "description": result.get('content', ''),
+                "source": result.get('url', '').split('/')[2] if result.get('url') else ''
+            })
+        
+        return {
+            "success": True,
+            "products": products,
+            "query": query
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Decoration search failed: {str(e)}"
+        }
+
+
+@tool(parse_docstring=True)
+def generate_decorated_image_tool(
+    image_url: str,
+    decoration_description: str
+) -> Dict[str, Any]:
+    """Generate decorated version of property image using Gemini Image Generation (Nano Banana).
+    
+    Args:
+        image_url: URL of the original property image
+        decoration_description: Description of Halloween decorations to add
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable is not set")
+    
+    try:
+        import google.generativeai as genai
+        import base64
+        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash-image')
+        
+        # Download original image
+        response = requests.get(image_url, timeout=10)
+        response.raise_for_status()
+        
+        from PIL import Image
+        import io
+        image = Image.open(io.BytesIO(response.content))
+        
+        # Create prompt for image editing
+        prompt = f"""Using the provided property image, add tasteful Halloween decorations to create a spooky but elegant atmosphere.
+        
+        Add these decorations: {decoration_description}
+        
+        Make sure the decorations:
+        - Look realistic and naturally placed
+        - Match the room's style and lighting
+        - Are festive but not overwhelming
+        - Enhance the property's appeal
+        
+        Keep the original room structure and furniture unchanged."""
+        
+        response = model.generate_content([prompt, image])
+        
+        # Extract generated image
+        decorated_image_base64 = None
+        for part in response.parts:
+            if hasattr(part, 'inline_data') and part.inline_data:
+                decorated_image_base64 = base64.b64encode(part.inline_data.data).decode('utf-8')
+                break
+        
+        return {
+            "success": True,
+            "decorated_image_base64": decorated_image_base64,
+            "original_image_url": image_url,
+            "decorations_added": decoration_description
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Image generation failed: {str(e)}"
+        }
+
+
 
 @tool(parse_docstring=True)
 def present_properties_for_review_tool(properties: List[PropertyForReview]) -> dict:
