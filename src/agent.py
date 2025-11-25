@@ -21,7 +21,9 @@ from src.tools import (
     google_places_geocode_tool,
     google_places_nearby_tool,
     present_properties_for_review_tool,
-    submit_final_report_tool
+    submit_final_report_tool,
+    analyze_property_images_tool,
+    search_halloween_decorations_tool
 )
 from src.models import PropertyReport
 from src.prompts import (
