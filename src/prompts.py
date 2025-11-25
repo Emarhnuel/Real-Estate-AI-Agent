@@ -32,7 +32,7 @@ PROPERTY_SEARCH_SYSTEM_PROMPT = """You are a specialized property search agent. 
   * RENT: "/for-rent/flats-apartments/X-bedroom-flat-[location]/[id]"
   * SALE: "/for-sale/houses/X-bedroom-house-[location]/[id]"
   * SHORTLET: "/rooms/[id]" or "/shortlet/[location]/[id]"
-- Collect up to 15 individual property listing URLs
+- Collect up to 6 individual property listing URLs
 
 ### Step 3: Extract Full Details from Each Property Listing
 - Take the individual property URLs from Step 2
