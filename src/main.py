@@ -102,13 +102,21 @@ def resume_agent(
             "rejected": []  # Can be extended to include rejected property IDs
         }
         
+        print(f"[DEBUG] Resuming with thread_id: {request.thread_id}")
+        print(f"[DEBUG] Resume data: {resume_data}")
+        
         # Resume agent execution with Command
         result = supervisor_agent.invoke(
             Command(resume=resume_data),
             config=config
         )
+        
+        print(f"[DEBUG] Resume successful, result keys: {result.keys() if isinstance(result, dict) else 'not a dict'}")
         return result
     except Exception as e:
+        import traceback
+        print(f"[ERROR] Agent resume failed: {str(e)}")
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Agent resume failed: {str(e)}")
 
 
