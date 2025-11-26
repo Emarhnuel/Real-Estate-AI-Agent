@@ -23,9 +23,10 @@ An intelligent, conversational AI agent that automates property search and analy
 ## Tech Stack
 
 **Backend:**
-- Deep Agents (LangGraph) - Multi-agent orchestration
+- Deep Agents (LangGraph) - Multi-agent orchestration with CompositeBackend for context management
 - FastAPI - API endpoint (Vercel serverless function)
 - Vercel Postgres - State persistence
+- InMemoryStore - Persistent storage for property and location data
 - Tavily API - Property search (rent, sale, shortlet)
 - Google Places API - Location data and reviews
 - Google Gemini API - Image analysis and AI-generated decoration visualizations
@@ -83,7 +84,7 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 ```
 ├── api/index.py          # FastAPI serverless function with all endpoints
 ├── src/
-│   ├── agent.py          # Deep Agents (supervisor + sub-agents)
+│   ├── agent.py          # Deep Agents (supervisor + sub-agents) with CompositeBackend
 │   ├── tools.py          # Tavily, Google Places tools
 │   ├── models.py         # Pydantic models (includes AgentRequest, ResumeRequest)
 │   ├── prompts.py        # System prompts for agents
