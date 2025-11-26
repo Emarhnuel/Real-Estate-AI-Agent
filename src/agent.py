@@ -91,7 +91,7 @@ supervisor_agent = create_deep_agent(
     tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
     checkpointer=checkpointer,
-    # response_format=PropertyReport
+    response_format=PropertyReport
 )
 
 
