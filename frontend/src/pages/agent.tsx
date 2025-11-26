@@ -219,6 +219,8 @@ export default function AgentPage() {
 
       const result = await response.json();
       
+      console.log('[DEBUG] Resume result:', result);
+      
       // Clear interrupt
       setInterrupt(null);
       
@@ -226,6 +228,41 @@ export default function AgentPage() {
       if (result.structured_response) {
         setReport(result.structured_response);
         setCurrentStep('report');
+        setResumeLoading(false);
+        return;
+      }
+      
+      // If no structured response yet, poll for completion
+      // The agent might still be processing location analysis
+      if (result.messages || result.todos) {
+        // Wait a bit and check state
+        setTimeout(async () => {
+          try {
+            const stateResponse = await fetch(`http://localhost:8000/api/state?thread_id=${interrupt.threadId}`, {
+              headers: {
+                Authorization: `Bearer ${jwt}`,
+              },
+            });
+            
+            if (stateResponse.ok) {
+              const stateResult = await stateResponse.json();
+              console.log('[DEBUG] State result:', stateResult);
+              
+              if (stateResult.values?.structured_response) {
+                setReport(stateResult.values.structured_response);
+                setCurrentStep('report');
+              } else {
+                // Still processing, show a message
+                setError('Analysis in progress. The agent is still working on your properties. Please wait...');
+              }
+            }
+          } catch (err) {
+            console.error('State check error:', err);
+            setError('Unable to check analysis status. Please try refreshing the page.');
+          }
+          setResumeLoading(false);
+        }, 3000);
+        return;
       }
       
       setResumeLoading(false);
