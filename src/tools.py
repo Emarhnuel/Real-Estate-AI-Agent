@@ -441,7 +441,7 @@ def present_properties_for_review_tool(properties: List[PropertyForReview]) -> d
 
 
 @tool
-def submit_final_report_tool(report: PropertyReport) -> str:
+def submit_final_report_tool(report: PropertyReport) -> dict:
     """
     Submit the final, comprehensive property report once all research and analysis is complete.
     This should be the last action taken by the agent.
@@ -449,6 +449,9 @@ def submit_final_report_tool(report: PropertyReport) -> str:
     Args:
         report: The complete PropertyReport object containing all gathered data.
     """
-    # In a real application, this might save the report to a database or file.
-    # For the agent's purpose, just confirming submission is enough.
-    return "Final report submitted successfully. The user can now view the results."
+    # Return the report as a dict so it can be accessed by the frontend
+    return {
+        "status": "success",
+        "message": "Final report submitted successfully",
+        "report": report.dict()
+    }
