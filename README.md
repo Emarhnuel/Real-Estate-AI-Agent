@@ -16,7 +16,7 @@ An intelligent, conversational AI agent that automates property search and analy
   - Generate AI-decorated images showing properties with Halloween themes
 - Task planning and progress tracking with Deep Agents
 - Human-in-the-loop property review
-- Comprehensive property reports
+- Comprehensive property reports with PropertyReport data structure
 - Clerk JWT authentication on all API endpoints
 - Deployed on Vercel
 
@@ -65,7 +65,7 @@ npm run dev
 All endpoints require Clerk JWT authentication via `Authorization: Bearer <token>` header.
 
 - `POST /api/invoke` - Start or continue agent conversation
-- `POST /api/resume` - Resume agent after human-in-the-loop interrupt
+- `POST /api/resume` - Resume agent after human-in-the-loop interrupt (returns PropertyReport on completion)
 - `GET /api/state` - Get current agent state for a thread
 - `GET /health` - Health check endpoint
 
