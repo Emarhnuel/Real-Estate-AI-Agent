@@ -65,8 +65,25 @@ def invoke_agent(
             {"messages": request.messages},
             config=config
         )
+        
+        # Check if submit_final_report_tool was called and extract the report
+        if "messages" in result:
+            for msg in reversed(result["messages"]):
+                if hasattr(msg, "tool_calls") and msg.tool_calls:
+                    for tool_call in msg.tool_calls:
+                        if tool_call.get("name") == "submit_final_report_tool":
+                            # Find the tool response
+                            for response_msg in result["messages"]:
+                                if hasattr(response_msg, "content") and isinstance(response_msg.content, dict):
+                                    if response_msg.content.get("report"):
+                                        result["structured_response"] = response_msg.content["report"]
+                                        break
+        
         return result
     except Exception as e:
+        import traceback
+        print(f"[ERROR] Agent invocation failed: {str(e)}")
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Agent invocation failed: {str(e)}")
 
 
@@ -112,6 +129,21 @@ def resume_agent(
         )
         
         print(f"[DEBUG] Resume successful, result keys: {result.keys() if isinstance(result, dict) else 'not a dict'}")
+        
+        # Check if submit_final_report_tool was called and extract the report
+        if "messages" in result:
+            for msg in reversed(result["messages"]):
+                if hasattr(msg, "tool_calls") and msg.tool_calls:
+                    for tool_call in msg.tool_calls:
+                        if tool_call.get("name") == "submit_final_report_tool":
+                            # Find the tool response
+                            for response_msg in result["messages"]:
+                                if hasattr(response_msg, "content") and isinstance(response_msg.content, dict):
+                                    if response_msg.content.get("report"):
+                                        result["structured_response"] = response_msg.content["report"]
+                                        print(f"[DEBUG] Extracted structured_response from tool call")
+                                        break
+        
         return result
     except Exception as e:
         import traceback
