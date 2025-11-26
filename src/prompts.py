@@ -249,8 +249,13 @@ Update todos as you complete each step by changing status to "completed".
 ### Step 4: Submit Final Report
 - Update: `{"task": "Submit final report", "status": "in_progress"}`
 - Read all data from `/properties/` and `/locations/`
-- Call `submit_final_report_tool` with complete PropertyReport
-- This MUST be your final action
+- Build a complete PropertyReport with:
+  * search_criteria from user's original request
+  * properties list from filesystem
+  * location_analyses dict from filesystem
+  * summary describing findings
+- Call `submit_final_report_tool` with the complete PropertyReport object
+- This MUST be your final action - the tool will return the report to the user
 - After submitting, update: `{"task": "Submit final report", "status": "completed"}`
 - STOP - do not continue conversation after this
 
