@@ -5,7 +5,6 @@ This module provides API endpoints for agent interaction with Clerk authenticati
 All endpoints are protected and require valid JWT tokens from authenticated users.
 """
 
-
 import os
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +15,8 @@ from langgraph.types import Command
 import sys
 sys.path.append('..')
 from src.agent import supervisor_agent
-from src.models import AgentRequest, ResumeRequest
+# CHANGE: Import the new StateRequest model
+from src.models import AgentRequest, ResumeRequest, StateRequest
 
 app = FastAPI(title="AI Real Estate Co-Pilot API")
 
@@ -32,7 +32,6 @@ app.add_middleware(
 # Clerk authentication configuration
 clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
 clerk_guard = ClerkHTTPBearer(clerk_config)
-
 
 
 @app.post("/api/invoke")
@@ -152,16 +151,17 @@ def resume_agent(
         raise HTTPException(status_code=500, detail=f"Agent resume failed: {str(e)}")
 
 
+# CHANGE: The entire /api/state endpoint is updated to be more robust.
 @app.post("/api/state")
 def get_state(
-    request: dict,
+    request: StateRequest,  # CHANGE: Use the specific Pydantic model instead of a generic dict
     creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
 ):
     """
     Get the current state of an agent conversation.
     
     Args:
-        request: Dict containing thread_id
+        request: StateRequest containing thread_id
         creds: Clerk authentication credentials (injected by dependency)
         
     Returns:
@@ -170,8 +170,8 @@ def get_state(
     # Extract user ID from JWT token for verification
     user_id = creds.decoded["sub"]
     
-    # Get thread_id from request body
-    thread_id = request.get("thread_id")
+    # CHANGE: Get thread_id from the Pydantic model for reliable parsing
+    thread_id = request.thread_id
     if not thread_id:
         raise HTTPException(status_code=400, detail="thread_id is required")
     
@@ -185,7 +185,8 @@ def get_state(
     try:
         # Get current state from checkpointer
         state = supervisor_agent.get_state(config)
-        return state
+        # CHANGE: Return only the .values part of the state snapshot for a cleaner response
+        return state.values
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve state: {str(e)}")
 
