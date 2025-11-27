@@ -253,13 +253,18 @@ export default function AgentPage() {
               const stateResult = await stateResponse.json();
               console.log('[DEBUG] State result:', stateResult);
               
-              if (stateResult.values?.structured_response) {
-                setReport(stateResult.values.structured_response);
+              // CHANGE: Removed .values since the backend now returns the state values directly.
+              if (stateResult?.structured_response) {
+                setReport(stateResult.structured_response);
                 setCurrentStep('report');
               } else {
                 // Still processing, show a message
                 setError('Analysis in progress. The agent is still working on your properties. Please wait...');
               }
+            } else {
+              // CHANGE: Handle the 403 error from the state endpoint more gracefully
+              const errorData = await stateResponse.json();
+              setError(`Failed to get analysis status: ${errorData.detail || 'Unknown error'}`);
             }
           } catch (err) {
             console.error('State check error:', err);
