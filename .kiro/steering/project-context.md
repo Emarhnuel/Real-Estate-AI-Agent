@@ -8,45 +8,55 @@ inclusion: always
 
 ```
 ai-real-estate-copilot/
-├── api/
-│   └── index.py       # Single FastAPI file with all endpoints
-├── src/
-│   ├── agent.py       # All agents + SupervisorState
-│   ├── prompts.py     # System prompts for all agents
-│   ├── tools.py       # Tavily, Mapbox tools
-│   ├── models.py      # Pydantic models
-│   └── utils.py       # Helper functions
-├── pages/
-│   ├── index.tsx      # Home page
-│   ├── agent.tsx      # Agent interaction (protected)
-│   ├── sign-in/       # Clerk sign-in
-│   ├── sign-up/       # Clerk sign-up
-│   └── profile/       # User profile (protected)
-├── components/        # React components
-├── tests/             # Integration tests
-├── .env               # Environment variables
-├── requirements.txt   # Python dependencies
-└── pyproject.toml     # Python project config (uv)
+├── src/                       # Python backend
+│   ├── agent.py               # All agents + SupervisorState
+│   ├── main.py                # FastAPI server entry point
+│   ├── prompts.py             # System prompts for all agents
+│   ├── tools.py               # Tavily, Google Places tools
+│   ├── models.py              # Pydantic models
+│   └── utils.py               # Helper functions
+├── frontend/                  # Next.js frontend
+│   └── src/
+│       ├── pages/             # Next.js pages
+│       │   ├── index.tsx      # Home page
+│       │   ├── agent.tsx      # Agent interaction (protected)
+│       │   ├── _app.tsx       # App wrapper with ClerkProvider
+│       │   ├── sign-in/       # Clerk sign-in
+│       │   ├── sign-up/       # Clerk sign-up
+│       │   └── profile/       # User profile (protected)
+│       ├── components/        # React components
+│       │   ├── ChatInterface.tsx
+│       │   ├── Navigation.tsx
+│       │   ├── PropertyReportView.tsx
+│       │   ├── PropertyReviewPanel.tsx
+│       │   ├── PropertySearchForm.tsx
+│       │   └── ui/            # Reusable UI components
+│       ├── lib/               # Utility functions
+│       ├── styles/            # Global styles
+│       └── middleware.ts      # Clerk route protection
+├── tests/                     # Integration tests
+├── .env                       # Environment variables
+├── requirements.txt           # Python dependencies
+└── pyproject.toml             # Python project config (uv)
 ```
 
 ## Technology Stack
 
 **Backend:**
 - Deep Agents (LangGraph) for agent orchestration
-- FastAPI in single `api/index.py` file (deployed as Vercel serverless function)
+- FastAPI in `src/main.py`
 - fastapi-clerk-auth for authentication
-- Vercel Postgres for state persistence
+- MemorySaver for development state persistence
 - uv for Python package management
 
 **Frontend:**
-- Next.js (Pages Router)
+- Next.js (Pages Router) in `frontend/` directory
 - Clerk for authentication
 - Tailwind CSS for styling
-- Deployed to Vercel
 
 ## API Endpoints
 
-All endpoints in single file: `api/index.py`
+All endpoints in: `src/main.py`
 
 ```
 POST /api/invoke   - Start agent conversation
