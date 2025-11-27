@@ -98,13 +98,13 @@ The system follows the **Tool Calling** multi-agent pattern where:
 
 ## Components and Interfaces
 
-### 1. FastAPI Server (api/index.py)
+### 1. FastAPI Server (src/main.py)
 
-**Purpose:** REST API server at `/api`
+**Purpose:** REST API server entry point
 
 **File Structure:**
 ```python
-# api/index.py
+# src/main.py
 import os
 from fastapi import FastAPI, Depends
 from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCredentials
@@ -351,35 +351,44 @@ def google_places_nearby_tool(
 - Profile picture, email, password management
 - Connected accounts and security settings
 
-**Key Components:**
+**Key Components (frontend/src/components/):**
 
-**Navigation:**
+**Navigation.tsx:**
 - Responsive navbar with logo and navigation links
 - Clerk `<UserButton />` for authenticated users
 - Sign-in/sign-up buttons for unauthenticated users
 - Mobile-responsive hamburger menu
 
-**ChatInterface (Agent Page):**
+**ChatInterface.tsx (Agent Page):**
 - Displays conversation with supervisor agent
 - Uses useStream() hook for streaming responses
 - Shows agent's task list for progress visibility
 - Message history with user and agent messages
 
-**PropertyReviewPanel (Agent Page):**
+**PropertyReviewPanel.tsx (Agent Page):**
 - Triggered by human-in-the-loop interrupt
 - Displays property cards with images and details
 - Provides checkboxes for approval/rejection
 - Submits selections to resume agent execution
 
-**PropertyReportView (Agent Page):**
+**PropertyReportView.tsx (Agent Page):**
 - Displays final comprehensive report
 - Shows property details, images, and location analysis
 - Presents pros/cons in structured format
 - Export or share functionality
 
+**PropertySearchForm.tsx (Agent Page):**
+- Form for entering property search criteria
+- Location, price range, bedrooms, property type inputs
+- Validates and submits search to agent
+
+**ui/ (Reusable Components):**
+- Shared UI components (buttons, inputs, cards, etc.)
+- Styled with Tailwind CSS
+
 **Authentication Integration (Pages Router):**
 ```typescript
-// middleware.ts - Route protection
+// frontend/src/middleware.ts - Route protection
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isProtectedRoute = createRouteMatcher([
@@ -398,10 +407,10 @@ export const config = {
   ],
 };
 
-// pages/_app.tsx - Clerk provider
+// frontend/src/pages/_app.tsx - Clerk provider
 import { ClerkProvider } from '@clerk/nextjs';
 import type { AppProps } from 'next/app';
-import '../styles/globals.css';
+import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -411,7 +420,7 @@ export default function App({ Component, pageProps }: AppProps) {
   );
 }
 
-// pages/agent.tsx - LangGraph integration with user context
+// frontend/src/pages/agent.tsx - LangGraph integration with user context
 import { useUser } from '@clerk/nextjs';
 import { useStream } from '@langchain/langgraph-sdk';
 import { GetServerSideProps } from 'next';
