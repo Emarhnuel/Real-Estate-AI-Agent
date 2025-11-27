@@ -775,20 +775,20 @@ def test_calculate_distance_between_coordinates():
 │   Application Architecture                          │
 │                                                      │
 │  ┌──────────────────────────────────────────────┐  │
-│  │   Next.js Frontend (Pages Router)            │  │
+│  │   Next.js Frontend (frontend/src/)           │  │
 │  │   - pages/index.tsx (home)                   │  │
 │  │   - pages/sign-in/[[...index]].tsx           │  │
 │  │   - pages/sign-up/[[...index]].tsx           │  │
 │  │   - pages/agent.tsx (protected)              │  │
 │  │   - pages/profile/[[...index]].tsx           │  │
-│  │   - Clerk Authentication                     │  │
+│  │   - components/ (UI components)              │  │
+│  │   - middleware.ts (Clerk route protection)   │  │
 │  └──────────────────────────────────────────────┘  │
 │                 │                                    │
 │                 │ JWT Bearer Token                   │
 │                 ↓                                    │
 │  ┌──────────────────────────────────────────────┐  │
-│  │   FastAPI Server                             │  │
-│  │   api/index.py                               │  │
+│  │   FastAPI Server (src/main.py)               │  │
 │  │   - POST /api/invoke                         │  │
 │  │   - POST /api/resume                         │  │
 │  │   - GET /api/state                           │  │
@@ -800,8 +800,9 @@ def test_calculate_distance_between_coordinates():
 │  ┌──────────────────────────────────────────────┐  │
 │  │   Deep Agents (src/)                         │  │
 │  │   - src/agent.py (supervisor + sub-agents)   │  │
-│  │   - src/tools.py (Tavily, Mapbox)            │  │
+│  │   - src/tools.py (Tavily, Google Places)     │  │
 │  │   - src/models.py (Pydantic models)          │  │
+│  │   - src/prompts.py (system prompts)          │  │
 │  │   - src/utils.py (helpers)                   │  │
 │  └──────────────────────────────────────────────┘  │
 │                 │                                    │
