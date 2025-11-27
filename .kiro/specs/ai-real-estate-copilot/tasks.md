@@ -135,8 +135,8 @@
 
 
 - [x] 16. Set up Clerk authentication and route protection
-  - Wrap application with ClerkProvider in pages/_app.tsx
-  - Create middleware.ts with clerkMiddleware for route protection
+  - Wrap application with ClerkProvider in frontend/src/pages/_app.tsx
+  - Create frontend/src/middleware.ts with clerkMiddleware for route protection
   - Define protected routes: /agent and /profile
   - Add getServerSideProps to protected pages for server-side auth checks
   - Configure redirect URLs for sign-in and sign-up flows
@@ -144,10 +144,10 @@
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 13.1, 13.2, 13.3, 13.4_
 
 - [x] 17. Implement home page and authentication pages
-  - Create home page (pages/index.tsx) with hero section and call-to-action
+  - Create home page (frontend/src/pages/index.tsx) with hero section and call-to-action
   - Add sign-in and sign-up buttons using Clerk components
-  - Create sign-in page (pages/sign-in/[[...index]].tsx) with Clerk SignIn component
-  - Create sign-up page (pages/sign-up/[[...index]].tsx) with Clerk SignUp component
+  - Create sign-in page (frontend/src/pages/sign-in/[[...index]].tsx) with Clerk SignIn component
+  - Create sign-up page (frontend/src/pages/sign-up/[[...index]].tsx) with Clerk SignUp component
   - Style authentication pages with Tailwind CSS to match application design
   - Configure Clerk appearance prop for custom styling
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 14.1, 14.2, 14.3, 14.4_
@@ -162,7 +162,7 @@
   - _Requirements: 11.5, 14.1, 14.2, 14.3, 14.5_
 
 - [x] 19. Implement profile page
-  - Create profile page (pages/profile/[[...index]].tsx) as protected route
+  - Create profile page (frontend/src/pages/profile/[[...index]].tsx) as protected route
   - Add getServerSideProps for server-side authentication check
   - Integrate Clerk UserProfile component
   - Display user information from Clerk (name, email, profile picture)
@@ -171,7 +171,7 @@
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 14.1, 14.2, 14.3_
 
 - [x] 20. Implement agent interaction page layout
-  - Create agent page (pages/agent.tsx) as protected route
+  - Create agent page (frontend/src/pages/agent.tsx) as protected route
   - Add getServerSideProps for server-side authentication check
   - Set up page layout with chat interface area and sidebar
   - Integrate useUser hook to get authenticated user information
@@ -181,7 +181,7 @@
   - _Files: frontend/src/pages/agent.tsx_
 
 - [x] 21. Implement ChatInterface component for agent page
-  - Create ChatInterface component with message display
+  - Create ChatInterface component (frontend/src/components/ChatInterface.tsx) with message display
   - Add message input field and send button
   - Show user avatar from Clerk in messages
   - Display agent's task list for progress visibility (ready for backend integration)
@@ -190,7 +190,7 @@
   - _Files: frontend/src/components/ChatInterface.tsx, frontend/src/pages/agent.tsx_
 
 - [x] 22. Implement PropertyReviewPanel component for agent page
-  - Create PropertyReviewPanel component triggered by interrupt
+  - Create PropertyReviewPanel component (frontend/src/components/PropertyReviewPanel.tsx) triggered by interrupt
   - Display property cards with images, address, price, bedrooms, bathrooms
   - Add checkboxes for each property for approval/rejection
   - Implement submit button to resume agent with selections
@@ -200,7 +200,7 @@
   - _Files: frontend/src/components/PropertyReviewPanel.tsx, frontend/src/pages/agent.tsx_
 
 - [x] 23. Implement PropertyReportView component for agent page
-  - Create PropertyReportView component for final report display
+  - Create PropertyReportView component (frontend/src/components/PropertyReportView.tsx) for final report display
   - Display property details in card format with images
   - Display location analysis with nearby POIs and distances
   - Display pros and cons in structured lists
