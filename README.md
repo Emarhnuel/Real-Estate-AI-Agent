@@ -67,7 +67,7 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 
 - `POST /api/invoke` - Start or continue agent conversation
 - `POST /api/resume` - Resume agent after human-in-the-loop interrupt (returns PropertyReport on completion)
-- `GET /api/state` - Get current agent state for a thread
+- `POST /api/state` - Get current agent state for a thread
 - `GET /health` - Health check endpoint
 
 ### Authentication Flow
