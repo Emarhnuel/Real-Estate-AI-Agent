@@ -38,7 +38,7 @@ from src.prompts import (
 
 
 model = init_chat_model(
-    model="google_genai:gemini-2.5-flash",
+    model="google_genai:gemini-2.5-pro",
     max_tokens=300000,
     thinking_budget=8192,
     include_thoughts=True,
