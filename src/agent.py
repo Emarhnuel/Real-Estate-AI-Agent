@@ -39,7 +39,7 @@ from src.prompts import (
 
 model = init_chat_model(
     model="gemini-2.5-pro",
-    max_tokens=300000,
+    max_tokens=200000,
     thinking_budget=8192,
     include_thoughts=True,
 )
