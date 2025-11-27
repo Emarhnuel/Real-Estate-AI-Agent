@@ -79,23 +79,18 @@ Protected by Clerk using `fastapi-clerk-auth`
 
 - **Supervisor Agent** - Coordinates conversation and sub-agents
 - **Property Search Sub-Agent** - Finds listings with Tavily
-- **Location Analysis Sub-Agent** - Analyzes locations with Mapbox
+- **Location Analysis Sub-Agent** - Analyzes locations with Google Places
 
 ## State Management
 
-- Agent state stored in Vercel Postgres via checkpointer
+- Agent state stored via MemorySaver checkpointer (development)
 - Filesystem for context offloading (/properties/, /locations/)
 - Thread ID format: `{user_id}-{timestamp}`
 
-## Deployment
+## Key Files
 
-Everything deploys to Vercel:
-- Frontend pages (Next.js)
-- Single API endpoint at `/api` (FastAPI serverless function)
-- Vercel Postgres database
-- Clerk authentication
-
-**Key files for deployment:**
-- `api/index.py` - FastAPI app
+- `src/main.py` - FastAPI server entry point
+- `src/agent.py` - Agent definitions and graph
+- `frontend/src/pages/agent.tsx` - Main agent interaction page
 - `requirements.txt` - Python dependencies
-- `vercel.json` - Vercel configuration
+- `pyproject.toml` - Python project config
