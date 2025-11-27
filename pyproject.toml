@@ -17,4 +17,5 @@ dependencies = [
     "requests>=2.32.5",
     "tavily-python>=0.7.12",
     "uvicorn>=0.38.0",
+    "langchain-google-vertexai>=3.1.0",
 ]
