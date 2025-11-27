@@ -238,10 +238,15 @@ export default function AgentPage() {
         // Wait a bit and check state
         setTimeout(async () => {
           try {
-            const stateResponse = await fetch(`http://localhost:8000/api/state?thread_id=${interrupt.threadId}`, {
+            const stateResponse = await fetch('http://localhost:8000/api/state', {
+              method: 'POST',
               headers: {
+                'Content-Type': 'application/json',
                 Authorization: `Bearer ${jwt}`,
               },
+              body: JSON.stringify({
+                thread_id: interrupt.threadId
+              }),
             });
             
             if (stateResponse.ok) {
