@@ -38,7 +38,7 @@ from src.prompts import (
 
 
 model = init_chat_model(
-    model="gpt-5-mini-2025-08-07",
+    model="google_genai:gemini-2.5-flash-lite",
 )
 
 # Property Search Sub-Agent Configuration
