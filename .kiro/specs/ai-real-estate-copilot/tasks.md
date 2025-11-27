@@ -103,8 +103,8 @@
   - Write LLM-as-judge test for agent decision quality
   - _Requirements: All requirements_
 
-- [x] 13. Implement FastAPI server (api/index.py)
-  - Create api/index.py with FastAPI app
+- [x] 13. Implement FastAPI server (src/main.py)
+  - Create src/main.py with FastAPI app
   - Set up ClerkConfig with CLERK_JWKS_URL from environment
   - Create ClerkHTTPBearer guard for authentication
   - Implement POST /api/invoke endpoint with Clerk auth
@@ -125,10 +125,10 @@
 ## Frontend: Next.js with Clerk Authentication
 
 - [x] 15. Create Next.js frontend project with Clerk authentication
-  - Initialize Next.js 14+ project with TypeScript and Pages Router
+  - Initialize Next.js 14+ project with TypeScript and Pages Router in frontend/ directory
   - Install @clerk/nextjs package for authentication
   - Install and configure Tailwind CSS
-  - Set up project structure with /pages, /components, /lib, /styles directories
+  - Set up project structure with frontend/src/pages, frontend/src/components, frontend/src/lib, frontend/src/styles directories
   - Configure environment variables: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY, CLERK_JWKS_URL
   - Note: API calls go to /api (same domain, no separate API_URL needed)
   - _Requirements: 10.1, 10.2, 10.3, 13.5, 14.1_
