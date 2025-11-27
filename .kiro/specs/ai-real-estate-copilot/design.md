@@ -6,6 +6,45 @@ The AI Real Estate Co-Pilot is a multi-agent system built on the Deep Agents fra
 
 The system integrates with external APIs (Tavily for web search, Google Places for location data and reviews) and presents results through a React/Next.js frontend that allows users to review and approve properties before detailed analysis.
 
+## Project Structure
+
+```
+ai-real-estate-copilot/
+├── src/                       # Python backend
+│   ├── agent.py               # All agents + SupervisorState
+│   ├── main.py                # FastAPI server entry point
+│   ├── prompts.py             # System prompts for all agents
+│   ├── tools.py               # Tavily, Google Places tools
+│   ├── models.py              # Pydantic models
+│   └── utils.py               # Helper functions
+├── frontend/                  # Next.js frontend
+│   └── src/
+│       ├── pages/             # Next.js pages
+│       │   ├── index.tsx      # Home page
+│       │   ├── agent.tsx      # Agent interaction (protected)
+│       │   ├── _app.tsx       # App wrapper with ClerkProvider
+│       │   ├── _document.tsx  # Document wrapper
+│       │   ├── sign-in/       # Clerk sign-in
+│       │   ├── sign-up/       # Clerk sign-up
+│       │   └── profile/       # User profile (protected)
+│       ├── components/        # React components
+│       │   ├── ChatInterface.tsx
+│       │   ├── Navigation.tsx
+│       │   ├── PropertyReportView.tsx
+│       │   ├── PropertyReviewPanel.tsx
+│       │   ├── PropertySearchForm.tsx
+│       │   └── ui/            # Reusable UI components
+│       ├── lib/               # Utility functions
+│       │   └── utils.ts
+│       ├── styles/            # Global styles
+│       │   └── globals.css
+│       └── middleware.ts      # Clerk route protection
+├── tests/                     # Integration tests
+├── .env                       # Environment variables
+├── requirements.txt           # Python dependencies
+└── pyproject.toml             # Python project config (uv)
+```
+
 ## Architecture
 
 ### High-Level Architecture
