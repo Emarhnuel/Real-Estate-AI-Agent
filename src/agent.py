@@ -5,6 +5,7 @@ This module defines the supervisor agent and sub-agents for property search
 and location analysis using the Deep Agents framework.
 """
 
+import os
 from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
 from langgraph.graph.message import add_messages
@@ -16,6 +17,14 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Configure LangSmith tracing (reads from env vars automatically)
+# Set LANGSMITH_TRACING=true and LANGSMITH_API_KEY in .env to enable
+if os.getenv("LANGSMITH_TRACING", "").lower() == "true":
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    if os.getenv("LANGSMITH_PROJECT"):
+        os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
+    print(f"[INFO] LangSmith tracing enabled for project: {os.getenv('LANGSMITH_PROJECT', 'default')}")
 
 from src.tools import (
     tavily_search_tool,
