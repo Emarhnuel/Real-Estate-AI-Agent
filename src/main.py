@@ -152,16 +152,16 @@ def resume_agent(
         raise HTTPException(status_code=500, detail=f"Agent resume failed: {str(e)}")
 
 
-@app.get("/api/state")
+@app.post("/api/state")
 def get_state(
-    thread_id: str,
+    request: dict,
     creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
 ):
     """
     Get the current state of an agent conversation.
     
     Args:
-        thread_id: The thread ID to retrieve state for
+        request: Dict containing thread_id
         creds: Clerk authentication credentials (injected by dependency)
         
     Returns:
@@ -169,6 +169,11 @@ def get_state(
     """
     # Extract user ID from JWT token for verification
     user_id = creds.decoded["sub"]
+    
+    # Get thread_id from request body
+    thread_id = request.get("thread_id")
+    if not thread_id:
+        raise HTTPException(status_code=400, detail="thread_id is required")
     
     # Verify the thread_id belongs to this user (security check)
     if not thread_id.startswith(user_id):
