@@ -55,11 +55,14 @@ graph TD
     Frontend <-->|LangGraph SDK| SupervisorAgent[Supervisor Agent]
     SupervisorAgent -->|Delegate Search| PropertySearchAgent[Property Search Sub-Agent]
     SupervisorAgent -->|Delegate Analysis| LocationAnalysisAgent[Location Analysis Sub-Agent]
+    SupervisorAgent -->|Delegate Decoration| HalloweenDecoratorAgent[Halloween Decorator Sub-Agent]
     PropertySearchAgent -->|Search Listings| TavilyAPI[Tavily API]
     LocationAnalysisAgent -->|Geocode & Find POIs| GooglePlacesAPI[Google Places API]
+    HalloweenDecoratorAgent -->|Analyze & Generate Images| GeminiAPI[Gemini Vision API]
     SupervisorAgent <-->|Read/Write| Filesystem[Agent Filesystem]
     PropertySearchAgent <-->|Read/Write| Filesystem
     LocationAnalysisAgent <-->|Read/Write| Filesystem
+    HalloweenDecoratorAgent <-->|Read/Write| Filesystem
     SupervisorAgent <-->|Persist State| Checkpointer[LangGraph Checkpointer]
 ```
 
@@ -251,6 +254,48 @@ location_analysis_agent = {
     "tools": [google_places_geocode_tool, google_places_nearby_tool],
     "model": model  # Any LLM (GPT-4, Claude, etc.)
 }
+```
+
+### 4. Halloween Decorator Sub-Agent
+
+**Purpose:** Specialized agent for analyzing property images and generating Halloween-decorated versions
+
+**Configuration:**
+```python
+halloween_decorator_agent = {
+    "name": "halloween_decorator",
+    "description": "Analyzes property images and generates Halloween-themed decorated versions",
+    "system_prompt": HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
+    "tools": [analyze_property_images_tool, generate_decorated_image_tool],
+    "model": model  # Any LLM (GPT-4, Claude, etc.)
+}
+```
+
+**Workflow:**
+1. Supervisor passes property image URLs from Property Search Agent results
+2. Halloween Decorator Agent calls `analyze_property_images_tool` to scan each image
+3. Analysis identifies: room type, decoration spaces, style notes, and suggestions
+4. Agent calls `generate_decorated_image_tool` with the image URL and decoration description
+5. Gemini Vision generates a Halloween-decorated version of the property image
+6. Decorated images (base64) are returned to Supervisor for inclusion in final report
+
+**Tool Interfaces:**
+```python
+def analyze_property_images_tool(image_url: str) -> dict:
+    """Analyze property image for Halloween decoration opportunities using Gemini Vision"""
+    # Returns: room_type, decoration_spaces, style_notes, suggestions
+
+def generate_decorated_image_tool(image_url: str, decoration_description: str) -> dict:
+    """Generate Halloween-decorated version of property image using Gemini"""
+    # Returns: decorated_image_base64, original_image_url, decorations_added
+```
+
+**Filesystem Structure:**
+```
+/decorations/
+  property_001_decorated.json  # Contains base64 image and metadata
+  property_002_decorated.json
+  ...
 ```
 
 ### 4. Frontend to API Integration
