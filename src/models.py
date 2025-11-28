@@ -14,19 +14,19 @@ class Property(BaseModel):
     """Property listing model with all relevant details."""
     
     id: str = Field(..., description="Unique identifier for the property")
-    address: str = Field(..., description="Street address of the property")
-    city: str = Field(..., description="City where property is located")
-    state: str = Field(..., description="State where property is located")
-    zip_code: str = Field(..., description="ZIP code of the property")
-    price: float = Field(..., description="Listing price in USD")
-    bedrooms: int = Field(..., description="Number of bedrooms")
-    bathrooms: float = Field(..., description="Number of bathrooms")
-    square_feet: int = Field(..., description="Total square footage")
-    property_type: str = Field(..., description="Type: house, condo, apartment, etc.")
-    listing_url: str = Field(..., description="URL to the original listing")
+    address: str = Field(default="Unknown", description="Street address of the property")
+    city: str = Field(default="Unknown", description="City where property is located")
+    state: str = Field(default="Unknown", description="State where property is located")
+    zip_code: str = Field(default="Unknown", description="ZIP code of the property")
+    price: Optional[float] = Field(None, description="Listing price in USD")
+    bedrooms: Optional[int] = Field(None, description="Number of bedrooms")
+    bathrooms: Optional[float] = Field(None, description="Number of bathrooms")
+    square_feet: Optional[int] = Field(None, description="Total square footage")
+    property_type: str = Field(default="Unknown", description="Type: house, condo, apartment, etc.")
+    listing_url: str = Field(default="", description="URL to the original listing")
     image_urls: list[str] = Field(default_factory=list, description="List of image URLs")
-    description: str = Field(..., description="Property description text")
-    listing_date: Optional[datetime] = Field(None, description="Date property was listed")
+    description: str = Field(default="", description="Property description text")
+    listing_date: Optional[str] = Field(None, description="Date property was listed (string format)")
 
 
 class SearchCriteria(BaseModel):
@@ -62,9 +62,9 @@ class PointOfInterest(BaseModel):
 class LocationAnalysis(BaseModel):
     """Location analysis for a property including nearby amenities."""
     
-    property_id: Optional[str] = Field(None, description="ID of the property being analyzed")
-    latitude: Optional[float] = Field(None, description="Property latitude")
-    longitude: Optional[float] = Field(None, description="Property longitude")
+    property_id: str = Field(default="", description="ID of the property being analyzed")
+    latitude: float = Field(default=0.0, description="Property latitude")
+    longitude: float = Field(default=0.0, description="Property longitude")
     nearby_pois: list[PointOfInterest] = Field(
         default_factory=list,
         description="List of nearby points of interest"
