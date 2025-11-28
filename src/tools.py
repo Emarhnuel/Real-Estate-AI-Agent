@@ -317,57 +317,6 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
 
 
 @tool(parse_docstring=True)
-def search_halloween_decorations_tool(
-    room_type: str,
-    decoration_needs: str,
-    max_results: int = 10
-) -> Dict[str, Any]:
-    """Search e-commerce sites for Halloween decoration products.
-    
-    Args:
-        room_type: Type of room (living room, bedroom, porch, etc.)
-        decoration_needs: Description of what decorations are needed
-        max_results: Maximum number of products to return
-    """
-    api_key = os.getenv("TAVILY_API_KEY")
-    if not api_key:
-        raise ValueError("TAVILY_API_KEY environment variable is not set")
-    
-    try:
-        client = TavilyClient(api_key=api_key)
-        
-        # Search for Halloween decorations
-        query = f"Halloween decorations for {room_type} {decoration_needs} site:amazon.com OR site:walmart.com OR site:target.com"
-        
-        response = client.search(
-            query=query,
-            max_results=max_results,
-            search_depth="advanced",
-            include_raw_content=True
-        )
-        
-        products = []
-        for result in response.get('results', []):
-            products.append({
-                "name": result.get('title', ''),
-                "url": result.get('url', ''),
-                "description": result.get('content', ''),
-                "source": result.get('url', '').split('/')[2] if result.get('url') else ''
-            })
-        
-        return {
-            "success": True,
-            "products": products,
-            "query": query
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Decoration search failed: {str(e)}"
-        }
-
-
-@tool(parse_docstring=True)
 def generate_decorated_image_tool(
     image_url: str,
     decoration_description: str
