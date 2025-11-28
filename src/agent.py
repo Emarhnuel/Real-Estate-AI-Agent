@@ -47,10 +47,12 @@ from src.prompts import (
 
 
 model = init_chat_model(
-    model="google_genai:gemini-2.5-pro",
+    model="google_genai:gemini-2.5-flash",
     max_tokens=300000,
     thinking_budget=8192,
     include_thoughts=True,
+    timeout=120,
+    max_retries=3,
 )
 
 # Property Search Sub-Agent Configuration
