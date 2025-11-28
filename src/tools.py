@@ -413,58 +413,12 @@ def submit_final_report_tool(report: PropertyReport) -> dict:
     Submit the final, comprehensive property report once all research and analysis is complete.
     This should be the last action taken by the agent.
     
-    Returns both structured JSON data and a markdown-formatted report for display.
-    
     Args:
-        report: The complete PropertyReport object containing all gathered data.
+        report: The complete PropertyReport object containing all gathered data,
+                including decorated_images from the Halloween decorator agent.
     """
-    report_dict = report.dict()
-    
-    # Generate markdown version for display
-    md_lines = [
-        f"# Property Search Report",
-        f"",
-        f"**Generated:** {report.generated_at.strftime('%B %d, %Y at %I:%M %p') if report.generated_at else 'N/A'}",
-        f"",
-        f"## Summary",
-        f"{report.summary}",
-        f"",
-        f"---",
-        f""
-    ]
-    
-    for i, prop in enumerate(report.properties, 1):
-        md_lines.append(f"## Property {i}: {prop.address}")
-        md_lines.append(f"**Location:** {prop.city}, {prop.state} {prop.zip_code}")
-        md_lines.append(f"**Price:** ₦{prop.price:,.0f}" if prop.price else "**Price:** N/A")
-        md_lines.append(f"**Bedrooms:** {prop.bedrooms} | **Bathrooms:** {prop.bathrooms} | **Size:** {prop.square_feet:,} sq ft" if prop.square_feet else "")
-        md_lines.append(f"**Type:** {prop.property_type}")
-        md_lines.append(f"")
-        md_lines.append(f"**Description:** {prop.description[:300]}..." if len(prop.description) > 300 else f"**Description:** {prop.description}")
-        md_lines.append(f"")
-        md_lines.append(f"[View Listing]({prop.listing_url})")
-        md_lines.append(f"")
-        
-        # Location analysis
-        loc = report.location_analyses.get(prop.id)
-        if loc:
-            md_lines.append(f"### Location Analysis")
-            if loc.pros:
-                md_lines.append(f"**Pros:**")
-                for pro in loc.pros:
-                    md_lines.append(f"- ✅ {pro}")
-            if loc.cons:
-                md_lines.append(f"**Cons:**")
-                for con in loc.cons:
-                    md_lines.append(f"- ⚠️ {con}")
-            md_lines.append(f"")
-        
-        md_lines.append(f"---")
-        md_lines.append(f"")
-    
     return {
         "status": "success",
         "message": "Final report submitted successfully",
-        "report": report_dict,
-        "markdown_report": "\n".join(md_lines)
+        "report": report.dict()
     }
