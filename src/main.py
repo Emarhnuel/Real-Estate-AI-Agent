@@ -175,6 +175,11 @@ def get_state(
     if not thread_id:
         raise HTTPException(status_code=400, detail="thread_id is required")
     
+    # DEBUG: Log the user_id and thread_id to identify mismatch
+    print(f"[DEBUG /api/state] user_id from JWT: '{user_id}'")
+    print(f"[DEBUG /api/state] thread_id from request: '{thread_id}'")
+    print(f"[DEBUG /api/state] thread_id.startswith(user_id): {thread_id.startswith(user_id)}")
+    
     # Verify the thread_id belongs to this user (security check)
     if not thread_id.startswith(user_id):
         raise HTTPException(status_code=403, detail="Thread ID does not belong to authenticated user")
