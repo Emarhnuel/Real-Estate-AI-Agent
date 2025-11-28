@@ -86,7 +86,18 @@
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
   - _Files: src/utils.py, src/tools.py, src/agent.py, src/prompts.py_
 
-- [ ] 10. Write integration tests for LangGraph workflow
+- [ ] 10. Implement Halloween Decorator Sub-Agent
+  - Define halloween_decorator_agent configuration with name, description, and system prompt
+  - Write system prompt instructing agent to analyze images and generate decorated versions
+  - Configure agent with analyze_property_images_tool and generate_decorated_image_tool
+  - Implement workflow: receive image URLs → analyze → generate decorated images
+  - Implement logic to write decorated images to /decorations/ directory
+  - Update Supervisor Agent to delegate to Halloween Decorator after property approval
+  - Update PropertyReport model to include decorated_image_urls field
+  - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8_
+  - _Files: src/agent.py, src/prompts.py, src/models.py_
+
+- [ ] 11. Write integration tests for LangGraph workflow
   - Write test for complete property search workflow with invoke
   - Write test for human-in-the-loop interrupt and resume
   - Write test for property rejection and re-search flow
