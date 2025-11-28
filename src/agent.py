@@ -5,6 +5,7 @@ This module defines the supervisor agent and sub-agents for property search
 and location analysis using the Deep Agents framework.
 """
 
+
 import os
 from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
@@ -49,7 +50,7 @@ from src.prompts import (
 model = init_chat_model(
     model="google_genai:gemini-2.5-flash",
     max_tokens=300000,
-    thinking_budget=8192,
+    thinking_budget=4096,
     include_thoughts=True,
     timeout=120,
     max_retries=3,
