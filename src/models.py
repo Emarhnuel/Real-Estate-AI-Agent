@@ -26,7 +26,7 @@ class Property(BaseModel):
     listing_url: str = Field(..., description="URL to the original listing")
     image_urls: list[str] = Field(default_factory=list, description="List of image URLs")
     description: str = Field(..., description="Property description text")
-    listing_date: datetime = Field(..., description="Date property was listed")
+    listing_date: Optional[datetime] = Field(None, description="Date property was listed")
 
 
 class SearchCriteria(BaseModel):
@@ -62,9 +62,9 @@ class PointOfInterest(BaseModel):
 class LocationAnalysis(BaseModel):
     """Location analysis for a property including nearby amenities."""
     
-    property_id: str = Field(..., description="ID of the property being analyzed")
-    latitude: float = Field(..., description="Property latitude")
-    longitude: float = Field(..., description="Property longitude")
+    property_id: Optional[str] = Field(None, description="ID of the property being analyzed")
+    latitude: Optional[float] = Field(None, description="Property latitude")
+    longitude: Optional[float] = Field(None, description="Property longitude")
     nearby_pois: list[PointOfInterest] = Field(
         default_factory=list,
         description="List of nearby points of interest"
