@@ -12,7 +12,6 @@ An intelligent, conversational AI agent that automates property search and analy
 - Location analysis with Google Places API (nearby amenities, POIs, reviews)
 - **Halloween Decorator** - AI-powered property decoration visualization with Gemini Vision
   - Analyze property images to identify decoration opportunities
-  - Search e-commerce sites for Halloween decoration products
   - Generate AI-decorated images showing properties with Halloween themes
 - Task planning and progress tracking with Deep Agents
 - Human-in-the-loop property review
