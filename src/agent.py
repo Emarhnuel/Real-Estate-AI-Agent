@@ -50,8 +50,6 @@ from src.prompts import (
 model = init_chat_model(
     model="google_genai:gemini-2.5-flash",
     max_tokens=300000,
-    thinking_budget=4096,
-    include_thoughts=True,
     timeout=120,
     max_retries=3,
 )
