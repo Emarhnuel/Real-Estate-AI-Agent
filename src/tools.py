@@ -51,6 +51,9 @@ def tavily_search_tool(
 def tavily_extract_tool(urls: List[str]) -> Dict[str, Any]:
     """Extract detailed content and images from a list of property URLs using Tavily API.
     
+    Uses advanced extraction depth for better image and content retrieval from property sites.
+    Images are returned in the 'images' field of each result.
+    
     Args:
         urls: A list of URLs to extract content from.
     """
@@ -59,15 +62,30 @@ def tavily_extract_tool(urls: List[str]) -> Dict[str, Any]:
         raise ValueError("TAVILY_API_KEY environment variable is not set")
         
     try:
-        # Instantiate the extractor tool with advanced depth
-        extractor = TavilyExtract(
-            api_key=api_key, 
-            include_images=True, 
+        client = TavilyClient(api_key=api_key)
+        
+        # Use the native Tavily client extract method with advanced depth
+        # This provides better image extraction than the LangChain wrapper
+        response = client.extract(
+            urls=urls,
+            include_images=True,
             extract_depth="advanced"
         )
-        # Invoke it with the provided URLs
-        response = extractor.invoke({"urls": urls})
-        return response
+        
+        # Process results to ensure images are properly extracted
+        processed_results = []
+        for result in response.get('results', []):
+            processed_result = {
+                "url": result.get("url", ""),
+                "raw_content": result.get("raw_content", ""),
+                "images": result.get("images", []),
+            }
+            processed_results.append(processed_result)
+        
+        return {
+            "results": processed_results,
+            "failed_results": response.get("failed_results", [])
+        }
     except Exception as e:
         raise Exception(f"Tavily extraction failed: {str(e)}")
 
@@ -446,12 +464,58 @@ def submit_final_report_tool(report: PropertyReport) -> dict:
     Submit the final, comprehensive property report once all research and analysis is complete.
     This should be the last action taken by the agent.
     
+    Returns both structured JSON data and a markdown-formatted report for display.
+    
     Args:
         report: The complete PropertyReport object containing all gathered data.
     """
-    # Return the report as a dict so it can be accessed by the frontend
+    report_dict = report.dict()
+    
+    # Generate markdown version for display
+    md_lines = [
+        f"# Property Search Report",
+        f"",
+        f"**Generated:** {report.generated_at.strftime('%B %d, %Y at %I:%M %p') if report.generated_at else 'N/A'}",
+        f"",
+        f"## Summary",
+        f"{report.summary}",
+        f"",
+        f"---",
+        f""
+    ]
+    
+    for i, prop in enumerate(report.properties, 1):
+        md_lines.append(f"## Property {i}: {prop.address}")
+        md_lines.append(f"**Location:** {prop.city}, {prop.state} {prop.zip_code}")
+        md_lines.append(f"**Price:** ₦{prop.price:,.0f}" if prop.price else "**Price:** N/A")
+        md_lines.append(f"**Bedrooms:** {prop.bedrooms} | **Bathrooms:** {prop.bathrooms} | **Size:** {prop.square_feet:,} sq ft" if prop.square_feet else "")
+        md_lines.append(f"**Type:** {prop.property_type}")
+        md_lines.append(f"")
+        md_lines.append(f"**Description:** {prop.description[:300]}..." if len(prop.description) > 300 else f"**Description:** {prop.description}")
+        md_lines.append(f"")
+        md_lines.append(f"[View Listing]({prop.listing_url})")
+        md_lines.append(f"")
+        
+        # Location analysis
+        loc = report.location_analyses.get(prop.id)
+        if loc:
+            md_lines.append(f"### Location Analysis")
+            if loc.pros:
+                md_lines.append(f"**Pros:**")
+                for pro in loc.pros:
+                    md_lines.append(f"- ✅ {pro}")
+            if loc.cons:
+                md_lines.append(f"**Cons:**")
+                for con in loc.cons:
+                    md_lines.append(f"- ⚠️ {con}")
+            md_lines.append(f"")
+        
+        md_lines.append(f"---")
+        md_lines.append(f"")
+    
     return {
         "status": "success",
         "message": "Final report submitted successfully",
-        "report": report.dict()
+        "report": report_dict,
+        "markdown_report": "\n".join(md_lines)
     }
