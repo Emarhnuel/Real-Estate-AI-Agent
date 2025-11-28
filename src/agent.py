@@ -45,12 +45,11 @@ from src.prompts import (
     SUPERVISOR_SYSTEM_PROMPT
 )
 
-
 model = init_chat_model(
     model="google_genai:gemini-2.5-pro",
     max_tokens=300000,
-    timeout=120,
-    max_retries=3,
+    timeout=300,
+    max_retries=5,
 )
 
 # Property Search Sub-Agent Configuration
@@ -79,7 +78,7 @@ halloween_decorator_agent = {
     "name": "halloween_decorator",
     "description": "Analyzes property images and creates Halloween decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
     "system_prompt": HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
-    "tools": [analyze_property_images_tool, search_halloween_decorations_tool, generate_decorated_image_tool],
+    "tools": [analyze_property_images_tool, generate_decorated_image_tool],
     "model": model
 }
 
