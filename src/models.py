@@ -86,7 +86,6 @@ class LocationAnalysis(BaseModel):
         description="Transit score 0-100 if available"
     )
 
-# The change is in the class below
 class PropertyForReview(BaseModel):
     """Property data for user review."""
     
@@ -125,7 +124,6 @@ class AgentRequest(BaseModel):
     timestamp: int = Field(..., description="Unix timestamp for thread ID generation")
 
 
-
 class ResumeRequest(BaseModel):
     """Request model for resuming agent after interrupt."""
     
@@ -134,3 +132,10 @@ class ResumeRequest(BaseModel):
         None,
         description="List of approved property IDs"
     )
+
+
+# CHANGE: Added a specific Pydantic model for the /api/state endpoint request.
+class StateRequest(BaseModel):
+    """Request model for getting agent state."""
+    
+    thread_id: str = Field(..., description="Thread ID to get state for")
