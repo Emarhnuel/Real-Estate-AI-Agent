@@ -4,6 +4,7 @@
 
 The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed to revolutionize the online property search experience. The system acts as a personal research assistant that automates the entire process of finding, vetting, and analyzing real estate listings. Built using the Deep Agents framework with LangGraph, the system employs a multi-agent architecture to handle complex property search and analysis tasks, delivering comprehensive reports with property details, images, and location analysis.
 
+
 ## Glossary
 
 - **Deep_Agent_System**: The main AI agent framework built on LangGraph that provides planning, file system management, and sub-agent capabilities
@@ -185,3 +186,18 @@ The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed 
 3. THE application SHALL use a consistent color scheme and typography throughout the application
 4. THE Clerk_Auth components SHALL be styled to match the application's design using the appearance prop
 5. THE application SHALL include a navigation bar with links to home, agent, and profile pages for authenticated users
+
+### Requirement 15
+
+**User Story:** As a property seeker, I want to see my selected properties decorated with Halloween themes, so that I can visualize how the property would look during the Halloween season
+
+#### Acceptance Criteria
+
+1. WHEN THE user approves properties for analysis, THE Supervisor_Agent SHALL delegate image decoration to the Halloween_Decorator_Agent
+2. THE Halloween_Decorator_Agent SHALL receive property image URLs from the Property_Search_Agent results
+3. THE Halloween_Decorator_Agent SHALL use the analyze_property_images_tool to scan each property image and identify decoration opportunities
+4. THE analyze_property_images_tool SHALL identify room types, available decoration spaces, and style recommendations
+5. THE Halloween_Decorator_Agent SHALL use the generate_decorated_image_tool to create Halloween-themed versions of property images
+6. THE generate_decorated_image_tool SHALL use Gemini Vision to add tasteful Halloween decorations while preserving the original property structure
+7. THE Property_Report SHALL include both original and Halloween-decorated versions of property images
+8. THE Halloween_Decorator_Agent SHALL process images one at a time to prevent context overflow
