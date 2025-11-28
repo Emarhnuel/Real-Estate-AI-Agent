@@ -50,7 +50,14 @@ uv sync
 
 3. Create `.env` file from `.env.example` and add your API keys
 
-4. Run locally:
+4. (Optional) Enable LangSmith tracing for monitoring:
+```env
+LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_TRACING=true
+LANGSMITH_PROJECT=ai-real-estate-copilot
+```
+
+5. Run locally:
 ```bash
 # Backend
 uv run uvicorn api.index:app --reload
