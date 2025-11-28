@@ -286,8 +286,9 @@ def analyze_property_images_tool(image_url: str) -> dict:
     # Returns: room_type, decoration_spaces, style_notes, suggestions
 
 def generate_decorated_image_tool(image_url: str, decoration_description: str) -> dict:
-    """Generate Halloween-decorated version of property image using Gemini"""
+    """Generate Halloween-decorated version of property image using Gemini 2.5 Flash Image"""
     # Returns: decorated_image_base64, original_image_url, decorations_added
+    # Note: Gemini 2.5 Flash Image can generate Halloween decorations directly without external search
 ```
 
 **Filesystem Structure:**
