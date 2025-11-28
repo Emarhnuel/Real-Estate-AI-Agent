@@ -98,6 +98,15 @@ class PropertyForReview(BaseModel):
     image_urls: list[str] = Field(..., description="Property image URLs")
 
 
+class DecoratedImage(BaseModel):
+    """Halloween-decorated property image."""
+    
+    property_id: str = Field(..., description="ID of the property this image belongs to")
+    original_image_url: str = Field(..., description="URL of the original property image")
+    decorated_image_base64: str = Field(..., description="Base64-encoded decorated image")
+    decorations_added: str = Field(default="", description="Description of decorations added")
+
+
 class PropertyReport(BaseModel):
     """Final comprehensive property report."""
     
@@ -109,6 +118,10 @@ class PropertyReport(BaseModel):
     location_analyses: dict[str, LocationAnalysis] = Field(
         default_factory=dict,
         description="Location analysis mapped by property_id"
+    )
+    decorated_images: dict[str, DecoratedImage] = Field(
+        default_factory=dict,
+        description="Halloween-decorated images mapped by property_id"
     )
     generated_at: datetime = Field(
         default_factory=datetime.now,
