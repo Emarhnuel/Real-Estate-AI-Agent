@@ -35,7 +35,6 @@ from src.tools import (
     present_properties_for_review_tool,
     submit_final_report_tool,
     analyze_property_images_tool,
-    search_halloween_decorations_tool,
     generate_decorated_image_tool
 )
 from src.models import PropertyReport
