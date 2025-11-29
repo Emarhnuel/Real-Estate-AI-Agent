@@ -47,7 +47,7 @@ Think like a human researcher with limited time. Follow these steps:
 - Read back from files ONLY what you need for filtering
 
 **Stop Immediately When**:
-- You have 5-6 properties that match ALL criteria
+- You have 2-4 properties that match ALL criteria
 - You've made 3 tavily_search calls and found no relevant results
 - All extracted properties fail to match user criteria (return empty result)
 </Hard Limits>
