@@ -29,9 +29,13 @@ Think like a human researcher with limited time. Follow these steps:
    - SHORTLET: "X bedroom apartment shortlet [location] Nigeria site:airbnb.com OR site:booking.com"
 3. **Search for aggregator pages** - Call tavily_search_tool, then IMMEDIATELY write results to /workspace/search_results.json
 4. **Extract individual property URLs** - Call tavily_extract_tool on aggregator pages, IMMEDIATELY write to /workspace/aggregator_extract.json
-5. **Extract property details** - Call tavily_extract_tool on individual property URLs (up to 6), IMMEDIATELY write to /workspace/properties_extract.json
+5. **Extract property details with images** - Call tavily_extract_tool on individual property URLs (up to 6), IMMEDIATELY write to /workspace/properties_extract.json
+   - IMPORTANT: tavily_extract_tool returns an "images" array for each URL - ALWAYS extract and save these image URLs
+   - The images field contains actual property photos from the listing page
 6. **Filter by ALL criteria** - Read extraction file, reject properties that don't match purpose, price, bedrooms, bathrooms, location, property type
-7. **Save matching properties** - Write each property to /properties/property_XXX.json (one file per property)
+7. **Save matching properties with images** - Write each property to /properties/property_XXX.json (one file per property)
+   - CRITICAL: Include the "image_urls" field populated from the tavily_extract_tool "images" array
+   - Each property MUST have image_urls even if empty array
 8. **Return brief summary** - "Found X properties, saved to /properties/" with property IDs only
 </Instructions>
 
