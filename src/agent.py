@@ -52,6 +52,7 @@ model = init_chat_model(
     max_retries=5,
 )
 
+
 # Property Search Sub-Agent Configuration
 
 property_search_agent = {
@@ -115,5 +116,8 @@ supervisor_agent = create_deep_agent(
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
     checkpointer=checkpointer,
     backend=composite_backend,
-    store=store
+    store=store,
+    interrupt_on={
+        "present_properties_for_review_tool": True  # Pause before executing, allow approve/edit/reject
+    }
 )
