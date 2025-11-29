@@ -386,25 +386,20 @@ def generate_decorated_image_tool(
 def present_properties_for_review_tool(properties: List[PropertyForReview]) -> dict:
     """Present properties to user for review and approval.
     
-    This tool triggers a human-in-the-loop interrupt by using LangGraph's interrupt() function.
-    The user will see each property with yes/no options to approve or reject.
+    This tool is configured with interrupt_on in the agent, so it will automatically
+    pause execution before running. The user can approve, edit, or reject the tool call.
+    When approved, this tool returns the properties for the next step.
     
     Args:
         properties: List of property objects with keys: id, address, price, bedrooms, bathrooms, image_urls
     """
-    from langgraph.types import interrupt
-    
-    # Trigger interrupt with property data
-    # Frontend will receive this in __interrupt__ field
-    user_decisions = interrupt({
-        "type": "property_review",
-        "properties": [p.dict() for p in properties], # Convert Pydantic models to dicts for the interrupt
-        "message": "Please review each property and select Yes or No"
-    })
-    
-    # When resumed with Command(resume=...), user_decisions will contain the response
-    # Expected format: {"approved": ["prop_001", "prop_002"], "rejected": ["prop_003"]}
-    return user_decisions
+    # Return the properties data - the interrupt happens BEFORE this tool executes
+    # due to interrupt_on configuration in the agent
+    return {
+        "status": "approved",
+        "properties": [p.dict() for p in properties],
+        "message": "Properties approved for analysis"
+    }
 
 
 @tool
