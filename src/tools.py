@@ -389,11 +389,10 @@ def present_properties_for_review_tool(properties: List[Dict[str, Any]]) -> dict
     
     This tool is configured with interrupt_on in the agent, so it will automatically
     pause execution before running. The user can approve, edit, or reject the tool call.
-    When approved/edited, this tool returns the approved property IDs for the next step.
+    When approved or edited, this tool returns the approved property IDs for the next step.
     
     Args:
-        properties: List of property objects or property IDs. Can be full PropertyForReview objects
-                   or simplified {"id": "property_001"} objects after user edits.
+        properties: List of property dicts containing at minimum an id field.
     """
     # Extract property IDs from the input
     # Handle both full property objects and simplified ID-only objects
