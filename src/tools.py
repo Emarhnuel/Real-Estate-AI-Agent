@@ -264,6 +264,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return distance
 
 
+
 # Halloween Decorator Tools
 
 @tool(parse_docstring=True)
@@ -383,22 +384,32 @@ def generate_decorated_image_tool(
 
 
 @tool(parse_docstring=True)
-def present_properties_for_review_tool(properties: List[PropertyForReview]) -> dict:
+def present_properties_for_review_tool(properties: List[Dict[str, Any]]) -> dict:
     """Present properties to user for review and approval.
     
     This tool is configured with interrupt_on in the agent, so it will automatically
     pause execution before running. The user can approve, edit, or reject the tool call.
-    When approved, this tool returns the properties for the next step.
+    When approved/edited, this tool returns the approved property IDs for the next step.
     
     Args:
-        properties: List of property objects with keys: id, address, price, bedrooms, bathrooms, image_urls
+        properties: List of property objects or property IDs. Can be full PropertyForReview objects
+                   or simplified {"id": "property_001"} objects after user edits.
     """
-    # Return the properties data - the interrupt happens BEFORE this tool executes
-    # due to interrupt_on configuration in the agent
+    # Extract property IDs from the input
+    # Handle both full property objects and simplified ID-only objects
+    approved_ids = []
+    for p in properties:
+        if isinstance(p, dict):
+            if "id" in p:
+                approved_ids.append(p["id"])
+        elif hasattr(p, "id"):
+            approved_ids.append(p.id)
+    
     return {
         "status": "approved",
-        "properties": [p.dict() for p in properties],
-        "message": "Properties approved for analysis"
+        "approved_property_ids": approved_ids,
+        "count": len(approved_ids),
+        "message": f"User approved {len(approved_ids)} properties for analysis"
     }
 
 
