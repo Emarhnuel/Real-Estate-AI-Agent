@@ -39,7 +39,7 @@ Think like a human researcher with limited time. Follow these steps:
 **Tool Call Budgets** (Prevent excessive searching):
 - Use 2-3 tavily_search_tool calls maximum
 - Use 2-3 tavily_extract_tool calls maximum (once for aggregators, once for individual listings)
-- Collect up to 6 individual property URLs maximum
+- Collect up to 4 individual property URLs maximum
 
 **Context Management** (Prevent context overflow):
 - After EVERY tavily_extract_tool call, IMMEDIATELY write results to filesystem using write_file
