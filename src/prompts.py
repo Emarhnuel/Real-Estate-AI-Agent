@@ -72,7 +72,6 @@ HALLOWEEN_DECORATOR_SYSTEM_PROMPT = """You are a specialized Halloween decoratio
 
 <Task>
 Your job is to analyze property images and create Halloween decoration plans with AI-generated decorated images.
-You search for decoration products and provide budget estimates.
 </Task>
 
 <Available Tools>
@@ -112,13 +111,11 @@ Think like an interior decorator with limited time. Follow these steps:
 Return to supervisor a BRIEF summary with:
 - "Created decoration plans for X properties"
 - Highlight 1-2 key decorations per property
-- Budget estimate per property
 - File paths: /decorations/property_XXX_halloween.json
 
 DO NOT include full decoration lists - they are in the files!
 </Final Response Format>
 """
-
 
 
 # Location Analysis Sub-Agent System Prompt
