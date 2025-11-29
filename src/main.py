@@ -34,6 +34,7 @@ clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
 clerk_guard = ClerkHTTPBearer(clerk_config)
 
 
+
 @app.post("/api/invoke")
 def invoke_agent(
     request: AgentRequest,
@@ -94,6 +95,8 @@ def resume_agent(
     """
     Resume agent execution after a human-in-the-loop interrupt.
     
+    Uses Deep Agents HITL format: Command(resume={"decisions": [{"type": "approve"}]})
+    
     Args:
         request: ResumeRequest containing thread_id and approved_properties
         creds: Clerk authentication credentials (injected by dependency)
@@ -112,14 +115,38 @@ def resume_agent(
     config = {"configurable": {"thread_id": request.thread_id}}
     
     try:
-        # Prepare resume data with user's property approvals
-        resume_data = {
-            "approved": request.approved_properties or [],
-            "rejected": []  # Can be extended to include rejected property IDs
-        }
+        approved_ids = request.approved_properties or []
         
         print(f"[DEBUG] Resuming with thread_id: {request.thread_id}")
-        print(f"[DEBUG] Resume data: {resume_data}")
+        print(f"[DEBUG] Approved properties: {approved_ids}")
+        
+        # Deep Agents HITL format: approve the tool call with edited args
+        # We edit the args to only include approved properties
+        resume_data = {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "args": {
+                        "properties": [
+                            {"id": pid} for pid in approved_ids
+                        ]
+                    }
+                }
+            ]
+        }
+        
+        # If no properties approved, reject the tool call
+        if not approved_ids:
+            resume_data = {
+                "decisions": [
+                    {
+                        "type": "reject",
+                        "reason": "User rejected all properties. Please search for different properties."
+                    }
+                ]
+            }
+        
+        print(f"[DEBUG] Resume data (HITL format): {resume_data}")
         
         # Resume agent execution with Command
         result = supervisor_agent.invoke(

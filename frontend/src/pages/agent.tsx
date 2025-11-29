@@ -114,14 +114,33 @@ export default function AgentPage() {
       const result = await response.json();
       
       // Check for interrupt (human-in-the-loop for property review)
+      // Deep Agents HITL format: __interrupt__ contains action_requests with tool call info
       if (result.__interrupt__) {
         const interruptData = result.__interrupt__;
         
-        // Extract properties from interrupt
+        // Extract properties from Deep Agents HITL interrupt format
         if (Array.isArray(interruptData) && interruptData.length > 0) {
           const interruptValue = interruptData[0]?.value;
           
-          if (interruptValue?.type === 'property_review' && interruptValue.properties) {
+          // Deep Agents format: action_requests contains the tool calls pending approval
+          if (interruptValue?.action_requests && interruptValue.action_requests.length > 0) {
+            const actionRequest = interruptValue.action_requests[0];
+            
+            // Check if this is the present_properties_for_review_tool
+            if (actionRequest.name === 'present_properties_for_review_tool') {
+              const properties = actionRequest.arguments?.properties || [];
+              
+              if (properties.length > 0) {
+                setInterrupt({
+                  properties: properties,
+                  threadId: currentThreadId
+                });
+                setCurrentStep('review');
+              }
+            }
+          }
+          // Fallback: check for legacy custom format
+          else if (interruptValue?.type === 'property_review' && interruptValue.properties) {
             setInterrupt({
               properties: interruptValue.properties,
               threadId: currentThreadId
@@ -396,3 +415,4 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     } 
   };
 };
+
