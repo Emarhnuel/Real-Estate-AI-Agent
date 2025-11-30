@@ -10,7 +10,7 @@ import PropertyReportView from '@/components/PropertyReportView';
 interface PropertyForReview {
   id: string;
   address: string;
-  price: number;
+  price: string | number;
   bedrooms: number;
   bathrooms: number;
   listing_url: string;
@@ -128,7 +128,7 @@ export default function AgentPage() {
             
             // Check if this is the present_properties_for_review_tool
             if (actionRequest.name === 'present_properties_for_review_tool') {
-              const properties = actionRequest.arguments?.properties || [];
+              const properties = actionRequest.args?.properties || [];
               
               if (properties.length > 0) {
                 setInterrupt({
