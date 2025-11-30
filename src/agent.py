@@ -100,14 +100,10 @@ class SupervisorState(TypedDict):
 checkpointer = MemorySaver()
 store = InMemoryStore()
 
-# Configure CompositeBackend to route large data to persistent storage
-composite_backend = lambda rt: CompositeBackend(
-    default=StateBackend(rt),  # Ephemeral scratch space
-    routes={
-        "/properties/": StoreBackend(rt),  # Persistent property data
-        "/locations/": StoreBackend(rt),   # Persistent location analysis
-    }
-)
+# Configure StateBackend for all paths - ephemeral per-thread storage
+# Each new thread_id gets a fresh filesystem, preventing old search data from persisting
+# Use StoreBackend only for paths that should persist across threads (e.g., /memories/)
+composite_backend = lambda rt: StateBackend(rt)
 
 supervisor_agent = create_deep_agent(
     model=model,
