@@ -3,7 +3,7 @@ import { useState } from 'react';
 interface PropertyForReview {
   id: string;
   address: string;
-  price: number;
+  price: string | number;
   bedrooms: number;
   bathrooms: number;
   listing_url: string;
@@ -123,7 +123,7 @@ export default function PropertyReviewPanel({
                 </h3>
                 <div className="flex flex-wrap gap-4 text-sm text-[#E0E0E0] mb-2">
                   <span className="font-bold text-[#FF6B00]">
-                    ₦{property.price.toLocaleString()}/year
+                    {typeof property.price === 'number' ? `₦${property.price.toLocaleString()}` : property.price}
                   </span>
                   <span>🛏️ {property.bedrooms} bed</span>
                   <span>🚿 {property.bathrooms} bath</span>
