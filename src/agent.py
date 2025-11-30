@@ -11,9 +11,8 @@ from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.store.memory import InMemoryStore
 from deepagents import create_deep_agent
-from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
+from deepagents.backends import StateBackend
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -98,11 +97,10 @@ class SupervisorState(TypedDict):
 
 # Create Supervisor Agent
 checkpointer = MemorySaver()
-store = InMemoryStore()
+
 
 # Configure StateBackend for all paths - ephemeral per-thread storage
 # Each new thread_id gets a fresh filesystem, preventing old search data from persisting
-# Use StoreBackend only for paths that should persist across threads (e.g., /memories/)
 composite_backend = lambda rt: StateBackend(rt)
 
 supervisor_agent = create_deep_agent(
@@ -112,7 +110,6 @@ supervisor_agent = create_deep_agent(
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
     checkpointer=checkpointer,
     backend=composite_backend,
-    store=store,
     interrupt_on={
         "present_properties_for_review_tool": True  # Pause before executing, allow approve/edit/reject
     }
