@@ -10,6 +10,7 @@ import os
 from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
 from langchain_openai import ChatOpenAI
+from langchain_deepseek import ChatDeepSeek
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
@@ -53,8 +54,8 @@ from src.prompts import (
 #)
 
 model1 = ChatDeepSeek(
-    model="deepseek/deepseek-v3.2",  
-    api_key="OPENROUTER_API_KEY",
+    model="deepseek-chat",
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
 )
 
