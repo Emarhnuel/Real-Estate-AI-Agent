@@ -9,6 +9,7 @@ and location analysis using the Deep Agents framework.
 import os
 from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
+from langchain_openai import ChatOpenAI
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
@@ -44,11 +45,18 @@ from src.prompts import (
     SUPERVISOR_SYSTEM_PROMPT
 )
 
-model = init_chat_model(
-    model="google_genai:gemini-2.5-pro",
-    max_tokens=300000,
-    timeout=300,
-    max_retries=5,
+# model = init_chat_model(
+#     model="google_genai:gemini-2.5-pro",
+#     max_tokens=300000,
+#     timeout=300,
+#     max_retries=5,
+)
+
+
+model1 = ChatOpenAI(
+    model="...",  # Specify a model available on OpenRouter
+    api_key="OPENROUTER_API_KEY",
+    base_url="https://openrouter.ai/api/v1",
 )
 
 
