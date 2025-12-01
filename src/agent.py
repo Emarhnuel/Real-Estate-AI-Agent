@@ -56,7 +56,8 @@ from src.prompts import (
 model1 = ChatDeepSeek(
     model="deepseek-chat",
     api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
+    api_base="https://openrouter.ai/api/v1",
+    extra_body={"reasoning": {"enabled": True}},
 )
 
 
