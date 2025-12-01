@@ -10,7 +10,6 @@ import os
 from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
 from langchain_openai import ChatOpenAI
-from langchain_deepseek import ChatDeepSeek
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
