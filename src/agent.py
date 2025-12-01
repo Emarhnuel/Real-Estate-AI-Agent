@@ -53,7 +53,7 @@ from src.prompts import (
 #     max_retries=5,
 #)
 
-model1 = ChatDeepSeek(
+model1 = ChatOpenAI(
     model="deepseek-chat",
     api_key=os.getenv("DEEPSEEK_API_KEY"),
     api_base="https://openrouter.ai/api/v1",
