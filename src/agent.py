@@ -66,7 +66,7 @@ property_search_agent = {
     "description": "Searches for property listings matching user criteria using web search. Returns summary of found properties with data saved to filesystem.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
     "tools": [tavily_search_tool, tavily_extract_tool],
-    "model": model
+    "model": model1
 }
 
 
@@ -76,7 +76,7 @@ location_analysis_agent = {
     "description": "Analyzes property locations and finds nearby points of interest. Evaluates location pros and cons based on amenities, transportation, and services.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
     "tools": [google_places_geocode_tool, google_places_nearby_tool],
-    "model": model 
+    "model": model1
 }
 
 
@@ -86,7 +86,7 @@ halloween_decorator_agent = {
     "description": "Analyzes property images and creates Halloween decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
     "system_prompt": HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
     "tools": [analyze_property_images_tool, generate_decorated_image_tool],
-    "model": model
+    "model": model1
 }
 
 
@@ -111,7 +111,7 @@ checkpointer = MemorySaver()
 composite_backend = lambda rt: StateBackend(rt)
 
 supervisor_agent = create_deep_agent(
-    model=model,
+    model=model1,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
