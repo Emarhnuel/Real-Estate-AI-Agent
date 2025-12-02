@@ -120,28 +120,28 @@ def resume_agent(
         print(f"[DEBUG] Resuming with thread_id: {request.thread_id}")
         print(f"[DEBUG] Approved properties: {approved_ids}")
         
-        # Deep Agents HITL format: approve the tool call with edited args
-        # We edit the args to only include approved properties
-        resume_data = {
-            "decisions": [
-                {
-                    "type": "edit",
-                    "args": {
-                        "properties": [
-                            {"id": pid} for pid in approved_ids
-                        ]
-                    }
-                }
-            ]
-        }
+        # Deep Agents HITL format per docs:
+        # - approve: {"type": "approve"}
+        # - reject: {"type": "reject"}
+        # - edit: {"type": "edit", "edited_action": {"name": "tool_name", "args": {...}}}
         
-        # If no properties approved, reject the tool call
         if not approved_ids:
+            # User rejected all properties
+            resume_data = {
+                "decisions": [{"type": "reject"}]
+            }
+        else:
+            # User approved some properties - use edit to pass only approved ones
             resume_data = {
                 "decisions": [
                     {
-                        "type": "reject",
-                        "reason": "User rejected all properties. Please search for different properties."
+                        "type": "edit",
+                        "edited_action": {
+                            "name": "present_properties_for_review_tool",
+                            "args": {
+                                "properties": [{"id": pid} for pid in approved_ids]
+                            }
+                        }
                     }
                 ]
             }
