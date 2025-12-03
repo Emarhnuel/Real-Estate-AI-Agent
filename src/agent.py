@@ -8,10 +8,7 @@ and location analysis using the Deep Agents framework.
 
 import os
 from typing import TypedDict, Annotated
-from langchain.chat_models import init_chat_model
 from langchain_openai import ChatOpenAI
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents.middleware import ModelFallbackMiddleware
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
@@ -48,48 +45,16 @@ from src.prompts import (
 )
 
 # =============================================================================
-# MODEL CONFIGURATION WITH FALLBACK
+# MODEL CONFIGURATION
 # =============================================================================
 
-# Primary model: Grok via OpenRouter (free tier)
-primary_model = ChatOpenAI(
+# Grok 4.1 Fast via OpenRouter
+model1 = ChatOpenAI(
     model="x-ai/grok-4.1-fast:free",
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
     timeout=120,
 )
-
-# Fallback model 1: Gemini (if you have GEMINI_API_KEY)
-fallback_model_gemini = ChatGoogleGenerativeAI(
-    model="gemini-2.5-pro",
-    google_api_key=os.getenv("GEMINI_API_KEY"),
-    timeout=120,
-) if os.getenv("GEMINI_API_KEY") else None
-
-# Fallback model 2: Another free OpenRouter model
-fallback_model_llama = ChatOpenAI(
-    model="qwen/qwen3-max",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
-    timeout=120,
-) if os.getenv("OPENROUTER_API_KEY") else None
-
-# Build middleware list with fallback models
-middleware_list = []
-
-# Add fallback middleware with available models
-fallback_models = []
-if fallback_model_gemini:
-    fallback_models.append(fallback_model_gemini)
-if fallback_model_llama:
-    fallback_models.append(fallback_model_llama)
-
-if fallback_models:
-    middleware_list.append(ModelFallbackMiddleware(*fallback_models))
-    print(f"[INFO] Model fallback enabled with {len(fallback_models)} backup model(s)")
-
-# Use primary model for all agents
-model1 = primary_model
 
 
 # Property Search Sub-Agent Configuration
