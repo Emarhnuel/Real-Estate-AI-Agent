@@ -68,7 +68,7 @@ fallback_model_gemini = ChatGoogleGenerativeAI(
 
 # Fallback model 2: Another free OpenRouter model
 fallback_model_llama = ChatOpenAI(
-    model="meta-llama/llama-3.3-8b-instruct:free",
+    model="qwen/qwen3-max",
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
     timeout=120,
