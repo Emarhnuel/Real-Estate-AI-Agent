@@ -54,7 +54,7 @@ from src.prompts import (
 
 model1 = ChatOpenAI(
     model="x-ai/grok-4.1-fast:free",
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
 )
 
