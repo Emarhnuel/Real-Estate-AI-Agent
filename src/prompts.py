@@ -218,11 +218,11 @@ Follow this workflow for all property search requests:
 - Create task plan with write_todos:
   ```
   [
-    {"task": "Search for properties", "status": "in_progress"},
-    {"task": "Present properties for review", "status": "pending"},
-    {"task": "Analyze approved properties", "status": "pending"},
-    {"task": "Create Halloween decoration plans", "status": "pending"},
-    {"task": "Submit final report", "status": "pending"}
+    {"content": "Search for properties", "status": "in_progress"},
+    {"content": "Present properties for review", "status": "pending"},
+    {"content": "Analyze approved properties", "status": "pending"},
+    {"content": "Create Halloween decoration plans", "status": "pending"},
+    {"content": "Submit final report", "status": "pending"}
   ]
   ```
 
