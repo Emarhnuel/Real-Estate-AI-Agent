@@ -11,7 +11,7 @@ from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents.middleware import ModelFallbackMiddleware, ModelRetryMiddleware
+from langchain.agents.middleware import ModelFallbackMiddleware
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
@@ -74,16 +74,8 @@ fallback_model_llama = ChatOpenAI(
     timeout=120,
 ) if os.getenv("OPENROUTER_API_KEY") else None
 
-# Build middleware list
-middleware_list = [
-    # Retry on transient failures (timeouts, rate limits)
-    ModelRetryMiddleware(
-        max_retries=2,
-        backoff_factor=2.0,
-        initial_delay=1.0,
-        on_failure="continue",  # Return error message instead of crashing
-    ),
-]
+# Build middleware list with fallback models
+middleware_list = []
 
 # Add fallback middleware with available models
 fallback_models = []
