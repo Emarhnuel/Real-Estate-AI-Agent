@@ -320,13 +320,19 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
 @tool(parse_docstring=True)
 def generate_decorated_image_tool(
     image_url: str,
-    decoration_description: str
+    decoration_description: str,
+    property_id: str
 ) -> Dict[str, Any]:
-    """Generate decorated version of property image using Gemini Image Generation (Nano Banana).
+    """Generate decorated version of property image using Gemini Image Generation.
+    
+    IMPORTANT: This tool automatically saves the generated image to the filesystem.
+    It returns only metadata (file path, success status) - NOT the base64 image data.
+    You do NOT need to read the image file or write it yourself.
     
     Args:
         image_url: URL of the original property image
         decoration_description: Description of Halloween decorations to add
+        property_id: Property ID used for naming the output file (e.g., "prop1")
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
