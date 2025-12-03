@@ -111,6 +111,7 @@ property_search_agent = {
 }
 
 
+
 # Location Analysis Sub-Agent Configuration
 location_analysis_agent = {
     "name": "location_analysis",
@@ -158,6 +159,7 @@ supervisor_agent = create_deep_agent(
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
     checkpointer=checkpointer,
     backend=composite_backend,
+    middleware=middleware_list,  # Add retry + fallback middleware
     interrupt_on={
         "present_properties_for_review_tool": True  # Pause before executing, allow approve/edit/reject
     }
