@@ -10,6 +10,7 @@ import os
 from typing import TypedDict, Annotated
 from langchain_openai import ChatOpenAI
 from langgraph.graph.message import add_messages
+from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
 from deepagents.backends import StateBackend
@@ -53,7 +54,6 @@ model1 = ChatOpenAI(
     model="x-ai/grok-4.1-fast:free",
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
-    timeout=120,
 )
 
 
@@ -122,7 +122,6 @@ supervisor_agent = create_deep_agent(
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
     checkpointer=checkpointer,
     backend=composite_backend,
-    middleware=middleware_list,  # Add retry + fallback middleware
     interrupt_on={
         "present_properties_for_review_tool": True  # Pause before executing, allow approve/edit/reject
     }
