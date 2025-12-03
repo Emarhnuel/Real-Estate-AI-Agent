@@ -10,6 +10,8 @@ import os
 from typing import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.agents.middleware import ModelFallbackMiddleware, ModelRetryMiddleware
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
@@ -45,18 +47,57 @@ from src.prompts import (
     SUPERVISOR_SYSTEM_PROMPT
 )
 
-# model = init_chat_model(
-#     model="google_genai:gemini-2.5-pro",
-#     max_tokens=300000,
-#     timeout=300,
-#     max_retries=5,
-#)
+# =============================================================================
+# MODEL CONFIGURATION WITH FALLBACK
+# =============================================================================
 
-model1 = ChatOpenAI(
+# Primary model: Grok via OpenRouter (free tier)
+primary_model = ChatOpenAI(
     model="x-ai/grok-4.1-fast:free",
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
+    timeout=120,
 )
+
+# Fallback model 1: Gemini (if you have GEMINI_API_KEY)
+fallback_model_gemini = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",
+    google_api_key=os.getenv("GEMINI_API_KEY"),
+    timeout=120,
+) if os.getenv("GEMINI_API_KEY") else None
+
+# Fallback model 2: Another free OpenRouter model
+fallback_model_llama = ChatOpenAI(
+    model="meta-llama/llama-3.3-8b-instruct:free",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    base_url="https://openrouter.ai/api/v1",
+    timeout=120,
+) if os.getenv("OPENROUTER_API_KEY") else None
+
+# Build middleware list
+middleware_list = [
+    # Retry on transient failures (timeouts, rate limits)
+    ModelRetryMiddleware(
+        max_retries=2,
+        backoff_factor=2.0,
+        initial_delay=1.0,
+        on_failure="continue",  # Return error message instead of crashing
+    ),
+]
+
+# Add fallback middleware with available models
+fallback_models = []
+if fallback_model_gemini:
+    fallback_models.append(fallback_model_gemini)
+if fallback_model_llama:
+    fallback_models.append(fallback_model_llama)
+
+if fallback_models:
+    middleware_list.append(ModelFallbackMiddleware(*fallback_models))
+    print(f"[INFO] Model fallback enabled with {len(fallback_models)} backup model(s)")
+
+# Use primary model for all agents
+model1 = primary_model
 
 
 # Property Search Sub-Agent Configuration
