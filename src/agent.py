@@ -51,7 +51,7 @@ from src.prompts import (
 
 # Grok 4.1 Fast via OpenRouter
 model1 = ChatOpenAI(
-    model="x-ai/grok-4.1-fast:free",
+    model="google/gemini-2.5-flash",
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
 )
