@@ -106,7 +106,7 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 ### Environment Variables
 
 Configure these environment variables in Vercel:
-- `DEEPSEEK_API_KEY` - OpenRouter API key (used to access DeepSeek model via OpenRouter)
+- `OPENROUTER_API_KEY` - OpenRouter API key (for accessing models via OpenRouter)
 - `CLERK_JWKS_URL` - Clerk JWKS URL for JWT validation
 - `TAVILY_API_KEY` - Tavily API key for property search
 - `GOOGLE_MAPS_API_KEY` - Google Maps API key for location services
