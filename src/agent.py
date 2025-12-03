@@ -125,11 +125,17 @@ halloween_decorator_agent = {
 
 
 
+# Reducer for todos - takes the last value when multiple updates occur
+def replace_todos(current: list[dict], new: list[dict]) -> list[dict]:
+    """Replace todos with the newest value (last write wins)."""
+    return new if new is not None else current
+
+
 # Supervisor Agent State Schema
 class SupervisorState(TypedDict):
     """State schema for the supervisor agent."""
     messages: Annotated[list, add_messages]
-    todos: list[dict]
+    todos: Annotated[list[dict], replace_todos]  # Use reducer to handle concurrent updates
     search_criteria: dict
     approved_properties: list[str]
     filesystem: dict
