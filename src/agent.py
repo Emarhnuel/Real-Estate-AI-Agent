@@ -61,7 +61,7 @@ primary_model = ChatOpenAI(
 
 # Fallback model 1: Gemini (if you have GEMINI_API_KEY)
 fallback_model_gemini = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+    model="gemini-2.5-pro",
     google_api_key=os.getenv("GEMINI_API_KEY"),
     timeout=120,
 ) if os.getenv("GEMINI_API_KEY") else None
