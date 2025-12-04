@@ -11,6 +11,7 @@ from typing import TypedDict, Annotated
 from langchain_openai import ChatOpenAI
 from langgraph.graph.message import add_messages
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
 from deepagents.backends import StateBackend
@@ -49,13 +50,14 @@ from src.prompts import (
 # MODEL CONFIGURATION
 # =============================================================================
 
-# Grok 4.1 Fast via OpenRouter
+# Claude sonnet via OpenRouter
 model1 = ChatOpenAI(
-    model="anthropic/claude-sonnet-4.5",
+    model="x-ai/grok-4.1-fast",
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
 )
 
+model = ChatGoogleGenerativeAI(model="gemini-3-pro-preview")
 
 # Property Search Sub-Agent Configuration
 
@@ -75,7 +77,7 @@ location_analysis_agent = {
     "description": "Analyzes property locations and finds nearby points of interest. Evaluates location pros and cons based on amenities, transportation, and services.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
     "tools": [google_places_geocode_tool, google_places_nearby_tool],
-    "model": model1
+    "model": model
 }
 
 
@@ -116,7 +118,7 @@ checkpointer = MemorySaver()
 composite_backend = lambda rt: StateBackend(rt)
 
 supervisor_agent = create_deep_agent(
-    model=model1,
+    model=model,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
