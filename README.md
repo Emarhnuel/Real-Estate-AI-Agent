@@ -25,7 +25,6 @@ An intelligent, conversational AI agent that automates property search and analy
 - Deep Agents (LangGraph) - Multi-agent orchestration with StateBackend for ephemeral per-thread storage
 - FastAPI - API endpoint (Vercel serverless function)
 - MemorySaver - State persistence (development)
-- Model fallback middleware - Automatic retry and fallback to backup models (Gemini, Llama) on failures
 - Tavily API - Property search (rent, sale, shortlet)
 - Google Places API - Location data and reviews
 - Google Gemini API - Image analysis and AI-generated decoration visualizations
