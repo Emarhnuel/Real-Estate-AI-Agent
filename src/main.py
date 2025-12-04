@@ -52,3 +52,213 @@ def validate_thread_ownership(thread_id: str, user_id: str) -> None:
     """Ensure the thread belongs to the authenticated user."""
     if not thread_id.startswith(f"{user_id}-"):
         raise HTTPException(status_code=403, detail="Access denied to this thread")
+
+
+def extract_final_report(state: dict) -> dict | None:
+    """Extract PropertyReport from submit_final_report_tool response in messages."""
+    messages = state.get("messages", [])
+    for msg in reversed(messages):
+        # Check for tool message from submit_final_report_tool
+        if hasattr(msg, "name") and msg.name == "submit_final_report_tool":
+            content = msg.content
+            if isinstance(content, str):
+                try:
+                    content = json.loads(content)
+                except json.JSONDecodeError:
+                    continue
+            if isinstance(content, dict) and content.get("status") == "success":
+                return content.get("report")
+    return None
+
+
+def serialize_interrupt(interrupt_data: list) -> list[dict[str, Any]]:
+    """Convert interrupt objects to JSON-serializable format."""
+    result = []
+    for item in interrupt_data:
+        if hasattr(item, "value"):
+            result.append({"value": item.value})
+        elif isinstance(item, dict):
+            result.append(item)
+    return result
+
+
+@app.post("/api/invoke")
+async def invoke_agent(
+    request: AgentRequest,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+) -> dict[str, Any]:
+    """Start agent conversation. Returns interrupt if property review needed."""
+    user_id = creds.decoded["sub"]
+    thread_id = f"{user_id}-{request.timestamp}"
+    config = {"configurable": {"thread_id": thread_id}}
+
+    logger.info(f"[INVOKE] Starting agent for thread {thread_id}")
+
+    try:
+        result = supervisor_agent.invoke(
+            {"messages": request.messages},
+            config
+        )
+
+        # Check for human-in-the-loop interrupt
+        if "__interrupt__" in result:
+            logger.info(f"[INVOKE] Interrupt triggered for property review")
+            return {"__interrupt__": serialize_interrupt(result["__interrupt__"])}
+
+        # Check for final report
+        report = extract_final_report(result)
+        if report:
+            logger.info(f"[INVOKE] Final report generated")
+            return {"structured_response": report}
+
+        # Return current state (agent still processing)
+        return {
+            "todos": result.get("todos", []),
+            "message": "Agent processing"
+        }
+
+    except Exception as e:
+        logger.error(f"[INVOKE] Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/resume")
+async def resume_agent(
+    request: ResumeRequest,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+) -> dict[str, Any]:
+    """Resume agent after human review. Filters properties to approved ones."""
+    user_id = creds.decoded["sub"]
+    validate_thread_ownership(request.thread_id, user_id)
+    config = {"configurable": {"thread_id": request.thread_id}}
+
+    logger.info(f"[RESUME] Resuming thread {request.thread_id}")
+
+    try:
+        # Get current state to find pending interrupt
+        state_snapshot = supervisor_agent.get_state(config)
+        
+        if not state_snapshot or not state_snapshot.tasks:
+            raise HTTPException(status_code=400, detail="No pending interrupt found")
+
+        # Extract original properties from the interrupt
+        original_properties = []
+        for task in state_snapshot.tasks:
+            if hasattr(task, "interrupts") and task.interrupts:
+                for interrupt in task.interrupts:
+                    if hasattr(interrupt, "value"):
+                        action_requests = interrupt.value.get("action_requests", [])
+                        for action in action_requests:
+                            if action.get("name") == "present_properties_for_review_tool":
+                                original_properties = action.get("args", {}).get("properties", [])
+                                break
+
+        # Filter to only approved properties
+        approved_ids = set(request.approved_properties or [])
+        filtered_properties = [
+            p for p in original_properties
+            if (p.get("id") if isinstance(p, dict) else getattr(p, "id", None)) in approved_ids
+        ]
+
+        logger.info(f"[RESUME] Approved {len(filtered_properties)} of {len(original_properties)} properties")
+
+        # Resume with edited args (filtered properties)
+        resume_command = Command(
+            resume={
+                "decisions": [{
+                    "type": "edit",
+                    "args": {"properties": filtered_properties}
+                }]
+            }
+        )
+
+        result = supervisor_agent.invoke(resume_command, config)
+
+        # Check for another interrupt
+        if "__interrupt__" in result:
+            logger.info(f"[RESUME] Another interrupt triggered")
+            return {"__interrupt__": serialize_interrupt(result["__interrupt__"])}
+
+        # Check for final report
+        report = extract_final_report(result)
+        if report:
+            logger.info(f"[RESUME] Final report generated")
+            return {"structured_response": report}
+
+        # Return current state
+        return {
+            "todos": result.get("todos", []),
+            "message": "Agent processing"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[RESUME] Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/state")
+async def get_agent_state(
+    request: StateRequest,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+) -> dict[str, Any]:
+    """Get current agent state for a thread."""
+    user_id = creds.decoded["sub"]
+    validate_thread_ownership(request.thread_id, user_id)
+    config = {"configurable": {"thread_id": request.thread_id}}
+
+    logger.info(f"[STATE] Getting state for thread {request.thread_id}")
+
+    try:
+        state_snapshot = supervisor_agent.get_state(config)
+        
+        if not state_snapshot or not state_snapshot.values:
+            raise HTTPException(status_code=404, detail="Thread not found")
+
+        values = state_snapshot.values
+
+        # Check for final report
+        report = extract_final_report(values)
+
+        return {
+            "structured_response": report,
+            "todos": values.get("todos", []),
+            "approved_properties": values.get("approved_properties", [])
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[STATE] Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/decorated-image/{property_id}")
+async def get_decorated_image(
+    property_id: str,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+) -> dict[str, Any]:
+    """Fetch Halloween-decorated image for a property."""
+    file_path = Path("decorated_images") / f"{property_id}_halloween.json"
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Decorated image not found")
+
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+        return data
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid image data")
+
+
+@app.get("/health")
+async def health_check() -> dict[str, str]:
+    """Health check endpoint."""
+    return {"status": "healthy"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
