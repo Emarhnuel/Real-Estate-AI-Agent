@@ -183,19 +183,22 @@ def resume_agent(
         
         print(f"[DEBUG] Resume successful, result keys: {result.keys() if isinstance(result, dict) else 'not a dict'}")
         
-        # Check if submit_final_report_tool was called and extract the report
+        # Debug: Print message types and content snippets
         if "messages" in result:
-            for msg in reversed(result["messages"]):
-                if hasattr(msg, "tool_calls") and msg.tool_calls:
-                    for tool_call in msg.tool_calls:
-                        if tool_call.get("name") == "submit_final_report_tool":
-                            # Find the tool response
-                            for response_msg in result["messages"]:
-                                if hasattr(response_msg, "content") and isinstance(response_msg.content, dict):
-                                    if response_msg.content.get("report"):
-                                        result["structured_response"] = response_msg.content["report"]
-                                        print(f"[DEBUG] Extracted structured_response from tool call")
-                                        break
+            print(f"[DEBUG] Number of messages: {len(result['messages'])}")
+            for i, msg in enumerate(result["messages"][-5:]):  # Last 5 messages
+                msg_type = type(msg).__name__
+                content = getattr(msg, "content", None) or (msg.get("content") if isinstance(msg, dict) else None)
+                content_preview = str(content)[:200] if content else "None"
+                print(f"[DEBUG] Message {i}: type={msg_type}, content_preview={content_preview}")
+        
+        # Extract final report if present
+        report = extract_final_report(result)
+        if report:
+            result["structured_response"] = report
+            print(f"[DEBUG] Extracted structured_response from final report")
+        else:
+            print(f"[DEBUG] No final report found in messages")
         
         return result
     except Exception as e:
@@ -205,47 +208,36 @@ def resume_agent(
         raise HTTPException(status_code=500, detail=f"Agent resume failed: {str(e)}")
 
 
-# CHANGE: The entire /api/state endpoint is updated to be more robust.
 @app.post("/api/state")
 def get_state(
-    request: StateRequest,  # CHANGE: Use the specific Pydantic model instead of a generic dict
+    request: StateRequest,
     creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
 ):
-    """
-    Get the current state of an agent conversation.
-    
-    Args:
-        request: StateRequest containing thread_id
-        creds: Clerk authentication credentials (injected by dependency)
-        
-    Returns:
-        Current agent state including messages, todos, and filesystem
-    """
-    # Extract user ID from JWT token for verification
+    """Get the current state of an agent conversation."""
     user_id = creds.decoded["sub"]
-    
-    # CHANGE: Get thread_id from the Pydantic model for reliable parsing
     thread_id = request.thread_id
+    
     if not thread_id:
         raise HTTPException(status_code=400, detail="thread_id is required")
     
-    # DEBUG: Log the user_id and thread_id to identify mismatch
-    print(f"[DEBUG /api/state] user_id from JWT: '{user_id}'")
-    print(f"[DEBUG /api/state] thread_id from request: '{thread_id}'")
-    print(f"[DEBUG /api/state] thread_id.startswith(user_id): {thread_id.startswith(user_id)}")
+    print(f"[DEBUG /api/state] user_id: '{user_id}', thread_id: '{thread_id}'")
     
-    # Verify the thread_id belongs to this user (security check)
+    # Verify the thread_id belongs to this user
     if not thread_id.startswith(user_id):
         raise HTTPException(status_code=403, detail="Thread ID does not belong to authenticated user")
     
-    # Configure agent with thread ID
     config = {"configurable": {"thread_id": thread_id}}
     
     try:
-        # Get current state from checkpointer
         state = supervisor_agent.get_state(config)
-        # CHANGE: Return only the .values part of the state snapshot for a cleaner response
-        return state.values
+        state_values = state.values if state else {}
+        
+        # Try to extract final report from state messages
+        report = extract_final_report(state_values)
+        if report:
+            state_values["structured_response"] = report
+        
+        return state_values
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve state: {str(e)}")
 
