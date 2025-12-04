@@ -99,12 +99,12 @@ class PropertyForReview(BaseModel):
 
 
 class DecoratedImage(BaseModel):
-    """Halloween-decorated property image."""
+    """Halloween-decorated property image metadata."""
     
     property_id: str = Field(..., description="ID of the property this image belongs to")
     original_image_url: str = Field(..., description="URL of the original property image")
-    decorated_image_base64: str = Field(..., description="Base64-encoded decorated image")
     decorations_added: str = Field(default="", description="Description of decorations added")
+    external_disk_path: str = Field(default="", description="Path to decorated image on external disk (decorated_images/ folder)")
 
 
 class PropertyReport(BaseModel):
