@@ -119,7 +119,7 @@ class PropertyReport(BaseModel):
         default_factory=dict,
         description="Location analysis mapped by property_id"
     )
-    decorated_images: dict[str, str] = Field(
+    decorated_images: dict[str, Optional[str]] = Field(
         default_factory=dict,
         description="External disk paths to decorated images mapped by property_id"
     )
