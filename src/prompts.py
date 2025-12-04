@@ -268,9 +268,19 @@ Follow this workflow for all property search requests:
 - Update todo status to "in_progress"
 - Read all data from `/properties/`, `/locations/`, and `/decorations/`
 - Build complete PropertyReport with search_criteria, properties, location_analyses, summary
+- **IMPORTANT**: For decorated_images, use the `external_disk_path` from `/decorations/` metadata files
+  - Decorated images are stored EXTERNALLY at `decorated_images/{property_id}_halloween.json`
+  - DO NOT try to read or include base64 data - just reference the external path
+  - The frontend will load decorated images directly from the external disk path
 - Call `submit_final_report_tool` (FINAL ACTION)
 - Update todo status to "completed"
 - STOP - do not continue conversation after this
+
+<CRITICAL: Decorated Images Storage>
+Halloween decorated images are saved to EXTERNAL disk (decorated_images/ folder), NOT the agent filesystem.
+The `/decorations/` folder in agent filesystem contains ONLY metadata with `external_disk_path` pointing to the real files.
+When building the final report, reference the external paths - do not search for base64 in agent filesystem.
+</CRITICAL>
 </Instructions>
 
 <Hard Limits>
