@@ -1,3 +1,6 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@clerk/nextjs';
+
 interface PointOfInterest {
   name: string;
   category: string;
@@ -30,9 +33,17 @@ interface Property {
   description: string;
 }
 
+interface DecoratedImage {
+  property_id: string;
+  original_image_url: string;
+  decorations_added: string;
+  external_disk_path?: string;
+}
+
 interface PropertyReport {
   properties: Property[];
   location_analyses: Record<string, LocationAnalysis>;
+  decorated_images?: Record<string, DecoratedImage>;
   summary: string;
   generated_at: string;
 }
@@ -41,7 +52,56 @@ interface PropertyReportViewProps {
   report: PropertyReport;
 }
 
+interface DecoratedImageData {
+  property_id: string;
+  original_image_url: string;
+  decorated_image_base64: string;
+  decorations_added: string;
+}
+
 export default function PropertyReportView({ report }: PropertyReportViewProps) {
+  const { getToken } = useAuth();
+  const [decoratedImages, setDecoratedImages] = useState<Record<string, DecoratedImageData>>({});
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+
+  // Fetch decorated images from the backend API
+  useEffect(() => {
+    async function fetchDecoratedImages() {
+      const jwt = await getToken();
+      if (!jwt) return;
+
+      for (const property of report.properties) {
+        // Skip if already loaded or loading
+        if (decoratedImages[property.id] || loadingImages.has(property.id)) continue;
+
+        setLoadingImages(prev => new Set(prev).add(property.id));
+
+        try {
+          const response = await fetch(`http://localhost:8000/api/decorated-image/${property.id}`, {
+            headers: {
+              Authorization: `Bearer ${jwt}`,
+            },
+          });
+
+          if (response.ok) {
+            const data: DecoratedImageData = await response.json();
+            setDecoratedImages(prev => ({ ...prev, [property.id]: data }));
+          }
+        } catch (error) {
+          console.error(`Failed to fetch decorated image for ${property.id}:`, error);
+        } finally {
+          setLoadingImages(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(property.id);
+            return newSet;
+          });
+        }
+      }
+    }
+
+    fetchDecoratedImages();
+  }, [report.properties, getToken]);
+
   const formatDistance = (meters: number) => {
     if (meters < 1000) {
       return `${Math.round(meters)}m`;
@@ -200,6 +260,55 @@ export default function PropertyReportView({ report }: PropertyReportViewProps) 
                     {property.description}
                   </p>
                 </div>
+
+                {/* Halloween Decorated Image */}
+                {(decoratedImages[property.id] || loadingImages.has(property.id)) && (
+                  <div className="mb-6 border-t-2 border-[#FF6B00] pt-6">
+                    <h5 className="font-semibold text-[#FF6B00] mb-4 text-xl" style={{ fontFamily: "'Creepster', cursive" }}>
+                      🎃 Halloween Transformation
+                    </h5>
+                    
+                    {loadingImages.has(property.id) ? (
+                      <div className="flex items-center justify-center h-48 bg-[#0A0A0A] rounded-lg border-2 border-[#8B00FF]">
+                        <div className="text-center">
+                          <div className="animate-spin text-4xl mb-2">🎃</div>
+                          <p className="text-[#E0E0E0]">Summoning Halloween spirits...</p>
+                        </div>
+                      </div>
+                    ) : decoratedImages[property.id] && (
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* Original Image */}
+                        <div>
+                          <p className="text-sm text-[#E0E0E0] mb-2 font-semibold">📷 Original</p>
+                          <img
+                            src={decoratedImages[property.id].original_image_url}
+                            alt="Original property"
+                            className="w-full h-48 object-cover rounded-lg border-2 border-[#8B00FF]/30"
+                            onError={(e) => {
+                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%231a1a1a" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23E0E0E0" font-family="sans-serif" font-size="18"%3ENo Image%3C/text%3E%3C/svg%3E';
+                            }}
+                          />
+                        </div>
+                        {/* Decorated Image */}
+                        <div>
+                          <p className="text-sm text-[#FF6B00] mb-2 font-semibold">🎃 Halloween Edition</p>
+                          <img
+                            src={`data:image/png;base64,${decoratedImages[property.id].decorated_image_base64}`}
+                            alt="Halloween decorated property"
+                            className="w-full h-48 object-cover rounded-lg border-2 border-[#FF6B00] shadow-[0_0_20px_rgba(255,107,0,0.5)]"
+                          />
+                        </div>
+                        {/* Decorations Description */}
+                        <div className="md:col-span-2 bg-[#FF6B00]/10 p-4 rounded-lg border-2 border-[#FF6B00]">
+                          <p className="text-sm text-[#E0E0E0]">
+                            <span className="font-semibold text-[#FF6B00]">🕸️ Decorations Added:</span>{' '}
+                            {decoratedImages[property.id].decorations_added}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Location Analysis */}
                 {locationAnalysis && (
