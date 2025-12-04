@@ -21,24 +21,20 @@ from src.models import AgentRequest, ResumeRequest, StateRequest
 
 
 def extract_final_report(result: dict) -> Optional[dict]:
-    """Extract the final report from agent result messages.
-    
-    Looks for submit_final_report_tool response in messages and extracts the report.
-    Handles both string (JSON) and dict content types.
-    """
+    """Extract the final report from agent result messages."""
     if "messages" not in result:
         return None
     
     for msg in reversed(result["messages"]):
-        # Get content from message (handles different message types)
-        content = None
-        if hasattr(msg, "content"):
-            content = msg.content
-        elif isinstance(msg, dict) and "content" in msg:
-            content = msg["content"]
+        content = getattr(msg, "content", None)
+        if content is None and isinstance(msg, dict):
+            content = msg.get("content")
         
         if content is None:
             continue
+        
+        # Debug: log content type for each message
+        print(f"[DEBUG extract] type={type(msg).__name__}, content_type={type(content).__name__}")
         
         # Parse content if it's a JSON string
         if isinstance(content, str):
@@ -47,9 +43,9 @@ def extract_final_report(result: dict) -> Optional[dict]:
             except (json.JSONDecodeError, TypeError):
                 continue
         
-        # Check if this is a report response
+        # Check if this is a report response (dict with "report" key)
         if isinstance(content, dict) and "report" in content:
-            print(f"[DEBUG] Found final report in message")
+            print(f"[DEBUG extract] Found report!")
             return content["report"]
     
     return None
