@@ -60,34 +60,38 @@ def tavily_extract_tool(urls: List[str]) -> Dict[str, Any]:
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
         raise ValueError("TAVILY_API_KEY environment variable is not set")
-        
-    try:
-        client = TavilyClient(api_key=api_key)
-        
-        # Use the native Tavily client extract method with advanced depth
-        # This provides better image extraction than the LangChain wrapper
-        response = client.extract(
-            urls=urls,
-            include_images=True,
-            extract_depth="advanced"
-        )
-        
-        # Process results to ensure images are properly extracted
-        processed_results = []
-        for result in response.get('results', []):
-            processed_result = {
-                "url": result.get("url", ""),
-                "raw_content": result.get("raw_content", ""),
-                "images": result.get("images", []),
-            }
-            processed_results.append(processed_result)
-        
-        return {
-            "results": processed_results,
-            "failed_results": response.get("failed_results", [])
-        }
-    except Exception as e:
-        raise Exception(f"Tavily extraction failed: {str(e)}")
+    
+    client = TavilyClient(api_key=api_key)
+    processed_results = []
+    failed_urls = []
+    
+    # Process URLs individually with retry logic
+    for url in urls:
+        for attempt in range(3):  # 3 attempts with increasing timeout
+            try:
+                timeout = 60 + (attempt * 30)  # 60s, 90s, 120s
+                response = client.extract(
+                    urls=[url],
+                    include_images=True,
+                    extract_depth="advanced",
+                    timeout=timeout
+                )
+                for result in response.get('results', []):
+                    processed_results.append({
+                        "url": result.get("url", ""),
+                        "raw_content": result.get("raw_content", ""),
+                        "images": result.get("images", []),
+                    })
+                break  # Success, move to next URL
+            except Exception as e:
+                if attempt == 2:  # Final attempt failed
+                    failed_urls.append({"url": url, "error": str(e)})
+    
+    return {
+        "results": processed_results,
+        "failed_results": failed_urls,
+        "message": f"Extracted {len(processed_results)} URLs, {len(failed_urls)} failed"
+    }
 
 
 # Google Places API configuration
