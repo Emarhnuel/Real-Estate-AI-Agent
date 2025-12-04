@@ -68,11 +68,12 @@ npm run dev
 
 ## API Endpoints
 
-All endpoints require Clerk JWT authentication via `Authorization: Bearer <token>` header.
+All endpoints require Clerk JWT authentication via `Authorization: Bearer <token>` header (except `/health`).
 
 - `POST /api/invoke` - Start or continue agent conversation
 - `POST /api/resume` - Resume agent after human-in-the-loop interrupt (returns PropertyReport on completion)
 - `POST /api/state` - Get current agent state for a thread
+- `GET /api/decorated-image/{property_id}` - Fetch Halloween-decorated image data for a property
 - `GET /health` - Health check endpoint
 
 ### Authentication Flow
