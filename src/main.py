@@ -7,6 +7,7 @@ All endpoints are protected and require valid JWT tokens from authenticated user
 
 import os
 import json
+import ast
 from typing import Optional
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
