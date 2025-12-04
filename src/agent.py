@@ -77,7 +77,7 @@ location_analysis_agent = {
     "description": "Analyzes property locations and finds nearby points of interest. Evaluates location pros and cons based on amenities, transportation, and services.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
     "tools": [google_places_geocode_tool, google_places_nearby_tool],
-    "model": model
+    "model": model1
 }
 
 
@@ -118,7 +118,7 @@ checkpointer = MemorySaver()
 composite_backend = lambda rt: StateBackend(rt)
 
 supervisor_agent = create_deep_agent(
-    model=model,
+    model=model1,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
