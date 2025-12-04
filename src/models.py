@@ -115,13 +115,13 @@ class PropertyReport(BaseModel):
         default_factory=list,
         description="List of properties in the report"
     )
-    location_analyses: dict[str, LocationAnalysis] = Field(
+    location_analyses: dict = Field(
         default_factory=dict,
         description="Location analysis mapped by property_id"
     )
-    decorated_images: dict[str, DecoratedImage] = Field(
+    decorated_images: dict[str, str] = Field(
         default_factory=dict,
-        description="Halloween-decorated images mapped by property_id"
+        description="External disk paths to decorated images mapped by property_id"
     )
     generated_at: datetime = Field(
         default_factory=datetime.now,
