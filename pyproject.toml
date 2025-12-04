@@ -19,4 +19,5 @@ dependencies = [
     "uvicorn>=0.38.0",
     "langchain-google-vertexai>=3.1.0",
     "langsmith>=0.4.42",
+    "langchain-google-genai>=3.0.3",
 ]
