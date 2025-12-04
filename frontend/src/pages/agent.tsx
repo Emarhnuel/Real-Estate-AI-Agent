@@ -211,6 +211,9 @@ export default function AgentPage() {
   async function handlePropertyReview(approvedIds: string[]) {
     if (!interrupt) return;
     
+    // Capture threadId early to avoid stale closure issues
+    const threadId = interrupt.threadId;
+    
     setResumeLoading(true);
     
     const jwt = await getToken();
@@ -228,7 +231,7 @@ export default function AgentPage() {
           Authorization: `Bearer ${jwt}`,
         },
         body: JSON.stringify({
-          thread_id: interrupt.threadId,
+          thread_id: threadId,
           approved_properties: approvedIds
         }),
       });
@@ -265,7 +268,7 @@ export default function AgentPage() {
                 Authorization: `Bearer ${jwt}`,
               },
               body: JSON.stringify({
-                thread_id: interrupt.threadId
+                thread_id: threadId
               }),
             });
             
