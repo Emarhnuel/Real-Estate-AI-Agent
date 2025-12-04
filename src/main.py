@@ -6,6 +6,8 @@ All endpoints are protected and require valid JWT tokens from authenticated user
 """
 
 import os
+import json
+from typing import Optional
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCredentials
@@ -15,8 +17,42 @@ from langgraph.types import Command
 import sys
 sys.path.append('..')
 from src.agent import supervisor_agent
-# CHANGE: Import the new StateRequest model
 from src.models import AgentRequest, ResumeRequest, StateRequest
+
+
+def extract_final_report(result: dict) -> Optional[dict]:
+    """Extract the final report from agent result messages.
+    
+    Looks for submit_final_report_tool response in messages and extracts the report.
+    Handles both string (JSON) and dict content types.
+    """
+    if "messages" not in result:
+        return None
+    
+    for msg in reversed(result["messages"]):
+        # Get content from message (handles different message types)
+        content = None
+        if hasattr(msg, "content"):
+            content = msg.content
+        elif isinstance(msg, dict) and "content" in msg:
+            content = msg["content"]
+        
+        if content is None:
+            continue
+        
+        # Parse content if it's a JSON string
+        if isinstance(content, str):
+            try:
+                content = json.loads(content)
+            except (json.JSONDecodeError, TypeError):
+                continue
+        
+        # Check if this is a report response
+        if isinstance(content, dict) and "report" in content:
+            print(f"[DEBUG] Found final report in message")
+            return content["report"]
+    
+    return None
 
 app = FastAPI(title="AI Real Estate Co-Pilot API")
 
@@ -65,18 +101,10 @@ def invoke_agent(
             config=config
         )
         
-        # Check if submit_final_report_tool was called and extract the report
-        if "messages" in result:
-            for msg in reversed(result["messages"]):
-                if hasattr(msg, "tool_calls") and msg.tool_calls:
-                    for tool_call in msg.tool_calls:
-                        if tool_call.get("name") == "submit_final_report_tool":
-                            # Find the tool response
-                            for response_msg in result["messages"]:
-                                if hasattr(response_msg, "content") and isinstance(response_msg.content, dict):
-                                    if response_msg.content.get("report"):
-                                        result["structured_response"] = response_msg.content["report"]
-                                        break
+        # Extract final report if present
+        report = extract_final_report(result)
+        if report:
+            result["structured_response"] = report
         
         return result
     except Exception as e:
