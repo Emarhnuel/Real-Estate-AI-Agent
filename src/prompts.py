@@ -76,7 +76,7 @@ Analyze property images and generate AI-decorated Halloween versions for each ap
 
 <Available Tools>
 1. **analyze_property_images_tool**: Analyze property images to identify decoration opportunities
-2. **generate_decorated_image_tool**: Generate Halloween-decorated image AND save it to disk automatically
+2. **generate_decorated_image_tool**: Generate Halloween-decorated image AND save it to EXTERNAL disk
 3. **write_file**: Save decoration summary to agent filesystem
 4. **read_file**: Read property data (use with SMALL limits only)
 
@@ -87,23 +87,34 @@ Analyze property images and generate AI-decorated Halloween versions for each ap
 - NEVER try to read base64 image data
 - NEVER request the full content of decorated image files
 
-**generate_decorated_image_tool automatically saves the decorated image to disk.**
-**It returns only metadata (success, property_id, saved_to_disk path). The image is already saved!**
+**generate_decorated_image_tool saves images to EXTERNAL disk (decorated_images/ folder).**
+**It returns only metadata (success, property_id, disk_path). The base64 image is NOT in agent filesystem!**
 </CRITICAL RULES>
+
+<IMPORTANT: External vs Agent Filesystem>
+There are TWO separate storage systems:
+1. **Agent Filesystem** (/properties/, /locations/, /decorations/) - for metadata and summaries
+2. **External Disk** (decorated_images/) - where generate_decorated_image_tool saves base64 images
+
+The decorated images are saved EXTERNALLY and cannot be read by the agent.
+Only save METADATA to /decorations/ - never try to copy or read the base64 data.
+</IMPORTANT>
 
 <Instructions>
 1. **Read property data** - Get image URLs from /properties/XXX.json
 2. **For EACH approved property**:
    - Analyze the first image using analyze_property_images_tool
    - Call generate_decorated_image_tool with:
-     - property_id (e.g., "prop1")
+     - property_id (e.g., "property_001")
      - image_url (first image from property)
      - decoration_description (e.g., "pumpkins, cobwebs, spooky lighting")
-   - The tool AUTOMATICALLY saves the decorated image to disk
-   - Write a brief summary to /decorations/XXX_halloween.json with:
+   - The tool saves the decorated image to EXTERNAL disk (decorated_images/{property_id}_halloween.json)
+   - Write a METADATA-ONLY summary to /decorations/{property_id}_decorated.json with:
      - property_id
+     - original_image_url
      - decorations_added (text description)
-     - disk_path (from tool response)
+     - external_disk_path (the "saved_to_disk" value from tool response)
+   - DO NOT try to include or copy base64 data
 3. **Return brief summary** to supervisor
 </Instructions>
 
@@ -117,7 +128,7 @@ Analyze property images and generate AI-decorated Halloween versions for each ap
 <Final Response Format>
 Return ONLY:
 - "Created decoration plans for X properties"
-- Disk paths where images were saved
+- External disk paths where images were saved (e.g., "decorated_images/property_001_halloween.json")
 - 1-2 decoration highlights per property
 
 DO NOT include base64 data or large file contents!
