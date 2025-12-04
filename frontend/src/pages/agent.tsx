@@ -87,9 +87,10 @@ export default function AgentPage() {
       return;
     }
 
-    // Generate thread_id
+    // Generate thread_id - use the SAME timestamp for both local storage and API request
     const userId = jwt ? JSON.parse(atob(jwt.split('.')[1])).sub : '';
-    const currentThreadId = `${userId}-${Date.now()}`;
+    const timestamp = Date.now();
+    const currentThreadId = `${userId}-${timestamp}`;
 
     // Build search message from form data
     const searchMessage = buildSearchMessage(formData);
@@ -103,7 +104,7 @@ export default function AgentPage() {
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: searchMessage }],
-          timestamp: Date.now()
+          timestamp: timestamp  // Use the same timestamp to ensure thread_id matches
         }),
       });
 
