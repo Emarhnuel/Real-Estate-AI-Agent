@@ -34,7 +34,6 @@ clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
 clerk_guard = ClerkHTTPBearer(clerk_config)
 
 
-
 @app.post("/api/invoke")
 def invoke_agent(
     request: AgentRequest,
@@ -221,6 +220,38 @@ def get_state(
         return state.values
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve state: {str(e)}")
+
+
+@app.get("/api/decorated-image/{property_id}")
+def get_decorated_image(
+    property_id: str,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+):
+    """
+    Get decorated image data from external disk storage.
+    
+    Args:
+        property_id: Property ID (e.g., "property_001")
+        creds: Clerk authentication credentials (injected by dependency)
+        
+    Returns:
+        Decorated image data including base64-encoded image
+    """
+    import json
+    from pathlib import Path
+    
+    # Build path to decorated image file
+    file_path = Path("decorated_images") / f"{property_id}_halloween.json"
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail=f"Decorated image not found for {property_id}")
+    
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read decorated image: {str(e)}")
 
 
 @app.get("/health")
