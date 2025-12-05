@@ -22,7 +22,7 @@ An intelligent, conversational AI agent that automates property search and analy
 ## Tech Stack
 
 **Backend:**
-- Deep Agents (LangGraph) - Multi-agent orchestration with StateBackend for ephemeral per-thread storage
+- Deep Agents (LangGraph) - Multi-agent orchestration with FilesystemBackend for persistent storage
 - FastAPI - API endpoint (Vercel serverless function)
 - MemorySaver - State persistence (development)
 - Tavily API - Property search (rent, sale, shortlet)
