@@ -138,14 +138,6 @@ Configure these in Vercel:
 - `GEMINI_API_KEY` - Google Gemini API key (for Halloween Decorator 🎃)
 - `POSTGRES_URL` - Vercel Postgres connection string
 
-### Deploy to the Cloud ☁️
-
-```bash
-vercel --prod
-```
-
----
-
 ## 📜 License
 
 MIT
