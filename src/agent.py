@@ -92,24 +92,9 @@ halloween_decorator_agent = {
 
 
 
-# Reducer for todos - takes the last value when multiple updates occur
-def replace_todos(current: list[dict], new: list[dict]) -> list[dict]:
-    """Replace todos with the newest value (last write wins)."""
-    return new if new is not None else current
-
-
-# Supervisor Agent State Schema
-class SupervisorState(TypedDict):
-    """State schema for the supervisor agent."""
-    messages: Annotated[list, add_messages]
-    todos: Annotated[list[dict], replace_todos]  # Use reducer to handle concurrent updates
-    search_criteria: dict
-    approved_properties: list[str]
-    filesystem: dict
-    # structured_response will be automatically added by LangChain when response_format is set
-
-
 # Create Supervisor Agent
+# Note: Deep Agents manages its own internal state (messages, todos, filesystem)
+# Do NOT define a custom state schema - it conflicts with internal state management
 checkpointer = MemorySaver()
 
 
@@ -128,7 +113,7 @@ supervisor_agent = create_deep_agent(
     tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
     checkpointer=checkpointer,
-    backend=composite_backend,
+    backend=shared_backend,
     interrupt_on={
         "present_properties_for_review_tool": True  # Pause before executing, allow approve/edit/reject
     }
