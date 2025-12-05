@@ -59,7 +59,11 @@ export default function Navigation() {
                 appearance={{
                   elements: {
                     userButtonAvatarBox: "w-10 h-10 border-2 border-[#FF6B00] shadow-[0_0_10px_rgba(255,107,0,0.6)]",
-                    userButtonPopoverCard: "bg-[#1a1a1a] border-2 border-[#FF6B00] shadow-xl"
+                    userButtonPopoverCard: "bg-[#1a1a1a] border-2 border-[#FF6B00] shadow-xl",
+                    userButtonOuterIdentifier: {
+                      color: '#FF6B00',
+                      fontWeight: '600'
+                    }
                   }
                 }}
               />
