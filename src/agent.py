@@ -11,6 +11,7 @@ from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
+from deepagents.backends import FilesystemBackend
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -33,8 +34,6 @@ from src.tools import (
     submit_final_report_tool,
     analyze_property_images_tool,
     generate_decorated_image_tool,
-    save_property_to_disk_tool,
-    save_location_to_disk_tool,
     AGENT_DATA_DIR
 )
 from src.models import PropertyReport
