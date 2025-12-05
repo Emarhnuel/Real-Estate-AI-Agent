@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
-from deepagents.backends import StateBackend
+from deepagents.backends import FilesystemBackend
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -113,9 +113,14 @@ class SupervisorState(TypedDict):
 checkpointer = MemorySaver()
 
 
-# Configure StateBackend for all paths - ephemeral per-thread storage
-# Each new thread_id gets a fresh filesystem, preventing old search data from persisting
-composite_backend = lambda rt: StateBackend(rt)
+# Configure FilesystemBackend with real disk storage
+# All agents (supervisor + sub-agents) share the same disk location
+# This allows sub-agents to write data that supervisor can read for final report
+AGENT_DATA_DIR = os.path.abspath("./agent_data")
+os.makedirs(AGENT_DATA_DIR, exist_ok=True)
+
+# FilesystemBackend requires absolute path and gives all agents access to same disk
+shared_backend = FilesystemBackend(root_dir=AGENT_DATA_DIR)
 
 supervisor_agent = create_deep_agent(
     model=model1,
