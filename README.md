@@ -37,7 +37,7 @@ An intelligent, conversational AI agent that automates property search and analy
 
 **Backend (The Cauldron):**
 - 🕸️ Deep Agents (LangGraph) - Multi-agent orchestration with FilesystemBackend
-- ⚡ FastAPI - API endpoint (Vercel serverless function)
+- ⚡ FastAPI - API endpoint
 - 💾 MemorySaver - State persistence (development)
 - 🔍 Tavily API - Property search (rent, sale, shortlet)
 - 🗺️ Google Places API - Location data and reviews
@@ -126,17 +126,15 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 
 ---
 
-## ⚰️ Deployment
+## ⚰️ Environment Variables (Secret Ingredients)
 
-### Environment Variables (Secret Ingredients)
-
-Configure these in Vercel:
 - `OPENROUTER_API_KEY` - OpenRouter API key
 - `CLERK_JWKS_URL` - Clerk JWKS URL for JWT validation
 - `TAVILY_API_KEY` - Tavily API key for property search
 - `GOOGLE_MAPS_API_KEY` - Google Maps API key
 - `GEMINI_API_KEY` - Google Gemini API key (for Halloween Decorator 🎃)
-- `POSTGRES_URL` - Vercel Postgres connection string
+
+---
 
 ## 📜 License
 
