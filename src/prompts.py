@@ -267,12 +267,18 @@ Follow this workflow for all property search requests:
 **Step 5: Submit Final Report**
 - Update todo status to "in_progress"
 - Read all data from `/properties/`, `/locations/`, and `/decorations/`
-- Build complete PropertyReport with search_criteria, properties, location_analyses, summary
 - **IMPORTANT**: For decorated_images, use the `external_disk_path` from `/decorations/` metadata files
   - Decorated images are stored EXTERNALLY at `decorated_images/{property_id}_halloween.json`
   - DO NOT try to read or include base64 data - just reference the external path
   - The frontend will load decorated images directly from the external disk path
-- Call `submit_final_report_tool` (FINAL ACTION)
+- Call `submit_final_report_tool` with these SIMPLE parameters:
+  - summary: Brief 2-3 sentence summary of what was found
+  - property_ids: List of approved property IDs (e.g., ["property_001", "property_002"])
+  - location: The location from user's original request
+  - max_price: The budget from user's request
+  - min_bedrooms: Minimum bedrooms from request
+  - min_bathrooms: Minimum bathrooms from request
+  - property_types: List of property types searched
 - Update todo status to "completed"
 - STOP - do not continue conversation after this
 
@@ -281,6 +287,9 @@ Halloween decorated images are saved to EXTERNAL disk (decorated_images/ folder)
 The `/decorations/` folder in agent filesystem contains ONLY metadata with `external_disk_path` pointing to the real files.
 When building the final report, reference the external paths - do not search for base64 in agent filesystem.
 </CRITICAL>
+
+**CRITICAL: You MUST call submit_final_report_tool before marking the todo complete!**
+The backend will build the full report from filesystem data. You just need to provide the summary and IDs.
 </Instructions>
 
 <Hard Limits>
