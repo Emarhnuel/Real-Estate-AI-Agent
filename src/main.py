@@ -81,6 +81,18 @@ def extract_final_report(state: dict, thread_id: str) -> dict | None:
     return None
 
 
+def parse_json_content(content: Any) -> dict | None:
+    """Parse JSON content from string or dict."""
+    if isinstance(content, dict):
+        return content
+    if isinstance(content, str):
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            return None
+    return None
+
+
 def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> dict | None:
     """Build complete PropertyReport from filesystem data."""
     from src.agent import supervisor_agent
@@ -89,61 +101,65 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
     config = {"configurable": {"thread_id": thread_id}}
     
     try:
-        # Get the agent's filesystem state
         state_snapshot = supervisor_agent.get_state(config)
         if not state_snapshot or not state_snapshot.values:
+            logger.warning("[REPORT] No state snapshot found")
             return None
         
         filesystem = state_snapshot.values.get("filesystem", {})
+        logger.info(f"[REPORT] Filesystem keys: {list(filesystem.keys())[:10]}")
         
-        # Read properties from /properties/
         properties = []
-        properties_dir = filesystem.get("properties", {})
-        for filename, content in properties_dir.items():
-            if filename.endswith(".json"):
-                try:
-                    prop_data = json.loads(content) if isinstance(content, str) else content
-                    properties.append(prop_data)
-                except (json.JSONDecodeError, TypeError):
-                    continue
-        
-        # Read location analyses from /locations/
         location_analyses = {}
-        locations_dir = filesystem.get("locations", {})
-        for filename, content in locations_dir.items():
-            if filename.endswith(".json"):
-                try:
-                    loc_data = json.loads(content) if isinstance(content, str) else content
-                    prop_id = loc_data.get("property_id", filename.replace(".json", ""))
-                    location_analyses[prop_id] = loc_data
-                except (json.JSONDecodeError, TypeError):
-                    continue
-        
-        # Read decoration metadata from /decorations/
         decorated_images = {}
-        decorations_dir = filesystem.get("decorations", {})
-        for filename, content in decorations_dir.items():
-            if filename.endswith(".json"):
-                try:
-                    dec_data = json.loads(content) if isinstance(content, str) else content
-                    prop_id = dec_data.get("property_id", "")
-                    external_path = dec_data.get("external_disk_path", "")
+        
+        # StateBackend stores files with full paths as keys
+        # e.g., "/properties/property_001.json" or "properties/property_001.json"
+        for path, content in filesystem.items():
+            path_lower = path.lower()
+            data = parse_json_content(content)
+            if not data:
+                continue
+            
+            # Match /properties/ files
+            if "/properties/" in path_lower or path_lower.startswith("properties/"):
+                if path.endswith(".json"):
+                    properties.append(data)
+                    logger.info(f"[REPORT] Found property: {data.get('id', 'unknown')}")
+            
+            # Match /locations/ files
+            elif "/locations/" in path_lower or path_lower.startswith("locations/"):
+                if path.endswith(".json"):
+                    # Extract property_id from data or filename
+                    prop_id = data.get("property_id") or data.get("id")
+                    if not prop_id:
+                        # Try to extract from filename like "property_001.json" or "property_001_location.json"
+                        filename = path.split("/")[-1].replace(".json", "").replace("_location", "")
+                        prop_id = filename
+                    if prop_id:
+                        location_analyses[prop_id] = data
+                        logger.info(f"[REPORT] Found location: {prop_id}")
+            
+            # Match /decorations/ files
+            elif "/decorations/" in path_lower or path_lower.startswith("decorations/"):
+                if path.endswith(".json"):
+                    prop_id = data.get("property_id") or data.get("id")
+                    external_path = data.get("external_disk_path", "")
                     if prop_id:
                         decorated_images[prop_id] = external_path
-                except (json.JSONDecodeError, TypeError):
-                    continue
+                        logger.info(f"[REPORT] Found decoration: {prop_id}")
         
-        # Build search criteria from tool response or defaults
-        if tool_response:
-            search_criteria = tool_response.get("search_criteria", {})
-        else:
+        # Build search criteria
+        search_criteria = tool_response.get("search_criteria", {}) if tool_response else {}
+        if not search_criteria:
             search_criteria = {"location": "Unknown", "max_price": 0, "min_bedrooms": 0}
         
         # Build summary
-        if tool_response and tool_response.get("summary"):
-            summary = tool_response["summary"]
-        else:
+        summary = tool_response.get("summary", "") if tool_response else ""
+        if not summary:
             summary = f"Found {len(properties)} properties with location analysis and Halloween decorations."
+        
+        logger.info(f"[REPORT] Built report: {len(properties)} properties, {len(location_analyses)} locations, {len(decorated_images)} decorations")
         
         return {
             "search_criteria": search_criteria,
@@ -155,6 +171,8 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
         }
     except Exception as e:
         logger.error(f"[REPORT] Error building from filesystem: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return None
 
 
@@ -242,7 +260,9 @@ async def resume_agent(
                             if action.get("name") == "present_properties_for_review_tool":
                                 interrupt_id = interrupt.id
                                 original_action = action.copy()
-                                original_properties = action.get("arguments", {}).get("properties", [])
+                                # Check both "arguments" and "args" keys
+                                args_data = action.get("arguments") or action.get("args") or {}
+                                original_properties = args_data.get("properties", [])
                                 break
 
         if not interrupt_id or not original_action:
