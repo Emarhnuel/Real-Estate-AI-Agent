@@ -57,12 +57,30 @@ Think like a human researcher with limited time. Follow these steps:
 </Hard Limits>
 
 <Final Response Format>
-Return to supervisor a BRIEF summary ONLY:
-- "Found X properties matching criteria, saved to /properties/"
-- List property IDs: property_001, property_002, etc.
-- "Filtered out Y properties that didn't match"
+Return to supervisor a JSON object with ALL property data (supervisor cannot read your files):
 
-DO NOT include full property details in your response - they are in the files!
+```json
+{
+  "status": "success",
+  "properties_found": 3,
+  "properties": [
+    {
+      "id": "property_001",
+      "address": "123 Main St, Lagos",
+      "price": 500000,
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "property_type": "apartment",
+      "listing_url": "https://...",
+      "image_urls": ["https://...", "https://..."],
+      "description": "Brief description"
+    }
+  ],
+  "filtered_out": 2
+}
+```
+
+IMPORTANT: Include FULL property details - the supervisor needs this data to continue the workflow!
 </Final Response Format>
 """
 
