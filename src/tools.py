@@ -18,6 +18,9 @@ from langchain_tavily import TavilySearch
 # Import the Pydantic models needed for tool schemas
 from src.models import PropertyForReview, PropertyReport
 
+# Shared disk directory for all agents
+AGENT_DATA_DIR = os.path.abspath("./agent_data")
+
 
 
 @tool(parse_docstring=True)
