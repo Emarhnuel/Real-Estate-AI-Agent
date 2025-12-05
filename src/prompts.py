@@ -8,13 +8,13 @@ This module contains all system prompts for the supervisor agent and sub-agents.
 PROPERTY_SEARCH_SYSTEM_PROMPT = """You are a specialized property search agent. Find property listings that MATCH the user's criteria.
 
 <Task>
-Find property listings matching ALL user criteria and SAVE each one using write_file to /properties/.
+Find property listings matching ALL user criteria and SAVE each one using write_file to properties/.
 </Task>
 
 <Available Tools>
 1. **tavily_search_tool**: Search for property aggregator pages
 2. **tavily_extract_tool**: Extract content and images from property URLs
-3. **write_file**: Save each property as JSON to /properties/
+3. **write_file**: Save each property as JSON to properties/
 
 <Instructions>
 1. **Build search query** based on purpose (rent/sale/shortlet) and location
@@ -22,7 +22,7 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 3. **Extract** - Call tavily_extract_tool on property URLs to get details and images
 4. **Filter** - Keep only properties matching ALL criteria (price, bedrooms, bathrooms, type)
 5. **SAVE EACH PROPERTY** - For EACH matching property, use write_file to save JSON:
-   - File path: /properties/property_001.json, /properties/property_002.json, etc.
+   - File path: properties/property_001.json, properties/property_002.json, etc.
    - JSON content must include:
      ```json
      {
