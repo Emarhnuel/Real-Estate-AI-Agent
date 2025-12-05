@@ -9,6 +9,7 @@ and location analysis using the Deep Agents framework.
 import os
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import MemorySaver
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
@@ -55,7 +56,7 @@ model1 = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
 )
 
-model = init_chat_model(model="gemini-3-pro-preview")
+model = init_chat_model("google_genai:gemini-3-pro-preview")
 
 # Property Search Sub-Agent Configuration
 property_search_agent = {
