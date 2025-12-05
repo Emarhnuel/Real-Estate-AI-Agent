@@ -447,18 +447,37 @@ def present_properties_for_review_tool(properties: List[Dict[str, Any]]) -> dict
     }
 
 
-@tool
-def submit_final_report_tool(report: PropertyReport) -> dict:
-    """
-    Submit the final, comprehensive property report once all research and analysis is complete.
-    This should be the last action taken by the agent.
+@tool(parse_docstring=True)
+def submit_final_report_tool(
+    summary: str,
+    property_ids: List[str],
+    location: str,
+    max_price: float,
+    min_bedrooms: int,
+    min_bathrooms: float,
+    property_types: List[str]
+) -> dict:
+    """Submit the final property report. Call this as the LAST action after all analysis is complete.
     
     Args:
-        report: The complete PropertyReport object containing all gathered data,
-                including decorated_images from the Halloween decorator agent.
+        summary: Executive summary of findings (2-3 sentences about the properties found)
+        property_ids: List of approved property IDs (e.g., ["property_001", "property_002"])
+        location: Search location from user's original request
+        max_price: Maximum budget from user's request
+        min_bedrooms: Minimum bedrooms from user's request
+        min_bathrooms: Minimum bathrooms from user's request
+        property_types: Property types searched (e.g., ["apartment", "flat", "duplex"])
     """
     return {
         "status": "success",
         "message": "Final report submitted successfully",
-        "report": report.dict()
+        "summary": summary,
+        "property_ids": property_ids,
+        "search_criteria": {
+            "location": location,
+            "max_price": max_price,
+            "min_bedrooms": min_bedrooms,
+            "min_bathrooms": min_bathrooms,
+            "property_types": property_types
+        }
     }
