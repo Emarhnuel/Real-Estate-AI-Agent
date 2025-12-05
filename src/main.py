@@ -159,7 +159,8 @@ def extract_data_from_messages(messages: list) -> tuple[list, dict, dict]:
 
 def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> dict | None:
     """Build PropertyReport from disk and agent messages."""
-    from src.agent import AGENT_DATA_DIR, supervisor_agent
+    from src.tools import AGENT_DATA_DIR
+    from src.agent import supervisor_agent
     from datetime import datetime
     
     try:
