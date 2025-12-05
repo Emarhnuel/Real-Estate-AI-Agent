@@ -55,7 +55,7 @@ model1 = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
 )
 
-model = ChatGoogleGenerativeAI(model="gemini-3-pro-preview")
+model = init_chat_model(model="gemini-3-pro-preview")
 
 # Property Search Sub-Agent Configuration
 property_search_agent = {
