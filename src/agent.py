@@ -7,9 +7,6 @@ and location analysis using the Deep Agents framework.
 
 
 import os
-from typing import TypedDict, Annotated
-from langchain_openai import ChatOpenAI
-from langgraph.graph.message import add_messages
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import MemorySaver
@@ -37,8 +34,6 @@ from src.tools import (
     submit_final_report_tool,
     analyze_property_images_tool,
     generate_decorated_image_tool,
-    save_property_to_disk_tool,
-    save_location_to_disk_tool,
     AGENT_DATA_DIR
 )
 from src.models import PropertyReport
@@ -65,18 +60,18 @@ model = ChatGoogleGenerativeAI(model="gemini-3-pro-preview")
 # Property Search Sub-Agent Configuration
 property_search_agent = {
     "name": "property_search",
-    "description": "Searches for property listings matching user criteria. Saves each property to shared disk using save_property_to_disk_tool.",
+    "description": "Searches for property listings matching user criteria. Saves each property to /properties/ using write_file.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool, tavily_extract_tool, save_property_to_disk_tool],
+    "tools": [tavily_search_tool, tavily_extract_tool],
     "model": model1
 }
 
 # Location Analysis Sub-Agent Configuration
 location_analysis_agent = {
     "name": "location_analysis",
-    "description": "Analyzes property locations and nearby amenities. Saves analysis to shared disk using save_location_to_disk_tool.",
+    "description": "Analyzes property locations and nearby amenities. Saves analysis to /locations/ using write_file.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
-    "tools": [google_places_geocode_tool, google_places_nearby_tool, save_location_to_disk_tool],
+    "tools": [google_places_geocode_tool, google_places_nearby_tool],
     "model": model1
 }
 
@@ -97,15 +92,16 @@ halloween_decorator_agent = {
 # Do NOT define a custom state schema - it conflicts with internal state management
 checkpointer = MemorySaver()
 
-
-# Configure FilesystemBackend with real disk storage
-# All agents (supervisor + sub-agents) share the same disk location
-# This allows sub-agents to write data that supervisor can read for final report
-AGENT_DATA_DIR = os.path.abspath("./agent_data")
+# Ensure shared data directory exists (AGENT_DATA_DIR imported from tools.py)
 os.makedirs(AGENT_DATA_DIR, exist_ok=True)
+os.makedirs(os.path.join(AGENT_DATA_DIR, "properties"), exist_ok=True)
+os.makedirs(os.path.join(AGENT_DATA_DIR, "locations"), exist_ok=True)
+os.makedirs(os.path.join(AGENT_DATA_DIR, "decorations"), exist_ok=True)
 
-# FilesystemBackend requires absolute path and gives all agents access to same disk
-shared_backend = FilesystemBackend(root_dir=AGENT_DATA_DIR)
+# Configure FilesystemBackend to use real disk instead of in-memory StateBackend
+# This allows all agents (supervisor + subagents) to share the same filesystem
+# root_dir must be an absolute path
+filesystem_backend = FilesystemBackend(root_dir=AGENT_DATA_DIR)
 
 supervisor_agent = create_deep_agent(
     model=model1,
@@ -113,7 +109,7 @@ supervisor_agent = create_deep_agent(
     tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
     checkpointer=checkpointer,
-    backend=shared_backend,
+    backend=filesystem_backend,
     interrupt_on={
         "present_properties_for_review_tool": True  # Pause before executing, allow approve/edit/reject
     }
