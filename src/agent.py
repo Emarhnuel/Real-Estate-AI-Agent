@@ -36,7 +36,10 @@ from src.tools import (
     present_properties_for_review_tool,
     submit_final_report_tool,
     analyze_property_images_tool,
-    generate_decorated_image_tool
+    generate_decorated_image_tool,
+    save_property_to_disk_tool,
+    save_location_to_disk_tool,
+    AGENT_DATA_DIR
 )
 from src.models import PropertyReport
 from src.prompts import (
@@ -60,23 +63,20 @@ model1 = ChatOpenAI(
 model = ChatGoogleGenerativeAI(model="gemini-3-pro-preview")
 
 # Property Search Sub-Agent Configuration
-
 property_search_agent = {
     "name": "property_search",
-    "description": "Searches for property listings matching user criteria using web search. Returns summary of found properties with data saved to filesystem.",
+    "description": "Searches for property listings matching user criteria. Saves each property to shared disk using save_property_to_disk_tool.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool, tavily_extract_tool],
+    "tools": [tavily_search_tool, tavily_extract_tool, save_property_to_disk_tool],
     "model": model1
 }
-
-
 
 # Location Analysis Sub-Agent Configuration
 location_analysis_agent = {
     "name": "location_analysis",
-    "description": "Analyzes property locations and finds nearby points of interest. Evaluates location pros and cons based on amenities, transportation, and services.",
+    "description": "Analyzes property locations and nearby amenities. Saves analysis to shared disk using save_location_to_disk_tool.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
-    "tools": [google_places_geocode_tool, google_places_nearby_tool],
+    "tools": [google_places_geocode_tool, google_places_nearby_tool, save_location_to_disk_tool],
     "model": model1
 }
 
