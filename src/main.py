@@ -94,60 +94,56 @@ def parse_json_content(content: Any) -> dict | None:
 
 
 def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> dict | None:
-    """Build complete PropertyReport from filesystem data."""
-    from src.agent import supervisor_agent
+    """Build complete PropertyReport from real disk filesystem data."""
+    from src.agent import AGENT_DATA_DIR
     from datetime import datetime
-    
-    config = {"configurable": {"thread_id": thread_id}}
+    import glob
     
     try:
-        state_snapshot = supervisor_agent.get_state(config)
-        if not state_snapshot or not state_snapshot.values:
-            logger.warning("[REPORT] No state snapshot found")
-            return None
-        
-        filesystem = state_snapshot.values.get("filesystem", {})
-        logger.info(f"[REPORT] Filesystem keys: {list(filesystem.keys())[:10]}")
+        logger.info(f"[REPORT] Reading from disk: {AGENT_DATA_DIR}")
         
         properties = []
         location_analyses = {}
         decorated_images = {}
         
-        # StateBackend stores files with full paths as keys
-        # e.g., "/properties/property_001.json" or "properties/property_001.json"
-        for path, content in filesystem.items():
-            path_lower = path.lower()
-            data = parse_json_content(content)
-            if not data:
-                continue
-            
-            # Match /properties/ files
-            if "/properties/" in path_lower or path_lower.startswith("properties/"):
-                if path.endswith(".json"):
+        # Read properties from real disk
+        properties_dir = Path(AGENT_DATA_DIR) / "properties"
+        if properties_dir.exists():
+            for file_path in properties_dir.glob("*.json"):
+                try:
+                    with open(file_path, "r") as f:
+                        data = json.load(f)
                     properties.append(data)
-                    logger.info(f"[REPORT] Found property: {data.get('id', 'unknown')}")
-            
-            # Match /locations/ files
-            elif "/locations/" in path_lower or path_lower.startswith("locations/"):
-                if path.endswith(".json"):
-                    # Extract property_id from data or filename
-                    prop_id = data.get("property_id") or data.get("id")
-                    if not prop_id:
-                        # Try to extract from filename like "property_001.json" or "property_001_location.json"
-                        filename = path.split("/")[-1].replace(".json", "").replace("_location", "")
-                        prop_id = filename
-                    if prop_id:
-                        location_analyses[prop_id] = data
-                        logger.info(f"[REPORT] Found location: {prop_id}")
-            
-            # Match /decorations/ files
-            elif "/decorations/" in path_lower or path_lower.startswith("decorations/"):
-                if path.endswith(".json"):
-                    prop_id = data.get("property_id") or data.get("id")
+                    logger.info(f"[REPORT] Found property: {data.get('id', file_path.stem)}")
+                except Exception as e:
+                    logger.warning(f"[REPORT] Failed to read {file_path}: {e}")
+        
+        # Read locations from real disk
+        locations_dir = Path(AGENT_DATA_DIR) / "locations"
+        if locations_dir.exists():
+            for file_path in locations_dir.glob("*.json"):
+                try:
+                    with open(file_path, "r") as f:
+                        data = json.load(f)
+                    prop_id = data.get("property_id") or data.get("id") or file_path.stem.replace("_location", "")
+                    location_analyses[prop_id] = data
+                    logger.info(f"[REPORT] Found location: {prop_id}")
+                except Exception as e:
+                    logger.warning(f"[REPORT] Failed to read {file_path}: {e}")
+        
+        # Read decorations from real disk
+        decorations_dir = Path(AGENT_DATA_DIR) / "decorations"
+        if decorations_dir.exists():
+            for file_path in decorations_dir.glob("*.json"):
+                try:
+                    with open(file_path, "r") as f:
+                        data = json.load(f)
+                    prop_id = data.get("property_id") or data.get("id") or file_path.stem
                     external_path = data.get("external_disk_path", "")
-                    if prop_id:
-                        decorated_images[prop_id] = external_path
-                        logger.info(f"[REPORT] Found decoration: {prop_id}")
+                    decorated_images[prop_id] = external_path
+                    logger.info(f"[REPORT] Found decoration: {prop_id}")
+                except Exception as e:
+                    logger.warning(f"[REPORT] Failed to read {file_path}: {e}")
         
         # Build search criteria
         search_criteria = tool_response.get("search_criteria", {}) if tool_response else {}
