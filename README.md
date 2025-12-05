@@ -52,6 +52,23 @@ An intelligent, conversational AI agent that automates property search and analy
 
 ## 🕯️ Setup
 
+### 🐳 Docker (Recommended - One Command!)
+
+1. **Create your spell book** (`.env` file from `.env.example`) and add your API keys
+
+2. **Summon the containers:**
+```bash
+docker-compose up --build
+```
+
+That's it! 🎉 Frontend runs at `http://localhost:3000`, Backend at `http://localhost:8000`
+
+To stop: `docker-compose down`
+
+---
+
+### 🧪 Manual Setup (Alternative)
+
 1. **Summon uv:**
 ```bash
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
@@ -74,9 +91,9 @@ LANGSMITH_PROJECT=ai-real-estate-copilot
 5. **Awaken the servers:**
 ```bash
 # Backend
-uv run uvicorn api.index:app --reload
+uv run uvicorn src.main:app --reload
 
-# Frontend
+# Frontend (in another terminal)
 cd frontend
 npm install
 npm run dev
