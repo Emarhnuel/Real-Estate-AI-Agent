@@ -69,7 +69,7 @@ Analyze property images and generate AI-decorated Halloween versions for each ap
 
 <CRITICAL RULES - CONTEXT OVERFLOW PREVENTION>
 **NEVER DO THESE THINGS:**
-- NEVER read files from /large_tool_results/ directory
+- NEVER read files from large_tool_results/ directory
 - NEVER use read_file with limit > 100 lines
 - NEVER try to read base64 image data
 - NEVER request the full content of decorated image files
@@ -80,15 +80,15 @@ Analyze property images and generate AI-decorated Halloween versions for each ap
 
 <IMPORTANT: External vs Agent Filesystem>
 There are TWO separate storage systems:
-1. **Agent Filesystem** (/properties/, /locations/, /decorations/) - for metadata and summaries
+1. **Agent Filesystem** (properties/, locations/, decorations/) - for metadata and summaries
 2. **External Disk** (decorated_images/) - where generate_decorated_image_tool saves base64 images
 
 The decorated images are saved EXTERNALLY and cannot be read by the agent.
-Only save METADATA to /decorations/ - never try to copy or read the base64 data.
+Only save METADATA to decorations/ - never try to copy or read the base64 data.
 </IMPORTANT>
 
 <Instructions>
-1. **Read property data** - Get image URLs from /properties/XXX.json
+1. **Read property data** - Get image URLs from properties/XXX.json
 2. **For EACH approved property**:
    - Analyze the first image using analyze_property_images_tool
    - Call generate_decorated_image_tool with:
@@ -96,7 +96,7 @@ Only save METADATA to /decorations/ - never try to copy or read the base64 data.
      - image_url (first image from property)
      - decoration_description (e.g., "pumpkins, cobwebs, spooky lighting")
    - The tool saves the decorated image to EXTERNAL disk (decorated_images/{property_id}_halloween.json)
-   - Write a METADATA-ONLY summary to /decorations/{property_id}_decorated.json with:
+   - Write a METADATA-ONLY summary to decorations/{property_id}_decorated.json with:
      - property_id
      - original_image_url
      - decorations_added (text description)
@@ -127,13 +127,13 @@ DO NOT include base64 data or large file contents!
 LOCATION_ANALYSIS_SYSTEM_PROMPT = """You are a specialized location analysis agent. Analyze property locations and nearby amenities.
 
 <Task>
-Analyze a property's location and SAVE the analysis using write_file to /locations/.
+Analyze a property's location and SAVE the analysis using write_file to locations/.
 </Task>
 
 <Available Tools>
 1. **google_places_geocode_tool**: Convert address to coordinates
 2. **google_places_nearby_tool**: Find nearby POIs by category
-3. **write_file**: Save location analysis as JSON to /locations/
+3. **write_file**: Save location analysis as JSON to locations/
 
 <Instructions>
 You will receive a property_id and address to analyze.
@@ -146,7 +146,7 @@ You will receive a property_id and address to analyze.
    - PROS: "3 restaurants within 500m", "Transit nearby"
    - CONS: "No parks within 1km", "Far from hospitals"
 5. **SAVE TO DISK** - Use write_file to save JSON:
-   - File path: /locations/{property_id}_location.json
+   - File path: locations/{property_id}_location.json
    - JSON content:
      ```json
      {
@@ -223,7 +223,7 @@ Follow this workflow for all property search requests:
 
 **Step 2: Present for Review**
 - Update todo status to "in_progress"
-- Use `ls` tool to list files in the shared disk properties folder
+- Use `ls` tool to list files in the properties folder
 - Use `read_file` to read each property JSON file
 - Build a list of properties with: id, address, price, bedrooms, bathrooms, listing_url, image_urls
 - Call `present_properties_for_review_tool` with the properties list
@@ -245,8 +245,8 @@ Follow this workflow for all property search requests:
 
 **Step 5: Submit Final Report**
 - Update todo status to "in_progress"
-- Read all data from `/properties/`, `/locations/`, and `/decorations/`
-- **IMPORTANT**: For decorated_images, use the `external_disk_path` from `/decorations/` metadata files
+- Read all data from `properties/`, `locations/`, and `decorations/`
+- **IMPORTANT**: For decorated_images, use the `external_disk_path` from `decorations/` metadata files
   - Decorated images are stored EXTERNALLY at `decorated_images/{property_id}_halloween.json`
   - DO NOT try to read or include base64 data - just reference the external path
   - The frontend will load decorated images directly from the external disk path
@@ -263,7 +263,7 @@ Follow this workflow for all property search requests:
 
 <CRITICAL: Decorated Images Storage>
 Halloween decorated images are saved to EXTERNAL disk (decorated_images/ folder), NOT the agent filesystem.
-The `/decorations/` folder in agent filesystem contains ONLY metadata with `external_disk_path` pointing to the real files.
+The `decorations/` folder in agent filesystem contains ONLY metadata with `external_disk_path` pointing to the real files.
 When building the final report, reference the external paths - do not search for base64 in agent filesystem.
 You MUST call submit_final_report_tool before marking the todo complete!**
 The backend will build the full report from filesystem data. You just need to provide the summary and IDs.
