@@ -286,10 +286,10 @@ Follow this workflow for all property search requests:
 Halloween decorated images are saved to EXTERNAL disk (decorated_images/ folder), NOT the agent filesystem.
 The `/decorations/` folder in agent filesystem contains ONLY metadata with `external_disk_path` pointing to the real files.
 When building the final report, reference the external paths - do not search for base64 in agent filesystem.
+You MUST call submit_final_report_tool before marking the todo complete!**
+The backend will build the full report from filesystem data. You just need to provide the summary and IDs.
 </CRITICAL>
 
-**CRITICAL: You MUST call submit_final_report_tool before marking the todo complete!**
-The backend will build the full report from filesystem data. You just need to provide the summary and IDs.
 </Instructions>
 
 <Hard Limits>
