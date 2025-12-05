@@ -1,61 +1,77 @@
-# AI Real Estate Co-Pilot
+# 🎃 AI Real Estate Co-Pilot 👻
 
-An intelligent, conversational AI agent that automates property search and analysis using Deep Agents (LangGraph).
+> *"Find your dream home... if you dare!"*
 
+An intelligent, conversational AI agent that automates property search and analysis using Deep Agents (LangGraph). Now with spooky Halloween decoration powers! 🦇
 
+---
 
-## Features
+## ✨ Features
 
-- Natural language property search with purpose-based filtering (rent, sale, shortlet)
+🔮 **Natural Language Search** - Speak your wishes and watch properties appear
+- Purpose-based filtering (rent, sale, shortlet)
 - Automated property listing discovery with Tavily
 - Purpose-specific search strategies for different property types
-- Location analysis with Google Places API (nearby amenities, POIs, reviews)
-- **Halloween Decorator** - AI-powered property decoration visualization with Gemini Vision
-  - Analyze property images to identify decoration opportunities
-  - Generate AI-decorated images showing properties with Halloween themes
+
+📍 **Location Analysis** - Know what lurks nearby
+- Google Places API integration
+- Nearby amenities, POIs, and reviews
+- Neighborhood insights
+
+🎃 **Halloween Decorator** - Transform any property into a haunted mansion!
+- AI-powered property decoration visualization with Gemini Vision
+- Analyze property images to identify decoration opportunities
+- Generate AI-decorated images showing properties with spooky Halloween themes
+- Pumpkins, cobwebs, spooky lighting, and more!
+
+📋 **Smart Workflow**
 - Task planning and progress tracking with Deep Agents
 - Human-in-the-loop property review
-- Comprehensive property reports with PropertyReport data structure
-- Clerk JWT authentication on all API endpoints
-- Deployed on Vercel
+- Comprehensive property reports
 
-## Tech Stack
+🔐 **Secure** - Clerk JWT authentication on all API endpoints
 
-**Backend:**
-- Deep Agents (LangGraph) - Multi-agent orchestration with FilesystemBackend for persistent storage
-- FastAPI - API endpoint (Vercel serverless function)
-- MemorySaver - State persistence (development)
-- Tavily API - Property search (rent, sale, shortlet)
-- Google Places API - Location data and reviews
-- Google Gemini API - Image analysis and AI-generated decoration visualizations
+---
 
-**Frontend:**
-- Next.js (Pages Router)
-- Clerk - Authentication with middleware route protection
-- Tailwind CSS - Styling
+## 🧙‍♂️ Tech Stack
 
-## Setup
+**Backend (The Cauldron):**
+- 🕸️ Deep Agents (LangGraph) - Multi-agent orchestration with FilesystemBackend
+- ⚡ FastAPI - API endpoint (Vercel serverless function)
+- 💾 MemorySaver - State persistence (development)
+- 🔍 Tavily API - Property search (rent, sale, shortlet)
+- 🗺️ Google Places API - Location data and reviews
+- 👁️ Google Gemini API - Image analysis and AI-generated decoration visualizations
 
-1. Install uv:
+**Frontend (The Haunted House):**
+- ⚛️ Next.js (Pages Router)
+- 🔑 Clerk - Authentication with middleware route protection
+- 🎨 Tailwind CSS - Styling
+
+---
+
+## 🕯️ Setup
+
+1. **Summon uv:**
 ```bash
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-2. Install dependencies:
+2. **Brew the dependencies:**
 ```bash
 uv sync
 ```
 
-3. Create `.env` file from `.env.example` and add your API keys
+3. **Create your spell book** (`.env` file from `.env.example`) and add your API keys
 
-4. (Optional) Enable LangSmith tracing for monitoring:
+4. **(Optional) Enable LangSmith tracing** for monitoring your spirits:
 ```env
 LANGSMITH_API_KEY=your_langsmith_api_key
 LANGSMITH_TRACING=true
 LANGSMITH_PROJECT=ai-real-estate-copilot
 ```
 
-5. Run locally:
+5. **Awaken the servers:**
 ```bash
 # Backend
 uv run uvicorn api.index:app --reload
@@ -66,17 +82,21 @@ npm install
 npm run dev
 ```
 
-## API Endpoints
+---
+
+## 🦴 API Endpoints
 
 All endpoints require Clerk JWT authentication via `Authorization: Bearer <token>` header (except `/health`).
 
-- `POST /api/invoke` - Start or continue agent conversation
-- `POST /api/resume` - Resume agent after human-in-the-loop interrupt (returns PropertyReport on completion)
-- `POST /api/state` - Get current agent state for a thread
-- `GET /api/decorated-image/{property_id}` - Fetch Halloween-decorated image data for a property
-- `GET /health` - Health check endpoint
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/invoke` | POST | Start or continue agent conversation |
+| `/api/resume` | POST | Resume agent after human-in-the-loop interrupt |
+| `/api/state` | POST | Get current agent state for a thread |
+| `/api/decorated-image/{property_id}` | GET | Fetch Halloween-decorated image 🎃 |
+| `/health` | GET | Health check (is the ghost still alive?) |
 
-### Authentication Flow
+### 🔐 Authentication Flow
 
 1. User authenticates with Clerk on frontend
 2. Clerk middleware protects `/agent` and `/profile` routes
@@ -85,14 +105,16 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 5. FastAPI validates JWT and extracts user_id
 6. Thread ID format: `{user_id}-{timestamp}`
 
-## Project Structure
+---
+
+## 🏚️ Project Structure
 
 ```
-├── api/index.py          # FastAPI serverless function with all endpoints
+├── api/index.py          # FastAPI serverless function 
 ├── src/
-│   ├── agent.py          # Deep Agents (supervisor + sub-agents) with StateBackend
+│   ├── agent.py          # Deep Agents (supervisor + sub-agents)
 │   ├── tools.py          # Tavily, Google Places tools
-│   ├── models.py         # Pydantic models (includes AgentRequest, ResumeRequest)
+│   ├── models.py         # Pydantic models
 │   ├── prompts.py        # System prompts for agents
 │   └── utils.py          # Helper functions
 ├── frontend/
@@ -102,26 +124,36 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 └── tests/                # Integration tests
 ```
 
-## Deployment
+---
 
-### Environment Variables
+## ⚰️ Deployment
 
-Configure these environment variables in Vercel:
-- `OPENROUTER_API_KEY` - OpenRouter API key (for accessing models via OpenRouter)
+### Environment Variables (Secret Ingredients)
+
+Configure these in Vercel:
+- `OPENROUTER_API_KEY` - OpenRouter API key
 - `CLERK_JWKS_URL` - Clerk JWKS URL for JWT validation
 - `TAVILY_API_KEY` - Tavily API key for property search
-- `GOOGLE_MAPS_API_KEY` - Google Maps API key for location services
-- `GEMINI_API_KEY` - Google Gemini API key for image analysis and generation (optional, for Halloween Decorator feature)
+- `GOOGLE_MAPS_API_KEY` - Google Maps API key
+- `GEMINI_API_KEY` - Google Gemini API key (for Halloween Decorator 🎃)
 - `POSTGRES_URL` - Vercel Postgres connection string
 
-### Deploy
+### Deploy to the Cloud ☁️
 
 ```bash
 vercel --prod
 ```
 
-The `vercel.json` configuration automatically routes `/api/*` requests to the FastAPI serverless function.
+---
 
-## License
+## 📜 License
 
 MIT
+
+---
+
+<p align="center">
+  <img src="https://em-content.zobj.net/source/apple/391/jack-o-lantern_1f383.png" width="50" />
+  <br>
+  <em>Happy Haunting! 👻</em>
+</p>
