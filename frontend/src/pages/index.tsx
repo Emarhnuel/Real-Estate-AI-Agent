@@ -12,7 +12,7 @@ export default function Home() {
       <div 
         className="fixed inset-0 z-0"
         style={{
-          backgroundImage: 'url(https://img.freepik.com/free-photo/location-symbol-with-building_23-2151649463.jpg)',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1509557965875-b88c97052f0e?q=80&w=2070&auto=format&fit=crop)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed'
