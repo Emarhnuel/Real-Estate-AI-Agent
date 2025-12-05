@@ -54,11 +54,12 @@ def validate_thread_ownership(thread_id: str, user_id: str) -> None:
         raise HTTPException(status_code=403, detail="Access denied to this thread")
 
 
-def extract_final_report(state: dict) -> dict | None:
-    """Extract PropertyReport from submit_final_report_tool response in messages."""
+def extract_final_report(state: dict, thread_id: str) -> dict | None:
+    """Extract report from submit_final_report_tool or build from filesystem as fallback."""
     messages = state.get("messages", [])
+    
+    # First, try to find submit_final_report_tool response
     for msg in reversed(messages):
-        # Check for tool message from submit_final_report_tool
         if hasattr(msg, "name") and msg.name == "submit_final_report_tool":
             content = msg.content
             if isinstance(content, str):
@@ -67,8 +68,94 @@ def extract_final_report(state: dict) -> dict | None:
                 except json.JSONDecodeError:
                     continue
             if isinstance(content, dict) and content.get("status") == "success":
-                return content.get("report")
+                # Tool was called - build full report from filesystem using the summary
+                return build_report_from_filesystem(thread_id, content)
+    
+    # Fallback: Check if all todos are complete but tool wasn't called
+    todos = state.get("todos", [])
+    all_complete = todos and all(t.get("status") == "completed" for t in todos)
+    if all_complete:
+        logger.info("[REPORT] Todos complete but tool not called - building from filesystem")
+        return build_report_from_filesystem(thread_id, None)
+    
     return None
+
+
+def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> dict | None:
+    """Build complete PropertyReport from filesystem data."""
+    from src.agent import supervisor_agent
+    from datetime import datetime
+    
+    config = {"configurable": {"thread_id": thread_id}}
+    
+    try:
+        # Get the agent's filesystem state
+        state_snapshot = supervisor_agent.get_state(config)
+        if not state_snapshot or not state_snapshot.values:
+            return None
+        
+        filesystem = state_snapshot.values.get("filesystem", {})
+        
+        # Read properties from /properties/
+        properties = []
+        properties_dir = filesystem.get("properties", {})
+        for filename, content in properties_dir.items():
+            if filename.endswith(".json"):
+                try:
+                    prop_data = json.loads(content) if isinstance(content, str) else content
+                    properties.append(prop_data)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+        
+        # Read location analyses from /locations/
+        location_analyses = {}
+        locations_dir = filesystem.get("locations", {})
+        for filename, content in locations_dir.items():
+            if filename.endswith(".json"):
+                try:
+                    loc_data = json.loads(content) if isinstance(content, str) else content
+                    prop_id = loc_data.get("property_id", filename.replace(".json", ""))
+                    location_analyses[prop_id] = loc_data
+                except (json.JSONDecodeError, TypeError):
+                    continue
+        
+        # Read decoration metadata from /decorations/
+        decorated_images = {}
+        decorations_dir = filesystem.get("decorations", {})
+        for filename, content in decorations_dir.items():
+            if filename.endswith(".json"):
+                try:
+                    dec_data = json.loads(content) if isinstance(content, str) else content
+                    prop_id = dec_data.get("property_id", "")
+                    external_path = dec_data.get("external_disk_path", "")
+                    if prop_id:
+                        decorated_images[prop_id] = external_path
+                except (json.JSONDecodeError, TypeError):
+                    continue
+        
+        # Build search criteria from tool response or defaults
+        if tool_response:
+            search_criteria = tool_response.get("search_criteria", {})
+        else:
+            search_criteria = {"location": "Unknown", "max_price": 0, "min_bedrooms": 0}
+        
+        # Build summary
+        if tool_response and tool_response.get("summary"):
+            summary = tool_response["summary"]
+        else:
+            summary = f"Found {len(properties)} properties with location analysis and Halloween decorations."
+        
+        return {
+            "search_criteria": search_criteria,
+            "properties": properties,
+            "location_analyses": location_analyses,
+            "decorated_images": decorated_images,
+            "generated_at": datetime.now().isoformat(),
+            "summary": summary
+        }
+    except Exception as e:
+        logger.error(f"[REPORT] Error building from filesystem: {str(e)}")
+        return None
 
 
 def serialize_interrupt(interrupt_data: list) -> list[dict[str, Any]]:
@@ -106,7 +193,7 @@ async def invoke_agent(
             return {"__interrupt__": serialize_interrupt(result["__interrupt__"])}
 
         # Check for final report
-        report = extract_final_report(result)
+        report = extract_final_report(result, thread_id)
         if report:
             logger.info(f"[INVOKE] Final report generated")
             return {"structured_response": report}
@@ -199,7 +286,7 @@ async def resume_agent(
             return {"__interrupt__": serialize_interrupt(result["__interrupt__"])}
 
         # Check for final report
-        report = extract_final_report(result)
+        report = extract_final_report(result, request.thread_id)
         if report:
             logger.info(f"[RESUME] Final report generated")
             return {"structured_response": report}
@@ -238,7 +325,7 @@ async def get_agent_state(
         values = state_snapshot.values
 
         # Check for final report
-        report = extract_final_report(values)
+        report = extract_final_report(values, request.thread_id)
 
         return {
             "structured_response": report,
