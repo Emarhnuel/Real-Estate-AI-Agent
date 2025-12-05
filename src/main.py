@@ -93,11 +93,74 @@ def parse_json_content(content: Any) -> dict | None:
     return None
 
 
+def extract_json_from_text(text: str) -> dict | None:
+    """Extract JSON object from text that may contain markdown code blocks."""
+    import re
+    # Try to find JSON in code blocks first
+    code_block = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
+    if code_block:
+        try:
+            return json.loads(code_block.group(1))
+        except json.JSONDecodeError:
+            pass
+    # Try to find raw JSON object
+    json_match = re.search(r'\{[^{}]*"(?:status|properties|property_id)"[^{}]*\}', text, re.DOTALL)
+    if json_match:
+        try:
+            return json.loads(json_match.group(0))
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
+def extract_data_from_messages(messages: list) -> tuple[list, dict, dict]:
+    """Extract property and location data from agent messages."""
+    properties = []
+    location_analyses = {}
+    decorated_images = {}
+    
+    for msg in messages:
+        content = getattr(msg, "content", "") if hasattr(msg, "content") else str(msg)
+        if not isinstance(content, str):
+            continue
+        
+        # Look for property search results
+        if '"properties"' in content and '"status"' in content:
+            data = extract_json_from_text(content)
+            if data and "properties" in data:
+                for prop in data["properties"]:
+                    if isinstance(prop, dict) and prop.get("id"):
+                        properties.append(prop)
+                        logger.info(f"[REPORT] Extracted property from message: {prop.get('id')}")
+        
+        # Look for location analysis results
+        if '"property_id"' in content and '"nearby_pois"' in content:
+            data = extract_json_from_text(content)
+            if data and "property_id" in data:
+                prop_id = data["property_id"]
+                location_analyses[prop_id] = data
+                logger.info(f"[REPORT] Extracted location from message: {prop_id}")
+    
+    # Read decorated images from external disk (these are always saved there)
+    decorated_dir = Path("decorated_images")
+    if decorated_dir.exists():
+        for file_path in decorated_dir.glob("*_halloween.json"):
+            try:
+                with open(file_path, "r") as f:
+                    data = json.load(f)
+                prop_id = data.get("property_id", file_path.stem.replace("_halloween", ""))
+                decorated_images[prop_id] = str(file_path)
+                logger.info(f"[REPORT] Found decorated image: {prop_id}")
+            except Exception as e:
+                logger.warning(f"[REPORT] Failed to read {file_path}: {e}")
+    
+    return properties, location_analyses, decorated_images
+
+
 def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> dict | None:
-    """Build complete PropertyReport from real disk filesystem data."""
-    from src.agent import AGENT_DATA_DIR
+    """Build PropertyReport from disk and agent messages."""
+    from src.agent import AGENT_DATA_DIR, supervisor_agent
     from datetime import datetime
-    import glob
     
     try:
         logger.info(f"[REPORT] Reading from disk: {AGENT_DATA_DIR}")
@@ -106,7 +169,7 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
         location_analyses = {}
         decorated_images = {}
         
-        # Read properties from real disk
+        # First try reading from real disk
         properties_dir = Path(AGENT_DATA_DIR) / "properties"
         if properties_dir.exists():
             for file_path in properties_dir.glob("*.json"):
@@ -114,11 +177,10 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
                     with open(file_path, "r") as f:
                         data = json.load(f)
                     properties.append(data)
-                    logger.info(f"[REPORT] Found property: {data.get('id', file_path.stem)}")
+                    logger.info(f"[REPORT] Found property on disk: {data.get('id', file_path.stem)}")
                 except Exception as e:
                     logger.warning(f"[REPORT] Failed to read {file_path}: {e}")
         
-        # Read locations from real disk
         locations_dir = Path(AGENT_DATA_DIR) / "locations"
         if locations_dir.exists():
             for file_path in locations_dir.glob("*.json"):
@@ -127,11 +189,10 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
                         data = json.load(f)
                     prop_id = data.get("property_id") or data.get("id") or file_path.stem.replace("_location", "")
                     location_analyses[prop_id] = data
-                    logger.info(f"[REPORT] Found location: {prop_id}")
+                    logger.info(f"[REPORT] Found location on disk: {prop_id}")
                 except Exception as e:
                     logger.warning(f"[REPORT] Failed to read {file_path}: {e}")
         
-        # Read decorations from real disk
         decorations_dir = Path(AGENT_DATA_DIR) / "decorations"
         if decorations_dir.exists():
             for file_path in decorations_dir.glob("*.json"):
@@ -141,9 +202,23 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
                     prop_id = data.get("property_id") or data.get("id") or file_path.stem
                     external_path = data.get("external_disk_path", "")
                     decorated_images[prop_id] = external_path
-                    logger.info(f"[REPORT] Found decoration: {prop_id}")
+                    logger.info(f"[REPORT] Found decoration on disk: {prop_id}")
                 except Exception as e:
                     logger.warning(f"[REPORT] Failed to read {file_path}: {e}")
+        
+        # If disk is empty, extract from agent messages
+        if not properties:
+            logger.info("[REPORT] Disk empty, extracting from agent messages")
+            config = {"configurable": {"thread_id": thread_id}}
+            state = supervisor_agent.get_state(config)
+            if state and state.values:
+                messages = state.values.get("messages", [])
+                msg_props, msg_locs, msg_decs = extract_data_from_messages(messages)
+                properties = msg_props
+                if not location_analyses:
+                    location_analyses = msg_locs
+                if not decorated_images:
+                    decorated_images = msg_decs
         
         # Build search criteria
         search_criteria = tool_response.get("search_criteria", {}) if tool_response else {}
