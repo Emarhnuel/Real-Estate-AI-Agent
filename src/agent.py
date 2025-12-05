@@ -63,7 +63,7 @@ property_search_agent = {
     "description": "Searches for property listings matching user criteria. Saves each property to /properties/ using write_file.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
     "tools": [tavily_search_tool, tavily_extract_tool],
-    "model": model
+    "model": model1
 }
 
 # Location Analysis Sub-Agent Configuration
@@ -104,7 +104,7 @@ os.makedirs(os.path.join(AGENT_DATA_DIR, "decorations"), exist_ok=True)
 filesystem_backend = FilesystemBackend(root_dir=AGENT_DATA_DIR)
 
 supervisor_agent = create_deep_agent(
-    model=model,
+    model=model1,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
