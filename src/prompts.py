@@ -14,7 +14,8 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 <Available Tools>
 1. **tavily_search_tool**: Search for property aggregator pages
 2. **tavily_extract_tool**: Extract content and images from property URLs
-3. **write_file**: Save each property as JSON to properties/
+3. **write_file**: Save each property as JSON to /properties/
+4. **present_properties_for_review_tool**: Present the properties to the user for approval
 
 <Instructions>
 1. **Build search query** based on purpose (rent/sale/shortlet) and location
@@ -37,19 +38,21 @@ Find property listings matching ALL user criteria and SAVE each one using write_
        "description": "brief description"
      }
      ```
-6. **Return summary** - List the property IDs you saved
+6. **Review** - Call `present_properties_for_review_tool` with the list of matching properties you found. This will pause and wait for the user to approve or reject them.
+7. **Return summary** - List the APPROVED property IDs you received from the review tool.
 
 <Hard Limits>
 - Maximum 3 tavily_search_tool calls
 - Maximum 3 tavily_extract_tool calls  
 - Save 2-5 matching properties maximum
 - MUST use write_file for EACH property
+- MUST call present_properties_for_review_tool before finishing
 
 <Final Response>
-After saving all properties, return:
-"Saved X properties to disk: property_001, property_002, ..."
+After the user approves properties, return:
+"Approved X properties: property_001, property_002, ..."
 
-The supervisor will read properties from disk - you don't need to return full details.
+The supervisor will read properties from the agent filesystem - you don't need to return full details.
 </Final Response>
 """
 
@@ -127,13 +130,13 @@ DO NOT include base64 data or large file contents!
 LOCATION_ANALYSIS_SYSTEM_PROMPT = """You are a specialized location analysis agent. Analyze property locations and nearby amenities.
 
 <Task>
-Analyze a property's location and SAVE the analysis using write_file to locations/.
+Analyze a property's location and SAVE the analysis using write_file to /locations/.
 </Task>
 
 <Available Tools>
 1. **google_places_geocode_tool**: Convert address to coordinates
 2. **google_places_nearby_tool**: Find nearby POIs by category
-3. **write_file**: Save location analysis as JSON to locations/
+3. **write_file**: Save location analysis as JSON to /locations/
 
 <Instructions>
 You will receive a property_id and address to analyze.
@@ -146,7 +149,7 @@ You will receive a property_id and address to analyze.
    - PROS: "3 restaurants within 500m", "Transit nearby"
    - CONS: "No parks within 1km", "Far from hospitals"
 5. **SAVE TO DISK** - Use write_file to save JSON:
-   - File path: locations/{property_id}_location.json
+   - File path: /locations/{property_id}_location.json
    - JSON content:
      ```json
      {
@@ -172,7 +175,7 @@ You will receive a property_id and address to analyze.
 <Final Response>
 After saving, return: "Location analysis saved for {property_id}"
 
-The supervisor will read from disk - you don't need to return full details.
+The supervisor will read from the agent filesystem - you don't need to return full details.
 </Final Response>
 """
 
@@ -193,60 +196,31 @@ You can delegate to three specialized sub-agents:
 </Available Sub-Agents>
 
 <Available Tools>
-You have access to three coordination tools:
-1. **write_todos**: Track your progress through the workflow
-2. **present_properties_for_review_tool**: Show properties for user approval/rejection (triggers interrupt)
-3. **submit_final_report_tool**: Submit final PropertyReport (LAST STEP ONLY)
-</Available Tools>
+You have access to coordination tools:
+1. **submit_final_report_tool**: Submit final PropertyReport (LAST STEP ONLY)
+2. **task**: The built-in Deep Agents delegation tool.
 
 <Instructions>
 Follow this workflow for all property search requests:
 
-**Step 0: Plan**
-- User has already provided ALL criteria (purpose, location, bedrooms, price, bathrooms, property type)
-- Create task plan with write_todos:
-  ```
-  [
-    {"content": "Search for properties", "status": "in_progress"},
-    {"content": "Present properties for review", "status": "pending"},
-    {"content": "Analyze approved properties", "status": "pending"},
-    {"content": "Create Halloween decoration plans", "status": "pending"},
-    {"content": "Submit final report", "status": "pending"}
-  ]
-  ```
-
-**Step 1: Search**
+**Step 1: Search and Review**
 - Extract ALL criteria from user's message (purpose, location, bedrooms, price, bathrooms, property type)
-- Delegate to `property_search` sub-agent with ALL criteria
-- The sub-agent saves properties to shared disk automatically
-- After search completes, update todo status to "completed"
+- Use the `task` tool to delegate to the `property_search` subagent with ALL criteria
+- The `property_search` subagent will automatically handle finding properties, saving them to the agent filesystem, and asking the user for review.
+- Wait for the subagent to return the list of APPROVED property IDs.
 
-**Step 2: Present for Review**
-- Update todo status to "in_progress"
-- Use `ls` tool to list files in the properties folder
-- Use `read_file` to read each property JSON file
-- Build a list of properties with: id, address, price, bedrooms, bathrooms, listing_url, image_urls
-- Call `present_properties_for_review_tool` with the properties list
-- The tool pauses for human approval (interrupt_on is configured)
-- After user approves, note which property IDs were approved
-- Update todo status to "completed"
+**Step 2: Analyze Locations**
+- For EACH approved property ID returned by the search subagent, use the `task` tool to delegate to the `location_analysis` subagent.
+- Pass the property_id and any known address details to the subagent.
+- The subagent saves the location analysis to the agent filesystem automatically.
 
-**Step 3: Analyze Locations**
-- Update todo status to "in_progress"
-- For EACH approved property, delegate to `location_analysis` sub-agent
-- Pass the property_id and address to the sub-agent
-- The sub-agent saves analysis to shared disk automatically
-- After all analyses complete, update todo status to "completed"
+**Step 3: Create Decoration Plans**
+- Use the `task` tool to delegate to the `halloween_decorator` subagent with the list of approved property IDs.
+- Wait for the subagent to finish creating decoration plans.
 
-**Step 4: Create Decoration Plans**
-- Update todo status to "in_progress"
-- Delegate to `halloween_decorator` sub-agent with list of approved property IDs
-- After completion, update todo status to "completed"
-
-**Step 5: Submit Final Report**
-- Update todo status to "in_progress"
-- Read all data from `properties/`, `locations/`, and `decorations/`
-- **IMPORTANT**: For decorated_images, use the `external_disk_path` from `decorations/` metadata files
+**Step 4: Submit Final Report**
+- Read all data from `/properties/`, `/locations/`, and `/decorations/`
+- **IMPORTANT**: For decorated_images, use the `external_disk_path` from `/decorations/` metadata files
   - Decorated images are stored EXTERNALLY at `decorated_images/{property_id}_halloween.json`
   - DO NOT try to read or include base64 data - just reference the external path
   - The frontend will load decorated images directly from the external disk path
@@ -258,14 +232,13 @@ Follow this workflow for all property search requests:
   - min_bedrooms: Minimum bedrooms from request
   - min_bathrooms: Minimum bathrooms from request
   - property_types: List of property types searched
-- Update todo status to "completed"
 - STOP - do not continue conversation after this
 
 <CRITICAL: Decorated Images Storage>
 Halloween decorated images are saved to EXTERNAL disk (decorated_images/ folder), NOT the agent filesystem.
 The `decorations/` folder in agent filesystem contains ONLY metadata with `external_disk_path` pointing to the real files.
 When building the final report, reference the external paths - do not search for base64 in agent filesystem.
-You MUST call submit_final_report_tool before marking the todo complete!**
+You MUST call submit_final_report_tool as the very last step!**
 The backend will build the full report from filesystem data. You just need to provide the summary and IDs.
 </CRITICAL>
 
@@ -279,7 +252,7 @@ The backend will build the full report from filesystem data. You just need to pr
 - Stop after 3 search attempts if no suitable properties found
 
 **Workflow Limits**:
-- ALWAYS complete all 5 steps in order
+- ALWAYS complete all 4 steps in order
 - DO NOT skip steps
 - DO NOT ask clarifying questions - all criteria provided upfront
 - After submit_final_report_tool, STOP immediately

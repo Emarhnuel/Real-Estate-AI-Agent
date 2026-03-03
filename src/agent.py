@@ -5,14 +5,12 @@ This module defines the supervisor agent and sub-agents for property search
 and location analysis using the Deep Agents framework.
 """
 
-
 import os
-from langchain_openai import ChatOpenAI
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.chat_models import init_chat_model
+from langchain_amazon_nova import ChatAmazonNova
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.store.memory import InMemoryStore
 from deepagents import create_deep_agent
-from deepagents.backends import FilesystemBackend
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -49,22 +47,30 @@ from src.prompts import (
 # MODEL CONFIGURATION
 # =============================================================================
 
-# Claude sonnet via OpenRouter
-model1 = ChatOpenAI(
-    model="x-ai/grok-4.1-fast",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
+# Amazon Nova - Main model for supervisor (most capable)
+model = ChatAmazonNova(
+    model="nova-premier-v1",
+    temperature=0.7,
+    max_tokens=4096,
 )
 
-model = init_chat_model("google_genai:gemini-3-pro-preview")
+# Amazon Nova - Lighter model for sub-agents (faster, cheaper for focused tasks)
+model1 = ChatAmazonNova(
+    model="nova-2-lite-v1",
+    temperature=0.7,
+    max_tokens=4096,
+)
 
 # Property Search Sub-Agent Configuration
 property_search_agent = {
     "name": "property_search",
-    "description": "Searches for property listings matching user criteria. Saves each property to /properties/ using write_file.",
+    "description": "Searches for property listings matching user criteria. Saves properties and asks for human review.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool, tavily_extract_tool],
-    "model": model1
+    "tools": [tavily_search_tool, tavily_extract_tool, present_properties_for_review_tool],
+    "model": model,
+    "interrupt_on": {
+        "present_properties_for_review_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
+    }
 }
 
 # Location Analysis Sub-Agent Configuration
@@ -87,32 +93,28 @@ halloween_decorator_agent = {
 }
 
 
-
-# Create Supervisor Agent
-# Note: Deep Agents manages its own internal state (messages, todos, filesystem)
-# Do NOT define a custom state schema - it conflicts with internal state management
 checkpointer = MemorySaver()
 
-# Ensure shared data directory exists (AGENT_DATA_DIR imported from tools.py)
-os.makedirs(AGENT_DATA_DIR, exist_ok=True)
-os.makedirs(os.path.join(AGENT_DATA_DIR, "properties"), exist_ok=True)
-os.makedirs(os.path.join(AGENT_DATA_DIR, "locations"), exist_ok=True)
-os.makedirs(os.path.join(AGENT_DATA_DIR, "decorations"), exist_ok=True)
+# CompositeBackend: hybrid storage for ephemeral + persistent data
+# - StateBackend (default): ephemeral per-thread storage for /properties/, /locations/, /decorations/
+#   → Automatically cleaned up when the thread ends. No data leaks between sessions.
+# - StoreBackend (/memories/): persistent cross-thread storage for user preferences
+#   → Remembers user preferences across sessions (e.g., "I prefer 3-bedroom apartments")
+def make_backend(runtime):
+    return CompositeBackend(
+        default=StateBackend(runtime),
+        routes={
+            "/memories/": StoreBackend(runtime),
+        }
+    )
 
-# Configure FilesystemBackend to use real disk instead of in-memory StateBackend
-# This allows all agents (supervisor + subagents) to share the same filesystem
-# root_dir must be an absolute path
-filesystem_backend = FilesystemBackend(root_dir=AGENT_DATA_DIR)
-
-supervisor_agent = create_deep_agent(
-    model=model1,
+# Supervisor agent orchestrates the workflow via create_deep_agent
+supervisor = create_deep_agent(
+    model=model,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
-    tools=[present_properties_for_review_tool, submit_final_report_tool],
     subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
+    tools=[submit_final_report_tool],
     checkpointer=checkpointer,
-    backend=filesystem_backend,
-    interrupt_on={
-        "present_properties_for_review_tool": True  # Pause before executing, allow approve/edit/reject
-    }
+    backend=make_backend,
+    store=InMemoryStore(),  # For local dev; omit for LangSmith Deployment
 )
-

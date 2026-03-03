@@ -17,7 +17,7 @@ from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCr
 from langgraph.types import Command
 from dotenv import load_dotenv
 
-from src.agent import supervisor_agent
+from src.agent import supervisor
 from src.models import AgentRequest, ResumeRequest, StateRequest
 
 # Load environment variables
@@ -211,7 +211,7 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
         if not properties:
             logger.info("[REPORT] Disk empty, extracting from agent messages")
             config = {"configurable": {"thread_id": thread_id}}
-            state = supervisor_agent.get_state(config)
+            state = supervisor.get_state(config)
             if state and state.values:
                 messages = state.values.get("messages", [])
                 msg_props, msg_locs, msg_decs = extract_data_from_messages(messages)
@@ -272,7 +272,7 @@ async def invoke_agent(
     logger.info(f"[INVOKE] Starting agent for thread {thread_id}")
 
     try:
-        result = supervisor_agent.invoke(
+        result = supervisor.invoke(
             {"messages": request.messages},
             config
         )
@@ -313,7 +313,7 @@ async def resume_agent(
 
     try:
         # Get current state to find pending interrupt
-        state_snapshot = supervisor_agent.get_state(config)
+        state_snapshot = supervisor.get_state(config)
         
         if not state_snapshot or not state_snapshot.tasks:
             raise HTTPException(status_code=400, detail="No pending interrupt found")
@@ -370,7 +370,7 @@ async def resume_agent(
             }
 
         resume_command = Command(resume=resume_payload)
-        result = supervisor_agent.invoke(resume_command, config)
+        result = supervisor.invoke(resume_command, config)
 
         # Check for another interrupt
         if "__interrupt__" in result:
@@ -409,7 +409,7 @@ async def get_agent_state(
     logger.info(f"[STATE] Getting state for thread {request.thread_id}")
 
     try:
-        state_snapshot = supervisor_agent.get_state(config)
+        state_snapshot = supervisor.get_state(config)
         
         if not state_snapshot or not state_snapshot.values:
             raise HTTPException(status_code=404, detail="Thread not found")
