@@ -44,3 +44,7 @@ htmlcov/
 tests/
 
 WARP.md
+
+# Skills
+.agents/
+skills-lock.json
