@@ -14,6 +14,8 @@ from deepagents import create_deep_agent
 from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
 from dotenv import load_dotenv
 
+from src.guardrails import PropertyOutputGuardrail
+
 # Load environment variables
 load_dotenv()
 
@@ -137,7 +139,8 @@ async def create_supervisor_agent():
         "model": model_with_grounding,
         "interrupt_on": {
             "present_properties_for_review_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
-        }
+        },
+        "middleware": [PropertyOutputGuardrail()],
     }
 
     # Location Analysis Sub-Agent Configuration
