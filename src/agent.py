@@ -40,7 +40,7 @@ from src.tools import (
 from src.prompts import (
     PROPERTY_SEARCH_SYSTEM_PROMPT,
     LOCATION_ANALYSIS_SYSTEM_PROMPT,
-    HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
+    INTERIOR_DECORATOR_SYSTEM_PROMPT,
     SUPERVISOR_SYSTEM_PROMPT
 )
 
@@ -152,11 +152,11 @@ async def create_supervisor_agent():
         "model": model1
     }
 
-    # Halloween Decorator Sub-Agent Configuration
-    halloween_decorator_agent = {
-        "name": "halloween_decorator",
-        "description": "Analyzes property images and creates Halloween decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
-        "system_prompt": HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
+    # Interior Decorator Sub-Agent Configuration
+    interior_decorator_agent = {
+        "name": "interior_decorator",
+        "description": "Analyzes property images and creates interior decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
+        "system_prompt": INTERIOR_DECORATOR_SYSTEM_PROMPT,
         "tools": [analyze_property_images_tool, generate_decorated_image_tool],
         "model": model1
     }
@@ -165,7 +165,7 @@ async def create_supervisor_agent():
     supervisor = create_deep_agent(
         model=model,
         system_prompt=SUPERVISOR_SYSTEM_PROMPT,
-        subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
+        subagents=[property_search_agent, location_analysis_agent, interior_decorator_agent],
         tools=[submit_final_report_tool],
         checkpointer=checkpointer,
         backend=make_backend,
