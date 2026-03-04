@@ -55,10 +55,11 @@ graph TD
     Frontend <-->|LangGraph SDK| SupervisorAgent[Supervisor Agent]
     SupervisorAgent -->|Delegate Search| PropertySearchAgent[Property Search Sub-Agent]
     SupervisorAgent -->|Delegate Analysis| LocationAnalysisAgent[Location Analysis Sub-Agent]
-    SupervisorAgent -->|Delegate Decoration| HalloweenDecoratorAgent[Halloween Decorator Sub-Agent]
-    PropertySearchAgent -->|Search Listings| TavilyAPI[Tavily API]
+    SupervisorAgent -->|Delegate Decoration| InteriorDecoratorAgent[Interior Decorator Sub-Agent]
+    PropertySearchAgent -->|Web Grounding| NovaAPI[Nova Web Grounding]
+    PropertySearchAgent -->|Scrape Pages| BrowserUseMCP[Browser Use MCP]
     LocationAnalysisAgent -->|Geocode & Find POIs| GooglePlacesAPI[Google Places API]
-    HalloweenDecoratorAgent -->|Analyze & Generate Images| GeminiAPI[Gemini Vision API]
+    InteriorDecoratorAgent -->|Analyze & Generate Images| GeminiAPI[Gemini Vision API]
     SupervisorAgent <-->|Read/Write| Filesystem[Agent Filesystem]
     PropertySearchAgent <-->|Read/Write| Filesystem
     LocationAnalysisAgent <-->|Read/Write| Filesystem
@@ -83,8 +84,11 @@ The system follows the **Tool Calling** multi-agent pattern where:
 - fastapi-clerk-auth - Clerk authentication for FastAPI
 - Python 3.11+ - Runtime environment
 - uv - Fast Python package manager and project manager
-- Tavily API - Web search for property listings
+- Amazon Nova - LLM models (nova-premier-v1 for supervisor, nova-2-lite-v1 for sub-agents)
+- Nova Web Grounding - Built-in web search capabilities (replaces Tavily)
+- Browser Use MCP - Cloud-hosted browser automation for web scraping
 - Google Places API - Location data, geocoding, and nearby points of interest
+- Gemini Vision API - Image analysis and generation for interior decoration
 
 **Frontend:**
 - Next.js 14+ (Pages Router) - React framework
@@ -95,9 +99,12 @@ The system follows the **Tool Calling** multi-agent pattern where:
 - useStream() hook - Handles streaming, state management, and interrupts
 
 **Infrastructure:**
-- FastAPI Server - REST API
+- FastAPI Server - REST API with SSE streaming support
 - LangGraph Checkpointer (MemorySaver) - State persistence
-- Agent Filesystem (StateBackend for short-term, StoreBackend for long-term memory)
+- CompositeBackend - Hybrid storage system:
+  - StateBackend (default) - Ephemeral per-thread storage for /properties/, /locations/, /decorations/
+  - StoreBackend (/memories/) - Persistent cross-thread storage for user preferences
+- InMemoryStore - Local development store (swap for PostgresStore in production)
 
 ## Components and Interfaces
 
@@ -121,34 +128,74 @@ clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
 clerk_guard = ClerkHTTPBearer(clerk_config)
 
 @app.post("/api/invoke")
-def invoke_agent(
+async def invoke_agent(
     request: AgentRequest,
     creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
 ):
+    """Start agent conversation. Returns interrupt if property review needed."""
     user_id = creds.decoded["sub"]
     thread_id = f"{user_id}-{request.timestamp}"
     config = {"configurable": {"thread_id": thread_id}}
-    result = supervisor_agent.invoke(request.dict(), config=config)
-    return result
+    result = supervisor_agent.invoke({"messages": request.messages}, config)
+    
+    # Check for interrupt or final report
+    if "__interrupt__" in result:
+        return {"__interrupt__": serialize_interrupt(result["__interrupt__"])}
+    
+    report = extract_final_report(result, thread_id)
+    if report:
+        return {"structured_response": report}
+    
+    return {"todos": result.get("todos", []), "message": "Agent processing"}
 
-@app.post("/api/resume")
-def resume_agent(
+@app.post("/api/stream")
+async def stream_agent(
+    request: AgentRequest,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+):
+    """Stream agent progress via SSE. Emits which agent is working and estimated progress."""
+    # Returns Server-Sent Events with progress updates
+    # Format: {"type": "progress", "agent": "property_search", "progress": 25}
+
+@app.post("/api/stream-resume")
+async def stream_resume(
     request: ResumeRequest,
     creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
 ):
-    user_id = creds.decoded["sub"]
-    config = {"configurable": {"thread_id": request.thread_id}}
-    result = supervisor_agent.invoke(request.dict(), config=config)
-    return result
+    """Stream the post-review phase via SSE (location analysis, decoration, final report)."""
+    # Returns Server-Sent Events with progress updates for post-review workflow
 
-@app.get("/api/state")
-def get_state(
-    thread_id: str,
+@app.post("/api/resume")
+async def resume_agent(
+    request: ResumeRequest,
     creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
 ):
-    config = {"configurable": {"thread_id": thread_id}}
+    """Resume agent after human review. Filters properties to approved ones."""
+    user_id = creds.decoded["sub"]
+    config = {"configurable": {"thread_id": request.thread_id}}
+    
+    # Build Command with decisions (approve/edit/reject)
+    resume_command = Command(resume={"decisions": decisions})
+    result = supervisor_agent.invoke(resume_command, config)
+    return result
+
+@app.post("/api/state")
+async def get_agent_state(
+    request: StateRequest,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+):
+    """Get current agent state for a thread."""
+    config = {"configurable": {"thread_id": request.thread_id}}
     state = supervisor_agent.get_state(config)
     return state
+
+@app.get("/api/interior-image/{property_id}")
+async def get_decorated_image(
+    property_id: str,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+):
+    """Fetch interior-decorated image for a property from external disk."""
+    # Reads from decorated_images/{property_id}_decorated.json
 ```
 
 **CORS configured** - Allows frontend to communicate with backend
@@ -159,23 +206,30 @@ def get_state(
 
 **Configuration:**
 ```python
-from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.store.memory import InMemoryStore
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
 
 # Development
 checkpointer = MemorySaver()
 
-# Production
-checkpointer = PostgresSaver.from_conn_string(
-    os.getenv("DATABASE_URL")
-)
+# Hybrid storage backend
+def make_backend(runtime):
+    return CompositeBackend(
+        default=StateBackend(runtime),  # Ephemeral per-thread
+        routes={
+            "/memories/": StoreBackend(runtime),  # Persistent cross-thread
+        }
+    )
 
 supervisor_agent = create_deep_agent(
-    model=model,  # Any LLM (GPT-4, Claude, etc.)
+    model=ChatAmazonNova(model="nova-premier-v1"),
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
-    tools=[],  # No external tools, uses sub-agents
-    subagents=[property_search_agent, location_analysis_agent],
+    tools=[submit_final_report_tool],
+    subagents=[property_search_agent, location_analysis_agent, interior_decorator_agent],
     checkpointer=checkpointer,
-    interrupt_on={"present_properties_for_review": True}
+    backend=make_backend,
+    store=InMemoryStore()
 )
 ```
 
@@ -201,36 +255,42 @@ class SupervisorState(TypedDict):
 
 ### 2. Property Search Sub-Agent
 
-**Purpose:** Specialized agent for finding property listings using web search
+**Purpose:** Specialized agent for finding property listings using Nova Web Grounding and Browser Use MCP
 
 **Configuration:**
 ```python
 property_search_agent = {
     "name": "property_search",
-    "description": "Searches for property listings matching user criteria using web search",
+    "description": "Searches for property listings using web grounding and browser automation",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool, tavily_extract_tool],
-    "model": model  # Any LLM (GPT-4, Claude, etc.)
+    "tools": [present_properties_for_review_tool] + browser_tools,
+    "model": ChatAmazonNova(model="nova-2-lite-v1", system_tools=["nova_grounding"]),
+    "interrupt_on": {
+        "present_properties_for_review_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
+    },
+    "middleware": [PropertyOutputGuardrail()]
 }
 ```
 
 **Responsibilities:**
 - Construct effective search queries from criteria
-- Call Tavily API to find property listings
-- Parse and extract structured data from search results
+- Use Nova Web Grounding to find property listing URLs
+- Use Browser Use MCP to scrape detailed property data from listing pages
+- Parse and extract structured data from scraped content
 - Extract image URLs from listings
 - Write results to filesystem (one file per property)
-- Return summary of found properties to supervisor
+- Present properties for human review via interrupt
+- Return summary of approved properties to supervisor
 
-**Tool Interface:**
+**Tool Interfaces:**
 ```python
-def tavily_search_tool(
-    query: str,
-    max_results: int = 10,
-    include_raw_content: bool = True,
-    search_depth: str = "advanced"
-) -> dict:
-    """Search for property listings using Tavily API"""
+# Nova Web Grounding (built-in)
+# Simply describe what to search for and the model grounds responses in web results
+
+# Browser Use MCP
+def browser_task(task: str) -> dict:
+    """Run autonomous browser task to navigate and extract data"""
+    # Example: browser_task(task="Go to {url} and extract price, bedrooms, bathrooms")
 ```
 
 **Filesystem Structure:**
@@ -256,47 +316,57 @@ location_analysis_agent = {
 }
 ```
 
-### 4. Halloween Decorator Sub-Agent
+### 4. Interior Decorator Sub-Agent
 
-**Purpose:** Specialized agent for analyzing property images and generating Halloween-decorated versions
+**Purpose:** Specialized agent for analyzing property images and generating interior-decorated versions
 
 **Configuration:**
 ```python
-halloween_decorator_agent = {
-    "name": "halloween_decorator",
-    "description": "Analyzes property images and generates Halloween-themed decorated versions",
-    "system_prompt": HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
+interior_decorator_agent = {
+    "name": "interior_decorator",
+    "description": "Analyzes property images and creates interior decoration plans with AI-generated decorated images",
+    "system_prompt": INTERIOR_DECORATOR_SYSTEM_PROMPT,
     "tools": [analyze_property_images_tool, generate_decorated_image_tool],
-    "model": model  # Any LLM (GPT-4, Claude, etc.)
+    "model": ChatAmazonNova(model="nova-2-lite-v1")
 }
 ```
 
 **Workflow:**
 1. Supervisor passes property image URLs from Property Search Agent results
-2. Halloween Decorator Agent calls `analyze_property_images_tool` to scan each image
+2. Interior Decorator Agent calls `analyze_property_images_tool` to scan each image
 3. Analysis identifies: room type, decoration spaces, style notes, and suggestions
 4. Agent calls `generate_decorated_image_tool` with the image URL and decoration description
-5. Gemini Vision generates a Halloween-decorated version of the property image
-6. Decorated images (base64) are returned to Supervisor for inclusion in final report
+5. Gemini Vision generates an interior-decorated version of the property image
+6. Decorated images are saved to EXTERNAL disk (decorated_images/ folder)
+7. Metadata (without base64) is saved to agent filesystem for context efficiency
 
 **Tool Interfaces:**
 ```python
 def analyze_property_images_tool(image_url: str) -> dict:
-    """Analyze property image for Halloween decoration opportunities using Gemini Vision"""
+    """Analyze property image for interior decoration opportunities using Gemini Vision"""
     # Returns: room_type, decoration_spaces, style_notes, suggestions
 
-def generate_decorated_image_tool(image_url: str, decoration_description: str) -> dict:
-    """Generate Halloween-decorated version of property image using Gemini 2.5 Flash Image"""
-    # Returns: decorated_image_base64, original_image_url, decorations_added
-    # Note: Gemini 2.5 Flash Image can generate Halloween decorations directly without external search
+def generate_decorated_image_tool(
+    image_url: str,
+    decoration_description: str,
+    property_id: str
+) -> dict:
+    """Generate interior-decorated image using Gemini 2.5 Flash Image and save to disk"""
+    # Saves to: decorated_images/{property_id}_decorated.json (external disk)
+    # Returns: metadata only (success, property_id, saved_to_disk path)
+    # Base64 image NOT returned to prevent context overflow
 ```
 
-**Filesystem Structure:**
+**Storage Architecture:**
 ```
-/decorations/
-  property_001_decorated.json  # Contains base64 image and metadata
-  property_002_decorated.json
-  ...
+Agent Filesystem (ephemeral):
+  /decorations/
+    property_001_decorated.json  # Metadata only with external_disk_path
+
+External Disk (persistent):
+  decorated_images/
+    property_001_decorated.json  # Full data with base64 image
+    property_002_decorated.json
 ```
 
 ### 4. Frontend to API Integration
