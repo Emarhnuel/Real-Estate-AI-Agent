@@ -32,6 +32,7 @@ node_modules/
 
 # Project specific
 Example/
+frontend/
 
 # OS
 .DS_Store
