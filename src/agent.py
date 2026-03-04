@@ -25,15 +25,14 @@ if os.getenv("LANGSMITH_TRACING", "").lower() == "true":
     print(f"[INFO] LangSmith tracing enabled for project: {os.getenv('LANGSMITH_PROJECT', 'default')}")
 
 from src.tools import (
-    tavily_search_tool,
-    tavily_extract_tool,
+    # tavily_search_tool,  # Replaced by Nova Web Grounding
+    # tavily_extract_tool,  # Replaced by Nova Web Grounding
     google_places_geocode_tool,
     google_places_nearby_tool,
     present_properties_for_review_tool,
     submit_final_report_tool,
     analyze_property_images_tool,
     generate_decorated_image_tool,
-    AGENT_DATA_DIR
 )
 from src.models import PropertyReport
 from src.prompts import (
@@ -61,13 +60,22 @@ model1 = ChatAmazonNova(
     max_tokens=4096,
 )
 
+# Amazon Nova - Model with Web Grounding for property search (replaces Tavily)
+model_with_grounding = ChatAmazonNova(
+    model="nova-2-lite-v1",
+    temperature=0.7,
+    max_tokens=4096,
+    system_tools=["nova_grounding"],
+)
+
 # Property Search Sub-Agent Configuration
+# Uses model_with_grounding (Nova Web Grounding) instead of Tavily tools
 property_search_agent = {
     "name": "property_search",
-    "description": "Searches for property listings matching user criteria. Saves properties and asks for human review.",
+    "description": "Searches for property listings matching user criteria using web grounding. Saves properties and asks for human review.",
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool, tavily_extract_tool, present_properties_for_review_tool],
-    "model": model,
+    "tools": [present_properties_for_review_tool],  # Web search handled by Nova Grounding natively
+    "model": model_with_grounding,
     "interrupt_on": {
         "present_properties_for_review_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
     }
