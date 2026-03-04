@@ -7,11 +7,12 @@
   - Create pyproject.toml with project metadata
   - Install deepagents, langgraph, langchain packages with uv add
   - Install FastAPI and fastapi-clerk-auth packages with uv add
-  - Install Tavily SDK package with uv add
+  - Install Amazon Nova SDK (langchain-amazon-nova) with uv add
+  - Install Google Generative AI SDK for Gemini with uv add
   - Install psycopg2-binary for PostgreSQL checkpointer with uv add
   - Create requirements.txt from uv dependencies
   - Create .env file from .env.example for API keys
-  - Create directory structure: api/ (index.py), src/ (agent.py, prompts.py, tools.py, models.py, utils.py), pages/, tests/
+  - Create directory structure: src/ (agent.py, prompts.py, tools.py, models.py, main.py, guardrails.py), tests/
   - Run uv sync to create virtual environment and install dependencies
   - _Requirements: All requirements depend on proper setup_
 
@@ -24,13 +25,15 @@
   - _Requirements: 2.1, 4.1, 5.1_
   - _Files: src/models.py_
 
-- [x] 3. Implement Tavily search tool
-  - Create tavily_search_tool function that accepts query, max_results, and search_depth parameters
-  - Implement property data extraction from Tavily search results
-  - Implement image URL extraction from search results
-  - Add error handling for API failures
+- [x] 3. Implement Nova Web Grounding and Browser Use MCP integration
+  - Configure Amazon Nova model with system_tools=["nova_grounding"] for web search
+  - Initialize MultiServerMCPClient for Browser Use cloud-hosted MCP server
+  - Configure MCP client with BROWSER_USE_API_KEY from environment
+  - Get browser automation tools from MCP server at startup
+  - Add browser_tools to property_search_agent configuration
+  - Test web grounding and browser automation capabilities
   - _Requirements: 2.2, 2.3, 2.4_
-  - _Files: src/tools.py_
+  - _Files: src/agent.py_
 
 - [x] 4. Implement Google Places location tools
   - Create google_places_geocode_tool to convert addresses to coordinates using Text Search API
@@ -40,14 +43,17 @@
   - _Requirements: 4.2, 4.3, 4.4_
   - _Files: src/tools.py_
 
-- [x] 5. Implement Property Search Sub-Agent
+- [x] 5. Implement Property Search Sub-Agent with Nova and Browser Use
   - Define property_search_agent configuration with name, description, and system prompt
-  - Write system prompt instructing agent to use Tavily tool and write results to filesystem
-  - Configure agent with tavily_search_tool
+  - Write system prompt instructing agent to use Nova Web Grounding for finding listing URLs
+  - Write system prompt instructing agent to use browser_task for scraping property details
+  - Configure agent with present_properties_for_review_tool and browser_tools
+  - Configure agent with ChatAmazonNova model with nova_grounding system tool
+  - Configure interrupt_on for present_properties_for_review_tool with allowed_decisions
+  - Add PropertyOutputGuardrail middleware for output validation
   - Implement logic to write each property to separate JSON file in /properties/ directory
-  - Implement summary generation of found properties
-  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 6.2_
-  - _Files: src/agent.py, src/prompts.py_
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 6.2_
+  - _Files: src/agent.py, src/prompts.py, src/guardrails.py_
 
 - [x] 6. Implement Location Analysis Sub-Agent
   - Define location_analysis_agent configuration with name, description, and system prompt
@@ -59,15 +65,20 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
   - _Files: src/agent.py, src/prompts.py_
 
-- [x] 7. Implement Supervisor Agent
-  - Create supervisor agent using create_deep_agent with any LLM model (GPT-4, Claude, etc.)
+- [x] 7. Implement Supervisor Agent with CompositeBackend
+  - Create supervisor agent using create_deep_agent with Amazon Nova Premier model
   - Write comprehensive system prompt for conversation management and coordination
-  - Configure agent with property_search_agent and location_analysis_agent as subagents
+  - Configure agent with property_search_agent, location_analysis_agent, and interior_decorator_agent as subagents
+  - Configure agent with submit_final_report_tool
   - Implement search criteria extraction from natural language
   - Configure checkpointer (MemorySaver for dev)
+  - Implement CompositeBackend with StateBackend (default) and StoreBackend (/memories/)
+  - Configure InMemoryStore for local development
+  - Add persistent memory instructions to system prompt
   - Define SupervisorState schema with messages, todos, search_criteria, approved_properties, filesystem
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 7.1, 8.1, 8.2, 8.3_
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 7.1, 8.1, 8.2, 8.3, 17.1, 17.2, 17.3_
   - _Files: src/agent.py, src/prompts.py_
+
 
 - [x] 8. Implement human-in-the-loop interrupt
   - Configure interrupt_on parameter for supervisor agent with "present_properties_for_review_tool" trigger
@@ -86,16 +97,19 @@
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
   - _Files: src/utils.py, src/tools.py, src/agent.py, src/prompts.py_
 
-- [ ] 10. Implement Halloween Decorator Sub-Agent
-  - Define halloween_decorator_agent configuration with name, description, and system prompt
+- [x] 10. Implement Interior Decorator Sub-Agent with external disk storage
+  - Define interior_decorator_agent configuration with name, description, and system prompt
   - Write system prompt instructing agent to analyze images and generate decorated versions
+  - Write system prompt with CRITICAL RULES to prevent context overflow (never read base64 data)
   - Configure agent with analyze_property_images_tool and generate_decorated_image_tool
-  - Implement workflow: receive image URLs → analyze → generate decorated images
-  - Implement logic to write decorated images to /decorations/ directory
-  - Update Supervisor Agent to delegate to Halloween Decorator after property approval
-  - Update PropertyReport model to include decorated_image_urls field
-  - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8_
-  - _Files: src/agent.py, src/prompts.py, src/models.py_
+  - Implement workflow: receive image URLs → analyze → generate decorated images → save to EXTERNAL disk
+  - Update generate_decorated_image_tool to save base64 to decorated_images/ folder (external disk)
+  - Update generate_decorated_image_tool to return metadata only (no base64 in response)
+  - Implement logic to write METADATA ONLY to /decorations/ directory with external_disk_path
+  - Update Supervisor Agent to delegate to Interior Decorator after property approval
+  - Update PropertyReport model to include decorated_images field with external paths
+  - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8, 15.9_
+  - _Files: src/agent.py, src/prompts.py, src/tools.py, src/models.py_
 
 - [ ] 11. Write integration tests for LangGraph workflow
   - Write test for complete property search workflow with invoke
@@ -114,17 +128,24 @@
   - Write LLM-as-judge test for agent decision quality
   - _Requirements: All requirements_
 
-- [x] 13. Implement FastAPI server (src/main.py)
-  - Create src/main.py with FastAPI app
+- [x] 13. Implement FastAPI server with streaming support (src/main.py)
+  - Create src/main.py with FastAPI app and async lifespan
+  - Implement lifespan function to initialize MCP client and supervisor at startup
   - Set up ClerkConfig with CLERK_JWKS_URL from environment
   - Create ClerkHTTPBearer guard for authentication
-  - Implement POST /api/invoke endpoint with Clerk auth
-  - Implement POST /api/resume endpoint with Clerk auth
-  - Implement GET /api/state endpoint with Clerk auth
+  - Implement POST /api/invoke endpoint with Clerk auth and interrupt handling
+  - Implement POST /api/stream endpoint for Server-Sent Events progress streaming
+  - Implement POST /api/stream-resume endpoint for post-review progress streaming
+  - Implement POST /api/resume endpoint with Clerk auth and Command-based resume
+  - Implement POST /api/state endpoint with Clerk auth using StateRequest model
+  - Implement GET /api/interior-image/{property_id} endpoint for fetching decorated images
   - Import supervisor_agent from src/agent.py
   - Extract user_id from creds.decoded["sub"] for thread isolation
+  - Implement extract_final_report function to build report from filesystem
+  - Implement build_report_from_filesystem function with disk and message fallback
+  - Implement serialize_interrupt function for JSON serialization
   - Test API endpoints locally with JWT token
-  - _Requirements: 8.1, 8.2, 12.3, 12.4, 13.1, 13.2_
+  - _Requirements: 8.1, 8.2, 12.3, 12.4, 13.1, 13.2, 16.1, 16.2, 16.3, 16.4, 16.5, 16.6_
 
 - [ ]* 14. Set up LangSmith monitoring for backend
   - Configure LangSmith API key in environment variables
