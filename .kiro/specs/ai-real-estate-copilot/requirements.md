@@ -5,17 +5,22 @@
 The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed to revolutionize the online property search experience. The system acts as a personal research assistant that automates the entire process of finding, vetting, and analyzing real estate listings. Built using the Deep Agents framework with LangGraph, the system employs a multi-agent architecture to handle complex property search and analysis tasks, delivering comprehensive reports with property details, images, and location analysis.
 
 
+
 ## Glossary
 
 - **Deep_Agent_System**: The main AI agent framework built on LangGraph that provides planning, file system management, and sub-agent capabilities
 - **Supervisor_Agent**: The primary agent that manages user conversations, gathers requirements, and coordinates sub-agents
-- **Property_Search_Agent**: A specialized sub-agent responsible for finding property listings using web search tools
+- **Property_Search_Agent**: A specialized sub-agent responsible for finding property listings using Nova Web Grounding and Browser Use MCP
 - **Location_Analysis_Agent**: A specialized sub-agent that analyzes nearby points of interest and evaluates location pros and cons
-- **Tavily_API**: The web search API used to find and extract property listing information
+- **Interior_Decorator_Agent**: A specialized sub-agent that analyzes property images and generates interior-decorated versions
+- **Nova_Web_Grounding**: Built-in web search capability in Amazon Nova models that grounds responses in real web results
+- **Browser_Use_MCP**: Cloud-hosted Model Context Protocol server providing browser automation tools for web scraping
 - **Google_Places_API**: The location data API used to geocode addresses, find nearby points of interest, and analyze locations
+- **Gemini_Vision_API**: Google's multimodal AI for analyzing property images and generating decorated versions
 - **Human_In_The_Loop**: A workflow pattern where the agent pauses execution to allow user review and approval before continuing
 - **Agent_Filesystem**: The internal file storage system used by agents to manage large amounts of data without overflowing context windows
-- **Property_Report**: The final deliverable containing property details, images, location analysis, and recommendations
+- **CompositeBackend**: Hybrid storage system with StateBackend (ephemeral) and StoreBackend (persistent) for efficient data management
+- **Property_Report**: The final deliverable containing property details, images, location analysis, and interior decoration plans
 - **Clerk_Auth**: The authentication and user management service that handles sign-in, sign-up, and user sessions
 - **Protected_Route**: A page or route that requires user authentication to access
 - **Public_Route**: A page or route accessible without authentication
@@ -41,11 +46,12 @@ The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed 
 #### Acceptance Criteria
 
 1. WHEN THE Supervisor_Agent has confirmed search criteria, THE Supervisor_Agent SHALL delegate the search task to the Property_Search_Agent
-2. THE Property_Search_Agent SHALL use the Tavily_API to search for property listings matching the user criteria
-3. THE Property_Search_Agent SHALL extract property details including address, price, bedrooms, bathrooms, and square footage from search results
-4. THE Property_Search_Agent SHALL extract image URLs from each property listing
-5. THE Property_Search_Agent SHALL write search results to the Agent_Filesystem using write_file to prevent context overflow
-6. THE Property_Search_Agent SHALL return a summary of found properties to the Supervisor_Agent
+2. THE Property_Search_Agent SHALL use Nova_Web_Grounding to search for property listing URLs matching the user criteria
+3. THE Property_Search_Agent SHALL use Browser_Use_MCP to scrape detailed property data from listing pages
+4. THE Property_Search_Agent SHALL extract property details including address, price, bedrooms, bathrooms, and square footage from scraped content
+5. THE Property_Search_Agent SHALL extract image URLs from each property listing
+6. THE Property_Search_Agent SHALL write search results to the Agent_Filesystem using write_file to prevent context overflow
+7. THE Property_Search_Agent SHALL present properties for review using present_properties_for_review_tool which triggers an interrupt
 
 ### Requirement 3
 
@@ -189,15 +195,29 @@ The AI Real Estate Co-Pilot is an intelligent, conversational AI agent designed 
 
 ### Requirement 15
 
-**User Story:** As a property seeker, I want to see my selected properties decorated with Halloween themes, so that I can visualize how the property would look during the Halloween season
+**User Story:** As a property seeker, I want to see my selected properties with interior decoration visualizations, so that I can imagine how the property would look with different decoration styles
 
 #### Acceptance Criteria
 
-1. WHEN THE user approves properties for analysis, THE Supervisor_Agent SHALL delegate image decoration to the Halloween_Decorator_Agent
-2. THE Halloween_Decorator_Agent SHALL receive property image URLs from the Property_Search_Agent results
-3. THE Halloween_Decorator_Agent SHALL use the analyze_property_images_tool to scan each property image and identify decoration opportunities
+1. WHEN THE user approves properties for analysis, THE Supervisor_Agent SHALL delegate image decoration to the Interior_Decorator_Agent
+2. THE Interior_Decorator_Agent SHALL receive property image URLs from the Property_Search_Agent results
+3. THE Interior_Decorator_Agent SHALL use the analyze_property_images_tool to scan each property image and identify decoration opportunities
 4. THE analyze_property_images_tool SHALL identify room types, available decoration spaces, and style recommendations
-5. THE Halloween_Decorator_Agent SHALL use the generate_decorated_image_tool to create Halloween-themed versions of property images
-6. THE generate_decorated_image_tool SHALL use Gemini Vision to add tasteful Halloween decorations while preserving the original property structure
-7. THE Property_Report SHALL include both original and Halloween-decorated versions of property images
-8. THE Halloween_Decorator_Agent SHALL process images one at a time to prevent context overflow
+5. THE Interior_Decorator_Agent SHALL use the generate_decorated_image_tool to create interior-decorated versions of property images
+6. THE generate_decorated_image_tool SHALL use Gemini_Vision_API to add tasteful interior decorations while preserving the original property structure
+7. THE generate_decorated_image_tool SHALL save decorated images to EXTERNAL disk (decorated_images/ folder) to prevent context overflow
+8. THE Interior_Decorator_Agent SHALL save METADATA ONLY to agent filesystem (/decorations/) with external_disk_path reference
+9. THE Property_Report SHALL include references to decorated image paths for frontend retrieval
+
+
+### Requirement 17
+
+**User Story:** As a property seeker, I want the system to remember my preferences across sessions, so that I don't have to repeat my requirements every time
+
+#### Acceptance Criteria
+
+1. THE Deep_Agent_System SHALL use CompositeBackend with StoreBackend for persistent memory storage
+2. THE Supervisor_Agent SHALL save user preferences to /memories/preferences.txt when expressed during conversation
+3. THE Supervisor_Agent SHALL read from /memories/ at the start of each conversation to personalize results
+4. THE persistent memory SHALL survive across different thread_ids for the same user
+5. THE ephemeral data in StateBackend SHALL be automatically cleaned up when threads end to prevent data leaks
