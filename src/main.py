@@ -334,8 +334,7 @@ async def resume_agent(
         if not state_snapshot or not state_snapshot.tasks:
             raise HTTPException(status_code=400, detail="No pending interrupt found")
 
-        # Extract interrupt ID, original action request, and properties
-        interrupt_id = None
+        # Extract original action request and properties from interrupt
         original_action = None
         original_properties = []
         
@@ -346,14 +345,12 @@ async def resume_agent(
                         action_requests = interrupt.value.get("action_requests", [])
                         for action in action_requests:
                             if action.get("name") == "present_properties_for_review_tool":
-                                interrupt_id = interrupt.id
                                 original_action = action.copy()
-                                # Check both "arguments" and "args" keys
-                                args_data = action.get("arguments") or action.get("args") or {}
+                                args_data = action.get("args") or action.get("arguments") or {}
                                 original_properties = args_data.get("properties", [])
                                 break
 
-        if not interrupt_id or not original_action:
+        if not original_action:
             raise HTTPException(status_code=400, detail="No property review interrupt found")
 
         # Filter to only approved properties
@@ -365,27 +362,20 @@ async def resume_agent(
 
         logger.info(f"[RESUME] Approved {len(filtered_properties)} of {len(original_properties)} properties")
 
-        # Build resume command with correct HITL format
-        # Use interrupt ID as key, with edited_action containing modified arguments
+        # Build resume command per Deep Agents HITL docs:
+        # Command(resume={"decisions": [{"type": "approve"|"edit"|"reject", ...}]})
         if len(filtered_properties) == len(original_properties):
-            # All properties approved - use simple approve
-            resume_payload = {
-                interrupt_id: {"decisions": [{"type": "approve"}]}
-            }
+            decisions = [{"type": "approve"}]
         else:
-            # Some properties filtered - use edit with modified action
-            edited_action = original_action.copy()
-            edited_action["arguments"] = {"properties": filtered_properties}
-            resume_payload = {
-                interrupt_id: {
-                    "decisions": [{
-                        "type": "edit",
-                        "edited_action": edited_action
-                    }]
+            decisions = [{
+                "type": "edit",
+                "edited_action": {
+                    "name": original_action["name"],
+                    "args": {"properties": filtered_properties}
                 }
-            }
+            }]
 
-        resume_command = Command(resume=resume_payload)
+        resume_command = Command(resume={"decisions": decisions})
         result = agent_module.supervisor.invoke(resume_command, config)
 
         # Check for another interrupt
