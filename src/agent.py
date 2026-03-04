@@ -7,6 +7,7 @@ and location analysis using the Deep Agents framework.
 
 import os
 from langchain_amazon_nova import ChatAmazonNova
+from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.store.memory import InMemoryStore
 from deepagents import create_deep_agent
@@ -34,7 +35,6 @@ from src.tools import (
     analyze_property_images_tool,
     generate_decorated_image_tool,
 )
-from src.models import PropertyReport
 from src.prompts import (
     PROPERTY_SEARCH_SYSTEM_PROMPT,
     LOCATION_ANALYSIS_SYSTEM_PROMPT,
@@ -68,38 +68,9 @@ model_with_grounding = ChatAmazonNova(
     system_tools=["nova_grounding"],
 )
 
-# Property Search Sub-Agent Configuration
-# Uses model_with_grounding (Nova Web Grounding) instead of Tavily tools
-property_search_agent = {
-    "name": "property_search",
-    "description": "Searches for property listings matching user criteria using web grounding. Saves properties and asks for human review.",
-    "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [present_properties_for_review_tool],  # Web search handled by Nova Grounding natively
-    "model": model_with_grounding,
-    "interrupt_on": {
-        "present_properties_for_review_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
-    }
-}
-
-# Location Analysis Sub-Agent Configuration
-location_analysis_agent = {
-    "name": "location_analysis",
-    "description": "Analyzes property locations and nearby amenities. Saves analysis to /locations/ using write_file.",
-    "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
-    "tools": [google_places_geocode_tool, google_places_nearby_tool],
-    "model": model1
-}
-
-
-# Halloween Decorator Sub-Agent Configuration
-halloween_decorator_agent = {
-    "name": "halloween_decorator",
-    "description": "Analyzes property images and creates Halloween decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
-    "system_prompt": HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
-    "tools": [analyze_property_images_tool, generate_decorated_image_tool],
-    "model": model1
-}
-
+# =============================================================================
+# BACKEND CONFIGURATION
+# =============================================================================
 
 checkpointer = MemorySaver()
 
@@ -116,13 +87,93 @@ def make_backend(runtime):
         }
     )
 
-# Supervisor agent orchestrates the workflow via create_deep_agent
-supervisor = create_deep_agent(
-    model=model,
-    system_prompt=SUPERVISOR_SYSTEM_PROMPT,
-    subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
-    tools=[submit_final_report_tool],
-    checkpointer=checkpointer,
-    backend=make_backend,
-    store=InMemoryStore(),  # For local dev; omit for LangSmith Deployment
-)
+
+# =============================================================================
+# MCP CLIENT & AGENT FACTORY (async)
+# =============================================================================
+
+# Global reference - set by create_supervisor_agent() at startup
+supervisor = None
+mcp_client = None
+
+
+async def create_supervisor_agent():
+    """
+    Async factory that initializes the MCP client, gets browser tools,
+    and creates the supervisor agent with all sub-agents.
+
+    Must be called once at app startup (e.g., in FastAPI lifespan).
+    """
+    global supervisor, mcp_client
+
+    # Initialize Browser Use MCP client (cloud-hosted)
+    mcp_client = MultiServerMCPClient(
+        {
+            "browser-use": {
+                "transport": "http",
+                "url": "https://api.browser-use.com/mcp",
+                "headers": {
+                    "X-Browser-Use-API-Key": os.getenv("BROWSER_USE_API_KEY", ""),
+                },
+            }
+        }
+    )
+
+    # Get browser automation tools from MCP server
+    browser_tools = await mcp_client.get_tools()
+    print(f"[INFO] Loaded {len(browser_tools)} Browser Use MCP tools")
+
+    # Property Search Sub-Agent Configuration
+    # Uses Nova Web Grounding for search + Browser Use MCP for scraping
+    property_search_agent = {
+        "name": "property_search",
+        "description": (
+            "Searches for property listings matching user criteria using web grounding. "
+            "Uses browser automation to extract detailed property data from listing pages. "
+            "Saves properties and asks for human review."
+        ),
+        "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
+        "tools": [present_properties_for_review_tool] + browser_tools,
+        "model": model_with_grounding,
+        "interrupt_on": {
+            "present_properties_for_review_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
+        }
+    }
+
+    # Location Analysis Sub-Agent Configuration
+    location_analysis_agent = {
+        "name": "location_analysis",
+        "description": "Analyzes property locations and nearby amenities. Saves analysis to /locations/ using write_file.",
+        "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
+        "tools": [google_places_geocode_tool, google_places_nearby_tool],
+        "model": model1
+    }
+
+    # Halloween Decorator Sub-Agent Configuration
+    halloween_decorator_agent = {
+        "name": "halloween_decorator",
+        "description": "Analyzes property images and creates Halloween decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
+        "system_prompt": HALLOWEEN_DECORATOR_SYSTEM_PROMPT,
+        "tools": [analyze_property_images_tool, generate_decorated_image_tool],
+        "model": model1
+    }
+
+    # Create the supervisor agent
+    supervisor = create_deep_agent(
+        model=model,
+        system_prompt=SUPERVISOR_SYSTEM_PROMPT,
+        subagents=[property_search_agent, location_analysis_agent, halloween_decorator_agent],
+        tools=[submit_final_report_tool],
+        checkpointer=checkpointer,
+        backend=make_backend,
+        store=InMemoryStore(),  # For local dev; swap for PostgresStore in production
+    )
+
+    print("[INFO] Supervisor agent created successfully with Browser Use MCP tools")
+    return supervisor
+
+
+async def shutdown_mcp_client():
+    """Cleanup MCP client connections on shutdown."""
+    global mcp_client
+    mcp_client = None
