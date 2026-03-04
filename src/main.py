@@ -161,11 +161,11 @@ def extract_data_from_messages(messages: list) -> tuple[list, dict, dict]:
     # Read decorated images from external disk (these are always saved there)
     decorated_dir = Path("decorated_images")
     if decorated_dir.exists():
-        for file_path in decorated_dir.glob("*_halloween.json"):
+        for file_path in decorated_dir.glob("*_decorated.json"):
             try:
                 with open(file_path, "r") as f:
                     data = json.load(f)
-                prop_id = data.get("property_id", file_path.stem.replace("_halloween", ""))
+                prop_id = data.get("property_id", file_path.stem.replace("_decorated", ""))
                 decorated_images[prop_id] = str(file_path)
                 logger.info(f"[REPORT] Found decorated image: {prop_id}")
             except Exception as e:
@@ -246,7 +246,7 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
         # Build summary
         summary = tool_response.get("summary", "") if tool_response else ""
         if not summary:
-            summary = f"Found {len(properties)} properties with location analysis and Halloween decorations."
+            summary = f"Found {len(properties)} properties with location analysis and interior decorations."
         
         logger.info(f"[REPORT] Built report: {len(properties)} properties, {len(location_analyses)} locations, {len(decorated_images)} decorations")
         
@@ -263,6 +263,7 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
         import traceback
         logger.error(traceback.format_exc())
         return None
+
 
 
 def serialize_interrupt(interrupt_data: list) -> list[dict[str, Any]]:
@@ -451,10 +452,10 @@ async def stream_resume(
 
     resume_command = Command(resume={"decisions": decisions})
 
-    # Post-review progress: location_analysis 55-75%, halloween_decorator 75-90%, report 90-100%
+    # Post-review progress: location_analysis 55-75%, interior_decorator 75-90%, report 90-100%
     RESUME_PROGRESS = {
         "location_analysis": (55, 75),
-        "halloween_decorator": (75, 90),
+        "interior_decorator": (75, 90),
     }
 
     def event_stream():
@@ -634,13 +635,13 @@ async def get_agent_state(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/decorated-image/{property_id}")
+@app.get("/api/interior-image/{property_id}")
 async def get_decorated_image(
     property_id: str,
     creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
 ) -> dict[str, Any]:
-    """Fetch Halloween-decorated image for a property."""
-    file_path = Path("decorated_images") / f"{property_id}_halloween.json"
+    """Fetch interior-decorated image for a property."""
+    file_path = Path("decorated_images") / f"{property_id}_decorated.json"
     
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Decorated image not found")
