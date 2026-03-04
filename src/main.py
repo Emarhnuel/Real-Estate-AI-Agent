@@ -8,6 +8,7 @@ Protected by Clerk authentication.
 import os
 import json
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,8 @@ from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCr
 from langgraph.types import Command
 from dotenv import load_dotenv
 
-from src.agent import supervisor
+import src.agent as agent_module
+from src.agent import create_supervisor_agent, shutdown_mcp_client
 from src.models import AgentRequest, ResumeRequest, StateRequest
 
 # Load environment variables
@@ -27,8 +29,22 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# FastAPI app
-app = FastAPI(title="AI Real Estate Co-Pilot API")
+
+# FastAPI lifespan: initialize MCP client + supervisor at startup
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize the supervisor agent (with MCP tools) at startup, cleanup on shutdown."""
+    logger.info("[STARTUP] Initializing supervisor agent with Browser Use MCP...")
+    await create_supervisor_agent()
+    logger.info("[STARTUP] Supervisor agent ready")
+    yield
+    logger.info("[SHUTDOWN] Cleaning up MCP client...")
+    await shutdown_mcp_client()
+    logger.info("[SHUTDOWN] Done")
+
+
+# FastAPI app with lifespan
+app = FastAPI(title="AI Real Estate Co-Pilot API", lifespan=lifespan)
 
 # CORS configuration
 app.add_middleware(
@@ -211,7 +227,7 @@ def build_report_from_filesystem(thread_id: str, tool_response: dict | None) -> 
         if not properties:
             logger.info("[REPORT] Disk empty, extracting from agent messages")
             config = {"configurable": {"thread_id": thread_id}}
-            state = supervisor.get_state(config)
+            state = agent_module.supervisor.get_state(config)
             if state and state.values:
                 messages = state.values.get("messages", [])
                 msg_props, msg_locs, msg_decs = extract_data_from_messages(messages)
@@ -272,7 +288,7 @@ async def invoke_agent(
     logger.info(f"[INVOKE] Starting agent for thread {thread_id}")
 
     try:
-        result = supervisor.invoke(
+        result = agent_module.supervisor.invoke(
             {"messages": request.messages},
             config
         )
@@ -313,7 +329,7 @@ async def resume_agent(
 
     try:
         # Get current state to find pending interrupt
-        state_snapshot = supervisor.get_state(config)
+        state_snapshot = agent_module.supervisor.get_state(config)
         
         if not state_snapshot or not state_snapshot.tasks:
             raise HTTPException(status_code=400, detail="No pending interrupt found")
@@ -370,7 +386,7 @@ async def resume_agent(
             }
 
         resume_command = Command(resume=resume_payload)
-        result = supervisor.invoke(resume_command, config)
+        result = agent_module.supervisor.invoke(resume_command, config)
 
         # Check for another interrupt
         if "__interrupt__" in result:
@@ -409,7 +425,7 @@ async def get_agent_state(
     logger.info(f"[STATE] Getting state for thread {request.thread_id}")
 
     try:
-        state_snapshot = supervisor.get_state(config)
+        state_snapshot = agent_module.supervisor.get_state(config)
         
         if not state_snapshot or not state_snapshot.values:
             raise HTTPException(status_code=404, detail="Thread not found")
