@@ -272,7 +272,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 
 
-# Halloween Decorator Tools
+# Interior Decorator Tools
 
 @tool(parse_docstring=True)
 def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
@@ -299,14 +299,14 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
         import io
         image = Image.open(io.BytesIO(response.content))
         
-        prompt = """Analyze this property image for Halloween decoration opportunities.
+        prompt = """Analyze this property image for interior decoration opportunities.
         
         Identify:
         1. Room type (living room, bedroom, porch, entryway, etc.)
         2. Available spaces for decorations (walls, corners, windows, doorways)
         3. Existing furniture and layout
         4. Style and color scheme
-        5. Specific decoration suggestions (where to place items)
+        5. Specific decoration suggestions (furniture, lighting, plants, art)
         
         Return a JSON object with: room_type, decoration_spaces, style_notes, suggestions"""
         
@@ -337,7 +337,7 @@ def generate_decorated_image_tool(
     
     Args:
         image_url: URL of the original property image
-        decoration_description: Description of Halloween decorations to add
+        decoration_description: Description of interior decorations to add
         property_id: Property ID used for naming the output file (e.g., "prop1")
     """
     api_key = os.getenv("GEMINI_API_KEY")
@@ -362,17 +362,16 @@ def generate_decorated_image_tool(
         image = Image.open(io.BytesIO(response.content))
         
         # Create prompt for image editing
-        prompt = f"""Using the provided property image, add tasteful Halloween decorations to create a spooky but elegant atmosphere.
+        prompt = f"""Using the provided property image, add tasteful interior decorations to create a beautiful and inviting atmosphere.
         
         Add these decorations: {decoration_description}
         
         Make sure the decorations:
         - Look realistic and naturally placed
         - Match the room's style and lighting
-        - Are festive but not overwhelming
         - Enhance the property's appeal
         
-        Keep the original room structure and furniture unchanged."""
+        Keep the original room structure unchanged."""
         
         response = model.generate_content([prompt, image])
         
@@ -394,7 +393,7 @@ def generate_decorated_image_tool(
         output_dir.mkdir(exist_ok=True)
         
         # Save as JSON with all metadata including base64
-        output_file = output_dir / f"{property_id}_halloween.json"
+        output_file = output_dir / f"{property_id}_decorated.json"
         decoration_data = {
             "property_id": property_id,
             "original_image_url": image_url,
