@@ -2,7 +2,7 @@
 Tools for AI Real Estate Co-Pilot.
 
 This module provides external API integrations including Tavily search
-for property listings, Google Places for location services, and Gemini for Halloween decorations.
+for property listings, Google Places for location services, and Gemini for interior decorations.
 """
 
 import os
@@ -13,6 +13,7 @@ from tavily import TavilyClient
 from langchain_core.tools import tool
 from langchain_tavily import TavilyExtract 
 from langchain_tavily import TavilySearch
+
 
 
 # Import the Pydantic models needed for tool schemas
