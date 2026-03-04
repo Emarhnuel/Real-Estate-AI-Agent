@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCredentials
 from langgraph.types import Command
@@ -313,6 +314,201 @@ async def invoke_agent(
     except Exception as e:
         logger.error(f"[INVOKE] Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/stream")
+async def stream_agent(
+    request: AgentRequest,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+):
+    """Stream agent progress via SSE. Emits which agent is working and estimated progress."""
+    user_id = creds.decoded["sub"]
+    thread_id = f"{user_id}-{request.timestamp}"
+    config = {"configurable": {"thread_id": thread_id}}
+
+    logger.info(f"[STREAM] Starting agent stream for thread {thread_id}")
+
+    # Progress map: subagent_type -> (start%, end%)
+    # Search phase: 0-50% (ends at interrupt for HITL review)
+    PROGRESS_MAP = {
+        "property_search": (5, 45),
+    }
+
+    def event_stream():
+        try:
+            yield f"data: {json.dumps({'type': 'progress', 'agent': 'supervisor', 'progress': 0, 'thread_id': thread_id})}\n\n"
+
+            current_subagent = None
+            subagent_steps = 0
+
+            for namespace, chunk in agent_module.supervisor.stream(
+                {"messages": request.messages},
+                config,
+                stream_mode="updates",
+                subgraphs=True,
+            ):
+                is_subagent = any(s.startswith("tools:") for s in namespace)
+
+                for node_name, data in chunk.items():
+                    # Subagent started
+                    if not namespace and node_name == "model_request":
+                        for msg in data.get("messages", []):
+                            for tc in getattr(msg, "tool_calls", []):
+                                if tc["name"] == "task":
+                                    current_subagent = tc["args"].get("subagent_type", "unknown")
+                                    subagent_steps = 0
+                                    start_pct = PROGRESS_MAP.get(current_subagent, (10, 40))[0]
+                                    yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent, 'progress': start_pct})}\n\n"
+
+                    # Subagent running — increment progress within its range
+                    elif is_subagent and current_subagent:
+                        subagent_steps += 1
+                        start_pct, end_pct = PROGRESS_MAP.get(current_subagent, (10, 40))
+                        # Estimate progress (cap at 90% of range, final 10% on completion)
+                        step_pct = min(start_pct + (subagent_steps * 3), end_pct - 5)
+                        yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent, 'progress': step_pct})}\n\n"
+
+                    # Subagent completed
+                    elif not namespace and node_name == "tools":
+                        for msg in data.get("messages", []):
+                            if hasattr(msg, "type") and msg.type == "tool":
+                                end_pct = PROGRESS_MAP.get(current_subagent, (10, 40))[1]
+                                yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent or 'supervisor', 'progress': end_pct})}\n\n"
+                                current_subagent = None
+
+            # Check final state for interrupt or report
+            state_snapshot = agent_module.supervisor.get_state(config)
+            if state_snapshot and state_snapshot.values:
+                if state_snapshot.tasks:
+                    for task in state_snapshot.tasks:
+                        if hasattr(task, "interrupts") and task.interrupts:
+                            yield f"data: {json.dumps({'type': 'interrupt', 'progress': 50, 'data': serialize_interrupt(task.interrupts)})}\n\n"
+                            yield "data: [DONE]\n\n"
+                            return
+
+                report = extract_final_report(state_snapshot.values, thread_id)
+                if report:
+                    yield f"data: {json.dumps({'type': 'report', 'progress': 100, 'data': report})}\n\n"
+
+            yield "data: [DONE]\n\n"
+
+        except Exception as e:
+            logger.error(f"[STREAM] Error: {str(e)}")
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/api/stream-resume")
+async def stream_resume(
+    request: ResumeRequest,
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
+):
+    """Stream the post-review phase via SSE (location analysis, decoration, final report)."""
+    user_id = creds.decoded["sub"]
+    validate_thread_ownership(request.thread_id, user_id)
+    config = {"configurable": {"thread_id": request.thread_id}}
+
+    logger.info(f"[STREAM-RESUME] Resuming thread {request.thread_id}")
+
+    # Build resume command
+    state_snapshot = agent_module.supervisor.get_state(config)
+    if not state_snapshot or not state_snapshot.tasks:
+        raise HTTPException(status_code=400, detail="No pending interrupt found")
+
+    original_action = None
+    original_properties = []
+    for task in state_snapshot.tasks:
+        if hasattr(task, "interrupts") and task.interrupts:
+            for interrupt in task.interrupts:
+                if hasattr(interrupt, "value"):
+                    for action in interrupt.value.get("action_requests", []):
+                        if action.get("name") == "present_properties_for_review_tool":
+                            original_action = action.copy()
+                            args_data = action.get("args") or action.get("arguments") or {}
+                            original_properties = args_data.get("properties", [])
+                            break
+
+    if not original_action:
+        raise HTTPException(status_code=400, detail="No property review interrupt found")
+
+    approved_ids = set(request.approved_properties or [])
+    filtered_properties = [
+        p for p in original_properties
+        if (p.get("id") if isinstance(p, dict) else getattr(p, "id", None)) in approved_ids
+    ]
+
+    if len(filtered_properties) == len(original_properties):
+        decisions = [{"type": "approve"}]
+    else:
+        decisions = [{
+            "type": "edit",
+            "edited_action": {
+                "name": original_action["name"],
+                "args": {"properties": filtered_properties}
+            }
+        }]
+
+    resume_command = Command(resume={"decisions": decisions})
+
+    # Post-review progress: location_analysis 55-75%, halloween_decorator 75-90%, report 90-100%
+    RESUME_PROGRESS = {
+        "location_analysis": (55, 75),
+        "halloween_decorator": (75, 90),
+    }
+
+    def event_stream():
+        try:
+            yield f"data: {json.dumps({'type': 'progress', 'agent': 'supervisor', 'progress': 50})}\n\n"
+
+            current_subagent = None
+            subagent_steps = 0
+
+            for namespace, chunk in agent_module.supervisor.stream(
+                resume_command,
+                config,
+                stream_mode="updates",
+                subgraphs=True,
+            ):
+                is_subagent = any(s.startswith("tools:") for s in namespace)
+
+                for node_name, data in chunk.items():
+                    if not namespace and node_name == "model_request":
+                        for msg in data.get("messages", []):
+                            for tc in getattr(msg, "tool_calls", []):
+                                if tc["name"] == "task":
+                                    current_subagent = tc["args"].get("subagent_type", "unknown")
+                                    subagent_steps = 0
+                                    start_pct = RESUME_PROGRESS.get(current_subagent, (55, 75))[0]
+                                    yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent, 'progress': start_pct})}\n\n"
+
+                    elif is_subagent and current_subagent:
+                        subagent_steps += 1
+                        start_pct, end_pct = RESUME_PROGRESS.get(current_subagent, (55, 75))
+                        step_pct = min(start_pct + (subagent_steps * 2), end_pct - 5)
+                        yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent, 'progress': step_pct})}\n\n"
+
+                    elif not namespace and node_name == "tools":
+                        for msg in data.get("messages", []):
+                            if hasattr(msg, "type") and msg.type == "tool":
+                                end_pct = RESUME_PROGRESS.get(current_subagent, (55, 75))[1]
+                                yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent or 'supervisor', 'progress': end_pct})}\n\n"
+                                current_subagent = None
+
+            # Final report
+            final_state = agent_module.supervisor.get_state(config)
+            if final_state and final_state.values:
+                report = extract_final_report(final_state.values, request.thread_id)
+                if report:
+                    yield f"data: {json.dumps({'type': 'report', 'progress': 100, 'data': report})}\n\n"
+
+            yield "data: [DONE]\n\n"
+
+        except Exception as e:
+            logger.error(f"[STREAM-RESUME] Error: {str(e)}")
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @app.post("/api/resume")
