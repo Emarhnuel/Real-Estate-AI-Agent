@@ -1,166 +1,282 @@
-# 🎃 AI Real Estate Co-Pilot 👻
+# langsmith-cli
 
-> *"Find your dream home... if you dare!"*
+> **Alpha** — This CLI is under active development. Commands, flags, and output schemas may change between releases. Feedback and bug reports welcome via [GitHub Issues](https://github.com/langchain-ai/langsmith-cli/issues).
 
-An intelligent, conversational AI agent that automates property search and analysis using Deep Agents (LangGraph). Now with spooky Halloween decoration powers! 🦇
+An agent-first CLI for querying and managing [LangSmith](https://smith.langchain.com) resources.
 
----
+Built for AI coding agents (deepagents, Claude Code, Cursor, etc.) and developers who need fast, scriptable access to projects, traces, runs, datasets, evaluators, experiments, and threads.
 
-## ✨ Features
+## Installation
 
-🔮 **Natural Language Search** - Speak your wishes and watch properties appear
-- Purpose-based filtering (rent, sale, shortlet)
-- Automated property listing discovery with Tavily
-- Purpose-specific search strategies for different property types
+### Install script (recommended)
 
-📍 **Location Analysis** - Know what lurks nearby
-- Google Places API integration
-- Nearby amenities, POIs, and reviews
-- Neighborhood insights
-
-🎃 **Halloween Decorator** - Transform any property into a haunted mansion!
-- AI-powered property decoration visualization with Gemini Vision
-- Analyze property images to identify decoration opportunities
-- Generate AI-decorated images showing properties with spooky Halloween themes
-- Pumpkins, cobwebs, spooky lighting, and more!
-
-📋 **Smart Workflow**
-- Task planning and progress tracking with Deep Agents
-- Human-in-the-loop property review
-- Comprehensive property reports
-
-🔐 **Secure** - Clerk JWT authentication on all API endpoints
-
----
-
-## 🧙‍♂️ Tech Stack
-
-**Backend (The Cauldron):**
-- 🕸️ Deep Agents (LangGraph) - Multi-agent orchestration with FilesystemBackend
-- ⚡ FastAPI - API endpoint
-- 💾 MemorySaver - State persistence (development)
-- 🔍 Tavily API - Property search (rent, sale, shortlet)
-- 🗺️ Google Places API - Location data and reviews
-- 👁️ Google Gemini API - Image analysis and AI-generated decoration visualizations
-
-**Frontend (The Haunted House):**
-- ⚛️ Next.js (Pages Router)
-- 🔑 Clerk - Authentication with middleware route protection
-- 🎨 Tailwind CSS - Styling
-
----
-
-## 🕯️ Setup
-
-### 🐳 Docker (Recommended - One Command!)
-
-1. **Create your spell book** (`.env` file from `.env.example`) and add your API keys
-
-2. **Summon the containers:**
 ```bash
-docker-compose up --build
+curl -sSL https://raw.githubusercontent.com/langchain-ai/langsmith-cli/main/scripts/install.sh | sh
 ```
 
-That's it! 🎉 Frontend runs at `http://localhost:3000`, Backend at `http://localhost:8000`
+### GitHub releases
 
-To stop: `docker-compose down`
+Download the latest binary for your platform from [GitHub Releases](https://github.com/langchain-ai/langsmith-cli/releases).
 
----
+## Authentication
 
-### 🧪 Manual Setup (Alternative)
+Set your API key as an environment variable:
 
-1. **Summon uv:**
 ```bash
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+export LANGSMITH_API_KEY="lsv2_pt_..."
 ```
 
-2. **Brew the dependencies:**
+Optionally set defaults:
+
 ```bash
-uv sync
+export LANGSMITH_ENDPOINT="https://api.smith.langchain.com"  # For self-hosted
+export LANGSMITH_PROJECT="my-default-project"                 # Default project for queries
 ```
 
-3. **Create your spell book** (`.env` file from `.env.example`) and add your API keys
+Or pass them as flags:
 
-4. **(Optional) Enable LangSmith tracing** for monitoring your spirits:
-```env
-LANGSMITH_API_KEY=your_langsmith_api_key
-LANGSMITH_TRACING=true
-LANGSMITH_PROJECT=ai-real-estate-copilot
-```
-
-5. **Awaken the servers:**
 ```bash
-# Backend
-uv run uvicorn src.main:app --reload
-
-# Frontend (in another terminal)
-cd frontend
-npm install
-npm run dev
+langsmith --api-key lsv2_pt_... trace list --project my-app
 ```
 
----
+## Quick Start
 
-## 🦴 API Endpoints
+```bash
+# List tracing projects
+langsmith project list
 
-All endpoints require Clerk JWT authentication via `Authorization: Bearer <token>` header (except `/health`).
+# List recent traces in a project
+langsmith trace list --project my-app --limit 5
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/invoke` | POST | Start or continue agent conversation |
-| `/api/resume` | POST | Resume agent after human-in-the-loop interrupt |
-| `/api/state` | POST | Get current agent state for a thread |
-| `/api/decorated-image/{property_id}` | GET | Fetch Halloween-decorated image 🎃 |
-| `/health` | GET | Health check (is the ghost still alive?) |
+# Get a specific trace with full detail
+langsmith trace get <trace-id> --project my-app --full
 
-### 🔐 Authentication Flow
+# List LLM calls with token counts
+langsmith run list --project my-app --run-type llm --include-metadata
 
-1. User authenticates with Clerk on frontend
-2. Clerk middleware protects `/agent` and `/profile` routes
-3. Frontend obtains JWT token with `getToken()`
-4. Token sent in Authorization header to API
-5. FastAPI validates JWT and extracts user_id
-6. Thread ID format: `{user_id}-{timestamp}`
+# List datasets
+langsmith dataset list
 
----
-
-## 🏚️ Project Structure
-
-```
-├── api/index.py          # FastAPI serverless function 
-├── src/
-│   ├── agent.py          # Deep Agents (supervisor + sub-agents)
-│   ├── tools.py          # Tavily, Google Places tools
-│   ├── models.py         # Pydantic models
-│   ├── prompts.py        # System prompts for agents
-│   └── utils.py          # Helper functions
-├── frontend/
-│   ├── middleware.ts     # Clerk route protection
-│   ├── src/pages/        # Next.js pages
-│   └── components/       # React components
-└── tests/                # Integration tests
+# List experiments for a dataset
+langsmith experiment list --dataset my-eval-set
 ```
 
----
+## Output Formats
 
-## ⚰️ Environment Variables (Secret Ingredients)
+All commands default to **JSON** output for agent consumption:
 
-- `OPENROUTER_API_KEY` - OpenRouter API key
-- `CLERK_JWKS_URL` - Clerk JWKS URL for JWT validation
-- `TAVILY_API_KEY` - Tavily API key for property search
-- `GOOGLE_MAPS_API_KEY` - Google Maps API key
-- `GEMINI_API_KEY` - Google Gemini API key (for Halloween Decorator 🎃)
+```bash
+langsmith trace list --project my-app  # JSON array to stdout
+```
 
----
+Use `--format pretty` for human-readable tables and trees:
 
-## 📜 License
+```bash
+langsmith --format pretty trace list --project my-app
+```
+
+Write to a file with `-o`:
+
+```bash
+langsmith trace list --project my-app -o traces.json
+```
+
+## Command Reference
+
+### `project` — List tracing projects
+
+A tracing project (session) is a namespace that groups related traces together. This lists only tracing projects, not experiments — use `experiment list` for those.
+
+```bash
+# List tracing projects (default limit: 20)
+langsmith project list
+langsmith project list --limit 50
+
+# Filter by name
+langsmith project list --name-contains chatbot
+
+# Human-readable table
+langsmith --format pretty project list
+```
+
+### `trace` — Query and export traces
+
+A trace is a tree of runs representing one end-to-end invocation of your application.
+
+```bash
+# List recent traces (default limit: 20)
+langsmith trace list --project my-app
+langsmith trace list --project my-app --limit 50 --last-n-minutes 60
+
+# Filter traces
+langsmith trace list --project my-app --error           # Only errors
+langsmith trace list --project my-app --min-latency 5   # Slow traces (>5s)
+langsmith trace list --project my-app --tags production  # By tag
+langsmith trace list --project my-app --name "agent"     # By name
+
+# Include additional fields
+langsmith trace list --project my-app --include-metadata   # + status, duration, tokens, costs
+langsmith trace list --project my-app --include-io         # + inputs, outputs, error
+langsmith trace list --project my-app --include-feedback   # + feedback_stats
+langsmith trace list --project my-app --full               # All fields (metadata + io + feedback)
+
+# Show trace hierarchy (fetches full run tree for each trace)
+langsmith trace list --project my-app --show-hierarchy --limit 3
+
+# Get a specific trace
+langsmith trace get <trace-id> --project my-app --full
+
+# Export traces to JSONL files (one per trace)
+langsmith trace export ./traces --project my-app --limit 20 --full
+
+# Custom filename pattern (supports {trace_id} and {name} placeholders)
+langsmith trace export ./traces --project my-app --filename-pattern "{name}_{trace_id}.jsonl"
+```
+
+### `run` — Query individual runs
+
+A run is a single step within a trace (LLM call, tool call, chain step, etc.).
+
+```bash
+# List LLM calls (default limit: 50)
+langsmith run list --project my-app --run-type llm
+langsmith run list --project my-app --run-type tool --name search
+
+# Find expensive calls
+langsmith run list --project my-app --run-type llm --min-tokens 1000 --include-metadata
+
+# Include feedback scores
+langsmith run list --project my-app --include-feedback
+
+# Get a specific run
+langsmith run get <run-id> --full
+
+# Export to JSONL (default limit: 100)
+langsmith run export llm_calls.jsonl --project my-app --run-type llm --full
+```
+
+### `thread` — Query conversation threads
+
+A thread groups multiple root runs sharing a thread_id (multi-turn conversations).
+
+```bash
+# List threads (requires --project)
+langsmith thread list --project my-chatbot
+langsmith thread list --project my-chatbot --last-n-minutes 120
+
+# Get all turns in a thread
+langsmith thread get <thread-id> --project my-chatbot --full
+```
+
+### `dataset` — Manage evaluation datasets
+
+```bash
+# List datasets
+langsmith dataset list
+langsmith dataset list --name-contains eval
+
+# Get dataset details
+langsmith dataset get my-dataset
+
+# Create and delete
+langsmith dataset create --name my-eval-set --description "QA pairs for v2"
+langsmith dataset delete my-old-dataset --yes
+
+# Export examples to JSON
+langsmith dataset export my-dataset ./data.json --limit 500
+
+# Upload from JSON file
+langsmith dataset upload data.json --name new-dataset
+```
+
+### `example` — Manage dataset examples
+
+```bash
+# List examples
+langsmith example list --dataset my-dataset
+langsmith example list --dataset my-dataset --split test --limit 50
+
+# Paginate through examples
+langsmith example list --dataset my-dataset --limit 20 --offset 20
+
+# Create an example
+langsmith example create --dataset my-dataset \
+  --inputs '{"question": "What is LangSmith?"}' \
+  --outputs '{"answer": "A platform for LLM observability"}'
+
+# Create with metadata and split assignment
+langsmith example create --dataset my-dataset \
+  --inputs '{"question": "What is tracing?"}' \
+  --outputs '{"answer": "Recording LLM application execution"}' \
+  --metadata '{"source": "manual", "version": 2}' \
+  --split test
+
+# Delete an example
+langsmith example delete <example-id> --yes
+```
+
+### `evaluator` — Manage evaluator rules
+
+```bash
+# List evaluators
+langsmith evaluator list
+
+# Upload an offline evaluator (for experiments)
+langsmith evaluator upload evals.py \
+  --name accuracy --function check_accuracy --dataset my-eval-set
+
+# Upload an online evaluator (for production monitoring)
+langsmith evaluator upload evals.py \
+  --name latency-check --function check_latency --project my-app
+
+# Set sampling rate (evaluate a fraction of runs, 0.0-1.0)
+langsmith evaluator upload evals.py \
+  --name latency-check --function check_latency --project my-app --sampling-rate 0.5
+
+# Replace an existing evaluator
+langsmith evaluator upload evals.py \
+  --name accuracy --function check_accuracy_v2 --dataset my-eval-set --replace --yes
+
+# Delete an evaluator
+langsmith evaluator delete accuracy --yes
+```
+
+### `experiment` — Query experiment results
+
+```bash
+# List experiments
+langsmith experiment list
+langsmith experiment list --dataset my-eval-set
+
+# Get experiment results (feedback stats, run stats)
+langsmith experiment get my-experiment-2024-01-15
+```
+
+## Filter Options
+
+Most `trace` and `run` commands share these filter options:
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--project` | Project name | `--project my-app` |
+| `--limit, -n` | Max results | `-n 10` |
+| `--last-n-minutes` | Time window | `--last-n-minutes 60` |
+| `--since` | After ISO timestamp | `--since 2024-01-15T00:00:00Z` |
+| `--error / --no-error` | Error status | `--error` |
+| `--name` | Name search (case-insensitive) | `--name ChatOpenAI` |
+| `--run-type` | Run type (run commands only) | `--run-type llm` |
+| `--min-latency` | Min latency (seconds) | `--min-latency 2.5` |
+| `--max-latency` | Max latency (seconds) | `--max-latency 10` |
+| `--min-tokens` | Min total tokens | `--min-tokens 1000` |
+| `--tags` | Tags (comma-separated, OR logic) | `--tags prod,v2` |
+| `--filter` | Raw LangSmith filter DSL | `--filter 'eq(status, "error")'` |
+| `--trace-ids` | Specific trace IDs | `--trace-ids abc123,def456` |
+
+### Requirements
+
+- Go 1.23+
+- golangci-lint (for linting)
+
+## License
 
 MIT
-
----
-
-<p align="center">
-  <img src="https://em-content.zobj.net/source/apple/391/jack-o-lantern_1f383.png" width="50" />
-  <br>
-  <em>Happy Haunting! 👻</em>
-</p>
