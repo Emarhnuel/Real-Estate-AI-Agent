@@ -2,7 +2,6 @@
 FastAPI server for AI Real Estate Co-Pilot.
 
 Handles agent invocation, human-in-the-loop interrupts, and final report delivery.
-Protected by Clerk authentication.
 """
 
 import os
@@ -12,10 +11,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCredentials
 from langgraph.types import Command
 from dotenv import load_dotenv
 
@@ -31,7 +29,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# FastAPI lifespan: initialize MCP client + supervisor at startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize the supervisor agent (with MCP tools) at startup, cleanup on shutdown."""
@@ -44,31 +41,15 @@ async def lifespan(app: FastAPI):
     logger.info("[SHUTDOWN] Done")
 
 
-# FastAPI app with lifespan
 app = FastAPI(title="AI Real Estate Co-Pilot API", lifespan=lifespan)
 
-# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        os.getenv("FRONTEND_URL", ""),
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Clerk authentication
-clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
-clerk_guard = ClerkHTTPBearer(clerk_config)
-
-
-def validate_thread_ownership(thread_id: str, user_id: str) -> None:
-    """Ensure the thread belongs to the authenticated user."""
-    if not thread_id.startswith(f"{user_id}-"):
-        raise HTTPException(status_code=403, detail="Access denied to this thread")
 
 
 def extract_final_report(state: dict, thread_id: str) -> dict | None:
@@ -278,13 +259,9 @@ def serialize_interrupt(interrupt_data: list) -> list[dict[str, Any]]:
 
 
 @app.post("/api/invoke")
-async def invoke_agent(
-    request: AgentRequest,
-    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
-) -> dict[str, Any]:
+async def invoke_agent(request: AgentRequest) -> dict[str, Any]:
     """Start agent conversation. Returns interrupt if property review needed."""
-    user_id = creds.decoded["sub"]
-    thread_id = f"{user_id}-{request.timestamp}"
+    thread_id = f"thread-{request.timestamp}"
     config = {"configurable": {"thread_id": thread_id}}
 
     logger.info(f"[INVOKE] Starting agent for thread {thread_id}")
@@ -318,13 +295,9 @@ async def invoke_agent(
 
 
 @app.post("/api/stream")
-async def stream_agent(
-    request: AgentRequest,
-    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
-):
+async def stream_agent(request: AgentRequest):
     """Stream agent progress via SSE. Emits which agent is working and estimated progress."""
-    user_id = creds.decoded["sub"]
-    thread_id = f"{user_id}-{request.timestamp}"
+    thread_id = f"thread-{request.timestamp}"
     config = {"configurable": {"thread_id": thread_id}}
 
     logger.info(f"[STREAM] Starting agent stream for thread {thread_id}")
@@ -401,13 +374,8 @@ async def stream_agent(
 
 
 @app.post("/api/stream-resume")
-async def stream_resume(
-    request: ResumeRequest,
-    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
-):
+async def stream_resume(request: ResumeRequest):
     """Stream the post-review phase via SSE (location analysis, decoration, final report)."""
-    user_id = creds.decoded["sub"]
-    validate_thread_ownership(request.thread_id, user_id)
     config = {"configurable": {"thread_id": request.thread_id}}
 
     logger.info(f"[STREAM-RESUME] Resuming thread {request.thread_id}")
@@ -513,13 +481,8 @@ async def stream_resume(
 
 
 @app.post("/api/resume")
-async def resume_agent(
-    request: ResumeRequest,
-    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
-) -> dict[str, Any]:
+async def resume_agent(request: ResumeRequest) -> dict[str, Any]:
     """Resume agent after human review. Filters properties to approved ones."""
-    user_id = creds.decoded["sub"]
-    validate_thread_ownership(request.thread_id, user_id)
     config = {"configurable": {"thread_id": request.thread_id}}
 
     logger.info(f"[RESUME] Resuming thread {request.thread_id}")
@@ -600,13 +563,8 @@ async def resume_agent(
 
 
 @app.post("/api/state")
-async def get_agent_state(
-    request: StateRequest,
-    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
-) -> dict[str, Any]:
+async def get_agent_state(request: StateRequest) -> dict[str, Any]:
     """Get current agent state for a thread."""
-    user_id = creds.decoded["sub"]
-    validate_thread_ownership(request.thread_id, user_id)
     config = {"configurable": {"thread_id": request.thread_id}}
 
     logger.info(f"[STATE] Getting state for thread {request.thread_id}")
@@ -636,10 +594,7 @@ async def get_agent_state(
 
 
 @app.get("/api/interior-image/{property_id}")
-async def get_decorated_image(
-    property_id: str,
-    creds: HTTPAuthorizationCredentials = Depends(clerk_guard)
-) -> dict[str, Any]:
+async def get_decorated_image(property_id: str) -> dict[str, Any]:
     """Fetch interior-decorated image for a property."""
     file_path = Path("decorated_images") / f"{property_id}_decorated.json"
     
