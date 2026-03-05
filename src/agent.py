@@ -49,23 +49,18 @@ from src.prompts import (
 # =============================================================================
 
 # Amazon Nova - Main model for supervisor (most capable)
-model = ChatAmazonNova(
-    model="nova-premier-v1",
-    temperature=0.7,
-    max_tokens=4096,
-)
 
 # Amazon Nova - Lighter model for sub-agents (faster, cheaper for focused tasks)
 model1 = ChatAmazonNova(
     model="nova-2-lite-v1",
-    temperature=0.7,
+    temperature=0.0,
     max_tokens=4096,
 )
 
 # Amazon Nova - Model with Web Grounding for property search (replaces Tavily)
 model_with_grounding = ChatAmazonNova(
     model="nova-2-lite-v1",
-    temperature=0.7,
+    temperature=0.0,
     max_tokens=4096,
     system_tools=["nova_grounding"],
 )
@@ -160,10 +155,10 @@ async def create_supervisor_agent():
         "tools": [analyze_property_images_tool, generate_decorated_image_tool],
         "model": model1
     }
-
+ 
     # Create the supervisor agent
     supervisor = create_deep_agent(
-        model=model,
+        model=model1,
         system_prompt=SUPERVISOR_SYSTEM_PROMPT,
         subagents=[property_search_agent, location_analysis_agent, interior_decorator_agent],
         tools=[submit_final_report_tool],
