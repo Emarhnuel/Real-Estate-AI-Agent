@@ -49,7 +49,10 @@ from src.prompts import (
 
 # Amazon Bedrock - Main model for all agents
 model1 = ChatBedrockConverse( 
-    model_id="us.amazon.nova-2-lite-v1:0",  
+    model_id="us.amazon.nova-2-lite-v1:0",
+    region_name=os.getenv("AWS_REGION", "us-east-1"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     temperature=0.0,
     max_tokens=40960,
 )
