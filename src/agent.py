@@ -6,7 +6,7 @@ and location analysis using the Deep Agents framework.
 """
 
 import os
-from langchain_amazon_nova import ChatAmazonNova
+from langchain_aws import ChatBedrockConverse
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.store.memory import InMemoryStore
@@ -28,8 +28,7 @@ if os.getenv("LANGSMITH_TRACING", "").lower() == "true":
     print(f"[INFO] LangSmith tracing enabled for project: {os.getenv('LANGSMITH_PROJECT', 'default')}")
 
 from src.tools import (
-    # tavily_search_tool,  # Replaced by Nova Web Grounding
-    # tavily_extract_tool,  # Replaced by Nova Web Grounding
+    tavily_search_tool,
     google_places_geocode_tool,
     google_places_nearby_tool,
     present_properties_for_review_tool,
@@ -48,21 +47,11 @@ from src.prompts import (
 # MODEL CONFIGURATION
 # =============================================================================
 
-# Amazon Nova - Main model for supervisor (most capable)
-
-# Amazon Nova - Lighter model for sub-agents (faster, cheaper for focused tasks)
-model1 = ChatAmazonNova(
-    model="nova-2-lite-v1",
+# Amazon Bedrock - Main model for all agents
+model1 = ChatBedrockConverse( 
+    model_id="us.amazon.nova-2-lite-v1:0",  
     temperature=0.0,
-    max_tokens=4096,
-)
-
-# Amazon Nova - Model with Web Grounding for property search (replaces Tavily)
-model_with_grounding = ChatAmazonNova(
-    model="nova-2-lite-v1",
-    temperature=0.0,
-    max_tokens=4096,
-    system_tools=["nova_grounding"],
+    max_tokens=40960,
 )
 
 # =============================================================================
@@ -121,17 +110,17 @@ async def create_supervisor_agent():
     print(f"[INFO] Loaded {len(browser_tools)} Browser Use MCP tools")
 
     # Property Search Sub-Agent Configuration
-    # Uses Nova Web Grounding for search + Browser Use MCP for scraping
+    # Uses Tavily for search + Browser Use MCP for scraping
     property_search_agent = {
         "name": "property_search",
         "description": (
-            "Searches for property listings matching user criteria using web grounding. "
+            "Searches for property listings matching user criteria. "
             "Uses browser automation to extract detailed property data from listing pages. "
             "Saves properties and asks for human review."
         ),
         "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-        "tools": [present_properties_for_review_tool] + browser_tools,
-        "model": model_with_grounding,
+        "tools": [tavily_search_tool, present_properties_for_review_tool] + browser_tools,
+        "model": model1,
         "interrupt_on": {
             "present_properties_for_review_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
         },
