@@ -60,8 +60,8 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         browser = Browser(use_cloud=True)
         # Using AWS Bedrock Anthropic model directly
         llm = ChatAnthropicBedrock(
-            model="anthropic.claude-sonnet-4-5-20250929-v1:0", 
-            aws_region=os.getenv("AWS_REGION", "eu-central-1")
+            model="us.anthropic.claude-sonnet-4-5-20250929-v1:0", 
+            aws_region=os.getenv("AWS_REGION", "us-east-1") 
         )
         
         # Max failures set to 3 for resilience as per browser-use docs
