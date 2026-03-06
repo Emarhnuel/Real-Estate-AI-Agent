@@ -18,7 +18,6 @@ from langgraph.types import Command
 from dotenv import load_dotenv
 
 import src.agent as agent_module
-from src.agent import create_supervisor_agent, shutdown_mcp_client
 from src.models import AgentRequest, ResumeRequest, StateRequest
 
 # Load environment variables
@@ -31,13 +30,10 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize the supervisor agent (with MCP tools) at startup, cleanup on shutdown."""
-    logger.info("[STARTUP] Initializing supervisor agent with Browser Use MCP...")
-    await create_supervisor_agent()
+    """Lifecycle for FastAPI."""
+    logger.info("[STARTUP] Initializing supervisor agent...")
     logger.info("[STARTUP] Supervisor agent ready")
     yield
-    logger.info("[SHUTDOWN] Cleaning up MCP client...")
-    await shutdown_mcp_client()
     logger.info("[SHUTDOWN] Done")
 
 
