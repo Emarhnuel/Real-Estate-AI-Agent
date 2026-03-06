@@ -9,7 +9,7 @@ venv/
 ENV/
 env/
 .uv/
-
+traces/
 err.txt
 
 # Environment
