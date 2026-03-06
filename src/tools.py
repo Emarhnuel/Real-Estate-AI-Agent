@@ -50,9 +50,12 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         f"1. Go to the URL: {url}\n"
         f"2. {extraction_prompt}\n"
         "3. Wait for 2 seconds if the page is not fully loaded, or refresh it.\n"
-        "4. If elements cannot be clicked normally, use send_keys action with 'Tab Enter' or 'ArrowDown'.\n"
-        "5. If a modal or pop-up appears and blocks the screen, attempt to close it.\n"
-        "6. Once data is found, use the 'done' action to return the extracted data."
+        "4. **CRITICAL: You MUST extract EXACTLY 2 matching properties on this page.** Stop immediately after finding 2.\n"
+        "5. **CRITICAL: You MUST extract the URL of the property itself.**\n"
+        "6. **CRITICAL: You MUST extract at least 3 image URLs per property.**\n"
+        "7. If elements cannot be clicked normally, use send_keys action with 'Tab Enter' or 'ArrowDown'.\n"
+        "8. If a modal or pop-up appears and blocks the screen, attempt to close it.\n"
+        "9. Once data is found for exactly 2 properties (including their URLs and 3 images each), use the 'done' action to return the extracted JSON array."
     )
     
     async def run_extraction():
