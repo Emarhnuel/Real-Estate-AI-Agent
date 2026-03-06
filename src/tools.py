@@ -13,6 +13,9 @@ from tavily import TavilyClient
 from langchain_core.tools import tool
 from langchain_tavily import TavilyExtract 
 from langchain_tavily import TavilySearch
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 
 
@@ -25,17 +28,31 @@ AGENT_DATA_DIR = os.path.abspath("./agent_data")
 
 
 
-from langchain_tavily import TavilySearch
-
-tavily_search_tool = TavilySearch(
-    max_results=5,
-    search_depth="advanced",
-    description="""Search for property listings using Tavily API to find URLs of individual properties.
+@tool(parse_docstring=True)
+def tavily_search_tool(
+    query: str,
+    max_results: int = 5
+) -> Dict[str, Any]:
+    """Search for property listings using Tavily API to find URLs of individual properties.
     
     Args:
         query: Search query for property listings.
+        max_results: Maximum number of result URLs to return.
     """
-)
+    api_key = os.getenv("TAVILY_API_KEY")
+    if not api_key:
+        raise ValueError("TAVILY_API_KEY environment variable is not set")
+    
+    try:
+        client = TavilyClient(api_key=api_key)
+        response = client.search(
+            query=query,
+            max_results=max_results,
+            search_depth="advanced"
+        )
+        return response
+    except Exception as e:
+        raise Exception(f"Tavily search failed: {str(e)}")
 
 
 @tool(parse_docstring=True)
