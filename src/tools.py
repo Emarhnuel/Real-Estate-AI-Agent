@@ -6,10 +6,13 @@ for property listings, Google Places for location services, and Gemini for inter
 """
 
 import os
+import asyncio
 import requests
 from typing import Dict, Any, List
 from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
+from browser_use import Agent, Browser
+from browser_use.llm import ChatAnthropicBedrock
 from langchain_core.tools import tool
 from langchain_tavily import TavilyExtract 
 from langchain_tavily import TavilySearch
@@ -26,6 +29,57 @@ from src.models import PropertyForReview, PropertyReport
 # Shared disk directory for all agents
 AGENT_DATA_DIR = os.path.abspath("./agent_data")
 
+
+
+@tool(parse_docstring=True)
+def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
+    """Use a stealth cloud browser to visit a URL and extract specific property information.
+    
+    Useful for scraping real estate listings that have anti-bot protections.
+    
+    Args:
+        url: The property URL to visit and extract data from.
+        extraction_prompt: Specific instructions on what to extract from the page (e.g., 'Extract price, bedrooms, and description').
+    """
+    api_key = os.getenv("BROWSER_USE_API_KEY")
+    if not api_key:
+        return "Error: BROWSER_USE_API_KEY environment variable is not set"
+    
+    # Advanced Prompting Strategy based on official docs
+    task = (
+        f"1. Go to the URL: {url}\n"
+        f"2. {extraction_prompt}\n"
+        "3. Wait for 2 seconds if the page is not fully loaded, or refresh it.\n"
+        "4. If elements cannot be clicked normally, use send_keys action with 'Tab Enter' or 'ArrowDown'.\n"
+        "5. If a modal or pop-up appears and blocks the screen, attempt to close it.\n"
+        "6. Once data is found, use the 'done' action to return the extracted data."
+    )
+    
+    async def run_extraction():
+        # use_cloud=True enables stealth and anti-bot bypass
+        browser = Browser(use_cloud=True)
+        # Using AWS Bedrock Anthropic model directly
+        llm = ChatAnthropicBedrock(
+            model="anthropic.claude-3-5-sonnet-20240620-v1:0", 
+            aws_region=os.getenv("AWS_REGION", "eu-central-1")
+        )
+        
+        # Max failures set to 3 for resilience as per browser-use docs
+        agent = Agent(
+            task=task, 
+            browser=browser, 
+            llm=llm,
+            max_failures=3,
+            use_vision=True # Allows the LLM to visually see the property listing layout
+        )
+        
+        history = await agent.run(max_steps=15)
+        return history.final_result()
+
+    try:
+        return asyncio.run(run_extraction())
+    except Exception as e:
+        return f"Extraction failed: {str(e)}"
 
 
 @tool(parse_docstring=True)
