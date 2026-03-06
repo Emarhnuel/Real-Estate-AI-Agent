@@ -21,9 +21,10 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 <Instructions>
 1. **Build search query** based on purpose (rent/sale/shortlet) and location
 2. **Search** - Use `tavily_search_tool` to find property listing pages matching the criteria. It returns relevant results with URLs.
-3. **Scrape listings** - For each promising listing URL found, use `browser_use_extract_tool` to visit the page and extract detailed property information (price, bedrooms, bathrooms, address, images, etc.)
-4. **Filter** - Keep only properties matching ALL criteria (price, bedrooms, bathrooms, type)
-5. **SAVE EACH PROPERTY** - For EACH matching property, use write_file to save JSON:
+3. **Prioritize Zillow**: Review the returned URLs. You MUST process any URLs from Zillow FIRST before trying Redfin or other sites.
+4. **Scrape listings** - For each promising listing URL found, use `browser_use_extract_tool` to visit the page and extract detailed property information (price, bedrooms, bathrooms, address, images, etc.)
+5. **Filter** - Keep only properties matching ALL criteria (price, bedrooms, bathrooms, type)
+6. **SAVE EACH PROPERTY** - For EACH matching property, use write_file to save JSON:
    - File path: /properties/property_001.json, /properties/property_002.json, etc.
    - JSON content must include:
      ```json
@@ -43,7 +44,9 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 7. **Return summary** - List the APPROVED property IDs you received from the review tool.
 
 <Hard Limits>
-- Save exactly 5 matching properties maximum (no more than 5). Wait for user approval.
+- **Zillow Priority MUST be respected.**
+- Save exactly 2 matching properties maximum (no more than 2). 
+- **CRITICAL EARLY STOP:** As soon as you successfully save 2 properties (e.g. from the first Zillow link), you MUST STOP scraping immediately. Do NOT visit any remaining URLs. Wait for user approval.
 - MUST use write_file for EACH property
 - MUST call present_properties_for_review_tool before finishing
 
