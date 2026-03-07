@@ -50,17 +50,24 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         f"1. Go to the URL: {url}\n"
         f"2. {extraction_prompt}\n"
         "3. Wait for 2 seconds if the page is not fully loaded, or refresh it.\n"
-        "4. **CRITICAL: You MUST extract EXACTLY 2 matching properties on this page.** Stop immediately after finding 2.\n"
+        "4. **CRITICAL: You MUST extract EXACTLY 2 matching properties on this page.**\n"
         "5. **CRITICAL: You MUST extract the URL of the property itself.**\n"
-        "6. **CRITICAL: You MUST extract at least 3 image URLs per property.**\n"
-        "7. If elements cannot be clicked normally, use send_keys action with 'Tab Enter' or 'ArrowDown'.\n"
-        "8. If a modal or pop-up appears and blocks the screen, attempt to close it.\n"
-        "9. Once data is found for exactly 2 properties (including their URLs and 3 images each), use the 'done' action to return the extracted JSON array."
+        "6. **CRITICAL: You MUST extract at least 3 image URLs per property. If a property is missing image URLs, SCROLL DOWN its page to trigger the lazy-loading of images. If it still has no images, SKIP IT and check the next property. DO NOT stop until you have 2 properties that meet ALL criteria AND have images.**\n"
+        "7. **CRITICAL: You MUST extract a short description for each property.**\n"
+        "8. If elements cannot be clicked normally, use send_keys action with 'Tab Enter' or 'ArrowDown'.\n"
+        "9. If a modal or pop-up appears and blocks the screen, attempt to close it.\n"
+        "10. Once data is found for exactly 2 properties (including their URLs, descriptions, and 3 images each), use the 'done' action to return the extracted JSON array."
     )
     
     async def run_extraction():
         # use_cloud=True enables stealth and anti-bot bypass
-        browser = Browser(use_cloud=True)
+        # cloud_proxy_country_code='us' uses a US residential proxy to further bypass Zillow blocks
+        # cloud_timeout=30 gives the CDP protocol up to 30 mins to serialize large DOM trees without TimeoutErrors
+        browser = Browser(
+            use_cloud=True,
+            cloud_proxy_country_code='us',
+            cloud_timeout=30
+        )
         # Using AWS Bedrock Anthropic model directly
         llm = ChatAnthropicBedrock(
             model="us.anthropic.claude-sonnet-4-5-20250929-v1:0", 
