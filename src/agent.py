@@ -125,6 +125,7 @@ supervisor = create_deep_agent(
     checkpointer=checkpointer,
     backend=make_backend,
     store=InMemoryStore(),  # For local dev; swap for PostgresStore in production
+    debug=True
 )
 
 print("[INFO] Supervisor agent created successfully")
