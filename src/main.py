@@ -254,6 +254,52 @@ def serialize_interrupt(interrupt_data: list) -> list[dict[str, Any]]:
     return result
 
 
+def build_resume_command(supervisor, thread_id: str, approved_ids: list[str]) -> Command:
+    """Helper to safely build a Deep Agents HITL resume command after verifying interrupt existence."""
+    config = {"configurable": {"thread_id": thread_id}}
+    state_snapshot = supervisor.get_state(config)
+    
+    if not state_snapshot or not state_snapshot.tasks:
+        raise HTTPException(status_code=400, detail="No pending interrupt found")
+
+    original_action = None
+    original_properties = []
+    
+    for task in state_snapshot.tasks:
+        if not getattr(task, "interrupts", None):
+            continue
+        for interrupt in task.interrupts:
+            if hasattr(interrupt, "value"):
+                for action in interrupt.value.get("action_requests", []):
+                    if action.get("name") == "present_properties_for_review_tool":
+                        original_action = action.copy()
+                        args_data = action.get("args") or action.get("arguments") or {}
+                        original_properties = args_data.get("properties", [])
+                        break
+
+    if not original_action:
+        raise HTTPException(status_code=400, detail="No property review interrupt found or already resolved")
+
+    approved_ids_set = set(approved_ids or [])
+    filtered_properties = [
+        p for p in original_properties
+        if (p.get("id") if isinstance(p, dict) else getattr(p, "id", None)) in approved_ids_set
+    ]
+
+    if len(filtered_properties) == len(original_properties):
+        decisions = [{"type": "approve"}]
+    else:
+        decisions = [{
+            "type": "edit",
+            "edited_action": {
+                "name": original_action["name"],
+                "args": {"properties": filtered_properties}
+            }
+        }]
+
+    return Command(resume={"decisions": decisions})
+
+
 @app.post("/api/invoke")
 async def invoke_agent(request: AgentRequest) -> dict[str, Any]:
     """Start agent conversation. Returns interrupt if property review needed."""
@@ -386,45 +432,12 @@ async def stream_resume(request: ResumeRequest):
 
     logger.info(f"[STREAM-RESUME] Resuming thread {request.thread_id}")
 
-    # Build resume command
-    state_snapshot = agent_module.supervisor.get_state(config)
-    if not state_snapshot or not state_snapshot.tasks:
-        raise HTTPException(status_code=400, detail="No pending interrupt found")
-
-    original_action = None
-    original_properties = []
-    for task in state_snapshot.tasks:
-        if hasattr(task, "interrupts") and task.interrupts:
-            for interrupt in task.interrupts:
-                if hasattr(interrupt, "value"):
-                    for action in interrupt.value.get("action_requests", []):
-                        if action.get("name") == "present_properties_for_review_tool":
-                            original_action = action.copy()
-                            args_data = action.get("args") or action.get("arguments") or {}
-                            original_properties = args_data.get("properties", [])
-                            break
-
-    if not original_action:
-        raise HTTPException(status_code=400, detail="No property review interrupt found")
-
-    approved_ids = set(request.approved_properties or [])
-    filtered_properties = [
-        p for p in original_properties
-        if (p.get("id") if isinstance(p, dict) else getattr(p, "id", None)) in approved_ids
-    ]
-
-    if len(filtered_properties) == len(original_properties):
-        decisions = [{"type": "approve"}]
-    else:
-        decisions = [{
-            "type": "edit",
-            "edited_action": {
-                "name": original_action["name"],
-                "args": {"properties": filtered_properties}
-            }
-        }]
-
-    resume_command = Command(resume={"decisions": decisions})
+    # Build resume command safely using helper
+    resume_command = build_resume_command(
+        agent_module.supervisor, 
+        request.thread_id, 
+        request.approved_properties or []
+    )
 
     # Post-review progress: location_analysis 55-75%, interior_decorator 75-90%, report 90-100%
     RESUME_PROGRESS = {
@@ -494,54 +507,13 @@ async def resume_agent(request: ResumeRequest) -> dict[str, Any]:
     logger.info(f"[RESUME] Resuming thread {request.thread_id}")
 
     try:
-        # Get current state to find pending interrupt
-        state_snapshot = agent_module.supervisor.get_state(config)
+        # Build resume command safely using helper
+        resume_command = build_resume_command(
+            agent_module.supervisor, 
+            request.thread_id, 
+            request.approved_properties or []
+        )
         
-        if not state_snapshot or not state_snapshot.tasks:
-            raise HTTPException(status_code=400, detail="No pending interrupt found")
-
-        # Extract original action request and properties from interrupt
-        original_action = None
-        original_properties = []
-        
-        for task in state_snapshot.tasks:
-            if hasattr(task, "interrupts") and task.interrupts:
-                for interrupt in task.interrupts:
-                    if hasattr(interrupt, "value"):
-                        action_requests = interrupt.value.get("action_requests", [])
-                        for action in action_requests:
-                            if action.get("name") == "present_properties_for_review_tool":
-                                original_action = action.copy()
-                                args_data = action.get("args") or action.get("arguments") or {}
-                                original_properties = args_data.get("properties", [])
-                                break
-
-        if not original_action:
-            raise HTTPException(status_code=400, detail="No property review interrupt found")
-
-        # Filter to only approved properties
-        approved_ids = set(request.approved_properties or [])
-        filtered_properties = [
-            p for p in original_properties
-            if (p.get("id") if isinstance(p, dict) else getattr(p, "id", None)) in approved_ids
-        ]
-
-        logger.info(f"[RESUME] Approved {len(filtered_properties)} of {len(original_properties)} properties")
-
-        # Build resume command per Deep Agents HITL docs:
-        # Command(resume={"decisions": [{"type": "approve"|"edit"|"reject", ...}]})
-        if len(filtered_properties) == len(original_properties):
-            decisions = [{"type": "approve"}]
-        else:
-            decisions = [{
-                "type": "edit",
-                "edited_action": {
-                    "name": original_action["name"],
-                    "args": {"properties": filtered_properties}
-                }
-            }]
-
-        resume_command = Command(resume={"decisions": decisions})
         result = agent_module.supervisor.invoke(resume_command, config)
 
         # Check for another interrupt
