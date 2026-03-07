@@ -352,7 +352,17 @@ async def stream_agent(request: AgentRequest):
                 if state_snapshot.tasks:
                     for task in state_snapshot.tasks:
                         if hasattr(task, "interrupts") and task.interrupts:
-                            yield f"data: {json.dumps({'type': 'interrupt', 'progress': 50, 'data': serialize_interrupt(task.interrupts)})}\n\n"
+                            # Extract properties from the nested interrupt structure
+                            properties = []
+                            for interrupt in task.interrupts:
+                                if hasattr(interrupt, "value"):
+                                    for action in interrupt.value.get("action_requests", []):
+                                        if action.get("name") == "present_properties_for_review_tool":
+                                            args = action.get("args") or action.get("arguments") or {}
+                                            properties = args.get("properties", [])
+                                            break
+                                
+                            yield f"data: {json.dumps({'type': 'interrupt', 'progress': 50, 'properties': properties, 'data': serialize_interrupt(task.interrupts)})}\n\n"
                             yield "data: [DONE]\n\n"
                             return
 
