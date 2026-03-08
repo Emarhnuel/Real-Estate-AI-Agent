@@ -90,11 +90,8 @@ property_search_agent = {
         "Saves properties and asks for human review."
     ),
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool, browser_use_extract_tool, present_properties_for_review_tool],
+    "tools": [tavily_search_tool, browser_use_extract_tool],
     "model": model1,
-    "interrupt_on": {
-        "present_properties_for_review_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
-    },
     "middleware": [PropertyOutputGuardrail()],
 }
 
