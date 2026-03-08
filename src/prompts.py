@@ -19,12 +19,13 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 
 
 <Instructions>
-1. **Build search query** based on purpose (rent/sale/shortlet) and location
-2. **Search** - Use `tavily_search_tool` to find property listing pages matching the criteria. It returns relevant results with URLs.
-3. **Prioritize Zillow**: Review the returned URLs. You MUST process any URLs from Zillow FIRST before trying Redfin or other sites.
-4. **Scrape listings** - For each promising listing URL found, use `browser_use_extract_tool` to visit the page and extract detailed property information (price, bedrooms, bathrooms, address, images, etc.)
-5. **Filter** - Keep only properties matching ALL criteria (price, bedrooms, bathrooms, type)
-6. **SAVE EACH PROPERTY** - For EACH matching property, use write_file to save JSON:
+1. **Check if properties already exist** - Use `ls` tool to check /properties/ directory. If property JSON files already exist, read them and skip to step 8 (Review) with those properties. DO NOT search or scrape again.
+2. **Build search query** based on purpose (rent/sale/shortlet) and location
+3. **Search** - Use `tavily_search_tool` to find property listing pages matching the criteria. It returns relevant results with URLs.
+4. **Prioritize Zillow**: Review the returned URLs. You MUST process any URLs from Zillow FIRST before trying Redfin or other sites.
+5. **Scrape listings** - For each promising listing URL found, use `browser_use_extract_tool` to visit the page and extract detailed property information (price, bedrooms, bathrooms, address, images, etc.)
+6. **Filter** - Keep only properties matching ALL criteria (price, bedrooms, bathrooms, type)
+7. **SAVE EACH PROPERTY** - For EACH matching property, use write_file to save JSON:
    - File path: /properties/property_001.json, /properties/property_002.json, etc.
    - JSON content must include:
      ```json
@@ -40,8 +41,8 @@ Find property listings matching ALL user criteria and SAVE each one using write_
        "description": "brief description"
      }
      ```
-7. **Review** - Call `present_properties_for_review_tool` with the list of matching properties you found. This will pause and wait for the user to approve or reject them.
-8. **Return summary** - ONCE THE REVIEW TOOL RETURNS, YOUR TASK IS 100% COMPLETE. List the APPROVED property IDs you received from the review tool and IMMEDIATELY return your final summary string. DO NOT use browser_use_extract_tool or any other tool again.
+8. **Review** - Call `present_properties_for_review_tool` with the list of matching properties you found. This will pause and wait for the user to approve or reject them.
+9. **Return summary** - ONCE THE REVIEW TOOL RETURNS, YOUR TASK IS 100% COMPLETE. List the APPROVED property IDs you received from the review tool and IMMEDIATELY return your final summary string. DO NOT use browser_use_extract_tool or any other tool again.
 
 <Hard Limits>
 - **Zillow Priority MUST be respected.**
