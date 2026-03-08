@@ -54,9 +54,10 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         "5. **CRITICAL: You MUST extract the URL of the property itself.**\n"
         "6. **CRITICAL: You MUST extract at least 3 image URLs per property. If a property is missing image URLs, SCROLL DOWN its page to trigger the lazy-loading of images. If it still has no images, SKIP IT and check the next property. DO NOT stop until you have 2 properties that meet ALL criteria AND have images.**\n"
         "7. **CRITICAL: You MUST extract a short description for each property.**\n"
-        "8. If elements cannot be clicked normally, use send_keys action with 'Tab Enter' or 'ArrowDown'.\n"
-        "9. If a modal or pop-up appears and blocks the screen, attempt to close it.\n"
-        "10. Once data is found for exactly 2 properties (including their URLs, descriptions, and 3 images each), use the 'done' action to return the extracted JSON array."
+        "8. Make sure you extract the image url first before you do anything else."
+        "9. If elements cannot be clicked normally, use send_keys action with 'Tab Enter' or 'ArrowDown'.\n"
+        "10. If a modal or pop-up appears and blocks the screen, attempt to close it.\n"
+        "11. Once data is found for exactly 2 properties (including their URLs, descriptions, and 3 images each), use the 'done' action to return the extracted JSON array."
     )
     
     async def run_extraction():
@@ -70,7 +71,7 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         )
         # Using AWS Bedrock Anthropic model directly
         llm = ChatAnthropicBedrock(
-            model="us.anthropic.claude-sonnet-4-5-20250929-v1:0", 
+            model="us.anthropic.claude-opus-4-6-v1", 
             aws_region=os.getenv("AWS_REGION", "us-east-1") 
         )
         
@@ -342,57 +343,6 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 
 # Interior Decorator Tools
-
-@tool(parse_docstring=True)
-def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
-    """Analyze property images using Gemini Vision to identify rooms and decoration opportunities.
-    
-    Args:
-        image_url: URL of the property image to analyze
-    """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable is not set")
-    
-    try:
-        import google.generativeai as genai
-        
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        
-        # Download image
-        response = requests.get(image_url, timeout=10)
-        response.raise_for_status()
-        
-        from PIL import Image
-        import io
-        image = Image.open(io.BytesIO(response.content))
-        
-        prompt = """Analyze this property image for interior decoration opportunities.
-        
-        Identify:
-        1. Room type (living room, bedroom, porch, entryway, etc.)
-        2. Available spaces for decorations (walls, corners, windows, doorways)
-        3. Existing furniture and layout
-        4. Style and color scheme
-        5. Specific decoration suggestions (furniture, lighting, plants, art)
-        
-        Return a JSON object with: room_type, decoration_spaces, style_notes, suggestions"""
-        
-        response = model.generate_content([prompt, image])
-        
-        return {
-            "success": True,
-            "analysis": response.text,
-            "image_url": image_url
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Image analysis failed: {str(e)}"
-        }
-
-
 @tool(parse_docstring=True)
 def generate_decorated_image_tool(
     image_url: str,
