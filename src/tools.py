@@ -196,11 +196,22 @@ def google_places_geocode_tool(address: str, country: str = None) -> Dict[str, A
             "textQuery": address
         }
         
-        if country:
-            body["regionCode"] = country.upper()
+        if country and len(country.strip()) == 2:
+            body["regionCode"] = country.strip().upper()
         
         response = requests.post(url, headers=headers, json=body, timeout=10)
-        response.raise_for_status()
+        
+        if not response.ok:
+            error_msg = f"Google API Error {response.status_code}"
+            try:
+                error_msg += f": {response.json()}"
+            except:
+                error_msg += f": {response.text}"
+            
+            if response.status_code == 404:
+                return {"success": False, "error": "Address not found"}
+            raise Exception(error_msg)
+            
         data = response.json()
         
         if not data.get("places") or len(data["places"]) == 0:
@@ -220,10 +231,6 @@ def google_places_geocode_tool(address: str, country: str = None) -> Dict[str, A
             "name": place.get("displayName", {}).get("text", ""),
             "place_id": place.get("id", "")
         }
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 404:
-            return {"success": False, "error": "Address not found"}
-        raise Exception(f"Google Places geocoding API error: {str(e)}")
     except requests.exceptions.RequestException as e:
         raise Exception(f"Google Places geocoding request failed: {str(e)}")
 
@@ -343,6 +350,64 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 
 # Interior Decorator Tools
+
+@tool(parse_docstring=True)
+def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
+    """Analyze property images using Gemini Vision to identify rooms and decoration opportunities.
+    
+    Args:
+        image_url: URL of the property image to analyze
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable is not set")
+    
+    try:
+        from google import genai
+        from google.genai import types
+        
+        client = genai.Client(api_key=api_key)
+        
+        # Download image
+        response = requests.get(image_url, timeout=10)
+        response.raise_for_status()
+        
+        image_bytes = response.content
+        
+        prompt = """Analyze this property image for interior decoration opportunities.
+        
+        Identify:
+        1. Room type (living room, bedroom, porch, entryway, etc.)
+        2. Available spaces for decorations (walls, corners, windows, doorways)
+        3. Existing furniture and layout
+        4. Style and color scheme
+        5. Specific decoration suggestions (furniture, lighting, plants, art)
+        
+        Return a JSON object with: room_type, decoration_spaces, style_notes, suggestions"""
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[
+                types.Part.from_bytes(
+                    data=image_bytes,
+                    mime_type='image/jpeg',
+                ),
+                prompt
+            ]
+        )
+        
+        return {
+            "success": True,
+            "analysis": response.text,
+            "image_url": image_url
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Image analysis failed: {str(e)}"
+        }
+
+
 @tool(parse_docstring=True)
 def generate_decorated_image_tool(
     image_url: str,
@@ -364,13 +429,13 @@ def generate_decorated_image_tool(
         raise ValueError("GEMINI_API_KEY environment variable is not set")
     
     try:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types
         import base64
         import json
         from pathlib import Path
         
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash-image')
+        client = genai.Client(api_key=api_key)
         
         # Download original image
         response = requests.get(image_url, timeout=10)
@@ -378,6 +443,7 @@ def generate_decorated_image_tool(
         
         from PIL import Image
         import io
+        # We need PIL Image for generate_decorated_image_tool's specific prompt blending with gemini-3.1-flash-image-preview
         image = Image.open(io.BytesIO(response.content))
         
         # Create prompt for image editing
@@ -392,12 +458,15 @@ def generate_decorated_image_tool(
         
         Keep the original room structure unchanged."""
         
-        response = model.generate_content([prompt, image])
+        response = client.models.generate_content(
+            model="gemini-3.1-flash-image-preview",
+            contents=[prompt, image],
+        )
         
         # Extract generated image
         decorated_image_base64 = None
         for part in response.parts:
-            if hasattr(part, 'inline_data') and part.inline_data:
+            if part.inline_data is not None:
                 decorated_image_base64 = base64.b64encode(part.inline_data.data).decode('utf-8')
                 break
         
