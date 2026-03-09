@@ -13,7 +13,6 @@ from deepagents import create_deep_agent
 from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
 from dotenv import load_dotenv
 
-from src.guardrails import PropertyOutputGuardrail
 
 # Load environment variables
 load_dotenv()
@@ -89,10 +88,10 @@ property_search_agent = {
         "Extracts detailed property data from listing pages. "
         "Saves properties and asks for human review."
     ),
-    "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT,
-    "tools": [tavily_search_tool, browser_use_extract_tool],
+    "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT, 
+    "tools": [tavily_search_tool, browser_use_extract_tool, present_properties_for_review_tool],
     "model": model1,
-    "middleware": [PropertyOutputGuardrail()],
+    "interrupt_on": {"present_properties_for_review_tool": True},
 }
 
 # Location Analysis Sub-Agent Configuration
@@ -122,7 +121,6 @@ supervisor = create_deep_agent(
     checkpointer=checkpointer,
     backend=make_backend,
     store=InMemoryStore(),  # For local dev; swap for PostgresStore in production
-    debug=True
 )
 
 print("[INFO] Supervisor agent created successfully")
