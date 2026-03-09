@@ -258,7 +258,10 @@ def serialize_interrupt(interrupt_data: list) -> list[dict[str, Any]]:
 async def invoke_agent(request: AgentRequest) -> dict[str, Any]:
     """Start agent conversation. Returns interrupt if property review needed."""
     thread_id = f"thread-{request.timestamp}"
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "recursion_limit": 2000
+    }
 
     logger.info(f"[INVOKE] Starting agent for thread {thread_id}")
 
@@ -294,7 +297,10 @@ async def invoke_agent(request: AgentRequest) -> dict[str, Any]:
 async def stream_agent(request: AgentRequest):
     """Stream agent progress via SSE. Emits which agent is working and estimated progress."""
     thread_id = f"thread-{request.timestamp}"
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "recursion_limit": 2000
+    }
 
     logger.info(f"[STREAM] Starting agent stream for thread {thread_id}")
 
@@ -489,7 +495,10 @@ async def stream_resume(request: ResumeRequest):
 @app.post("/api/resume")
 async def resume_agent(request: ResumeRequest) -> dict[str, Any]:
     """Resume agent after human review. Filters properties to approved ones."""
-    config = {"configurable": {"thread_id": request.thread_id}}
+    config = {
+        "configurable": {"thread_id": request.thread_id},
+        "recursion_limit": 2000
+    }
 
     logger.info(f"[RESUME] Resuming thread {request.thread_id}")
 
