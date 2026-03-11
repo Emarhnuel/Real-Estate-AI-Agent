@@ -21,6 +21,9 @@ err.txt
 out/
 node_modules/
 *.log
+package-lock.json
+package.json
+tsconfig.json
 
 # Vercel
 .vercel
