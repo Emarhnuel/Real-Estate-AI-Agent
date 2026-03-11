@@ -238,8 +238,14 @@ Follow this workflow for all property search requests:
   - Decorated images are stored EXTERNALLY at `decorated_images/{property_id}_decorated.json`
   - DO NOT try to read or include base64 data - just reference the external path
   - The frontend will load decorated images directly from the external disk path
-- Call `submit_final_report_tool` with these SIMPLE parameters:
-  - summary: Brief 2-3 sentence summary of what was found
+- Call `submit_final_report_tool` with these parameters:
+  - summary: A FULL DETAILED markdown report. Include for EACH property:
+    - Property name, address, price, bedrooms, bathrooms, type
+    - Full description from the listing
+    - Location analysis (nearby amenities, pros/cons)
+    - Interior decoration suggestions
+    - Image URLs
+    Format it as clean markdown with headers (## Property 1, ## Property 2), bullet points, and sections.
   - property_ids: List of approved property IDs (e.g., ["property_001", "property_002"])
   - location: The location from user's original request
   - max_price: The budget from user's request
