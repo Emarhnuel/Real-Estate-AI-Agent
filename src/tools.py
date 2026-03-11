@@ -49,15 +49,13 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
     task = (
         f"1. Go to the URL: {url}\n"
         f"2. {extraction_prompt}\n"
-        "3. Wait for 2 seconds if the page is not fully loaded, or refresh it.\n"
-        "4. **CRITICAL: You MUST extract EXACTLY 2 matching properties on this page.**\n"
-        "5. **CRITICAL: You MUST extract the URL of the property itself.**\n"
-        "6. **CRITICAL: You MUST extract at least 3 image URLs per property. If a property is missing image URLs, SCROLL DOWN its page to trigger the lazy-loading of images. If it still has no images, SKIP IT and check the next property. DO NOT stop until you have 2 properties that meet ALL criteria AND have images.**\n"
-        "7. **CRITICAL: You MUST extract a short description for each property.**\n"
-        "8. Make sure you extract the image url first before you do anything else."
-        "9. If elements cannot be clicked normally, use send_keys action with 'Tab Enter' or 'ArrowDown'.\n"
-        "10. If a modal or pop-up appears and blocks the screen, attempt to close it.\n"
-        "11. Once data is found for exactly 2 properties (including their URLs, descriptions, and 3 images each), use the 'done' action to return the extracted JSON array."
+        "3. Wait up to 3 seconds for the page to load. If not loaded, refresh ONCE.\n"
+        "4. Extract up to 2 properties that match the user's search criteria from this page.\n"
+        "5. For EACH property, you MUST extract: price, bedrooms, bathrooms, address, property URL, description, and at least 3 image URLs.\n"
+        "6. If images are not visible, scroll down ONCE to trigger lazy-loading. Do NOT scroll more than once per property.\n"
+        "7. If a modal or pop-up appears, close it and continue.\n"
+        "8. As soon as you have extracted 2 matching properties with all required fields, use the 'done' action IMMEDIATELY to return the JSON array. Do NOT continue browsing.\n"
+        "9. If after reasonable effort you can only find 1 matching property, return that 1 property. Do NOT keep searching endlessly.\n"
     )
     
     async def run_extraction():
@@ -358,21 +356,28 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
     Args:
         image_url: URL of the property image to analyze
     """
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable is not set")
+        raise ValueError("OPENROUTER_API_KEY environment variable is not set")
     
     try:
-        from google import genai
-        from google.genai import types
+        from langchain_openrouter import ChatOpenRouter
+        from langchain_core.messages import HumanMessage
+        import base64
         
-        client = genai.Client(api_key=api_key)
+        model = ChatOpenRouter(
+            model="google/gemini-2.5-flash",
+            api_key=api_key
+        )
         
         # Download image
         response = requests.get(image_url, timeout=10)
         response.raise_for_status()
         
         image_bytes = response.content
+        
+        # Convert image bytes to base64
+        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         
         prompt = """Analyze this property image for interior decoration opportunities.
         
@@ -385,20 +390,23 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
         
         Return a JSON object with: room_type, decoration_spaces, style_notes, suggestions"""
         
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[
-                types.Part.from_bytes(
-                    data=image_bytes,
-                    mime_type='image/jpeg',
-                ),
-                prompt
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": prompt},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{image_base64}"
+                    }
+                }
             ]
         )
         
+        response = model.invoke([message])
+        
         return {
             "success": True,
-            "analysis": response.text,
+            "analysis": response.content,
             "image_url": image_url
         }
     except Exception as e:
@@ -424,27 +432,29 @@ def generate_decorated_image_tool(
         decoration_description: Description of interior decorations to add
         property_id: Property ID used for naming the output file (e.g., "prop1")
     """
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable is not set")
+        raise ValueError("OPENROUTER_API_KEY environment variable is not set")
     
     try:
-        from google import genai
-        from google.genai import types
+        from langchain_openrouter import ChatOpenRouter
+        from langchain_core.messages import HumanMessage
         import base64
         import json
+        import re
         from pathlib import Path
         
-        client = genai.Client(api_key=api_key)
+        model = ChatOpenRouter(
+            model="google/gemini-3.1-flash-image-preview",
+            api_key=api_key
+        )
         
         # Download original image
         response = requests.get(image_url, timeout=10)
         response.raise_for_status()
         
-        from PIL import Image
-        import io
-        # We need PIL Image for generate_decorated_image_tool's specific prompt blending with gemini-3.1-flash-image-preview
-        image = Image.open(io.BytesIO(response.content))
+        # Convert image bytes to base64
+        image_base64 = base64.b64encode(response.content).decode('utf-8')
         
         # Create prompt for image editing
         prompt = f"""Using the provided property image, add tasteful interior decorations to create a beautiful and inviting atmosphere.
@@ -458,17 +468,33 @@ def generate_decorated_image_tool(
         
         Keep the original room structure unchanged."""
         
-        response = client.models.generate_content(
-            model="gemini-3.1-flash-image-preview",
-            contents=[prompt, image],
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": prompt},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{image_base64}"
+                    }
+                }
+            ]
         )
         
-        # Extract generated image
+        llm_response = model.invoke([message])
+        
+        # Extract base64 image from markdown response
+        # OpenRouter models often return images in format: ![image](data:image/png;base64,iVBORw0KG...)
         decorated_image_base64 = None
-        for part in response.parts:
-            if part.inline_data is not None:
-                decorated_image_base64 = base64.b64encode(part.inline_data.data).decode('utf-8')
-                break
+        
+        # Look for data URI pattern
+        match = re.search(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)', llm_response.content)
+        if match:
+            decorated_image_base64 = match.group(1)
+        else:
+            # Fallback if bare base64 string is returned
+            pure_b64 = re.sub(r'[^a-zA-Z0-9+/=]', '', llm_response.content)
+            if len(pure_b64) > 1000: # Heuristic to check if it's a large block string
+                decorated_image_base64 = pure_b64
         
         if not decorated_image_base64:
             return {
@@ -550,7 +576,7 @@ def submit_final_report_tool(
     """Submit the final property report. Call this as the LAST action after all analysis is complete.
     
     Args:
-        summary: Executive summary of findings (2-3 sentences about the properties found)
+        summary: A comprehensive and detailed executive summary of findings for all properties found.
         property_ids: List of approved property IDs (e.g., ["property_001", "property_002"])
         location: Search location from user's original request
         max_price: Maximum budget from user's request
