@@ -576,7 +576,7 @@ def submit_final_report_tool(
     """Submit the final property report. Call this as the LAST action after all analysis is complete.
     
     Args:
-        summary: A comprehensive and detailed executive summary of findings for all properties found.
+        summary: A FULL detailed markdown report covering ALL properties. Include property details (address, price, beds, baths, description), location analysis (amenities, pros, cons), and decoration suggestions. Use markdown headers, bullet points, and sections. Do NOT summarize — include everything.
         property_ids: List of approved property IDs (e.g., ["property_001", "property_002"])
         location: Search location from user's original request
         max_price: Maximum budget from user's request
