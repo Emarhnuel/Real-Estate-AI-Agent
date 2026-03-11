@@ -370,8 +370,12 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
             api_key=api_key
         )
         
-        # Download image
-        response = requests.get(image_url, timeout=10)
+        # Download image with browser-like headers to bypass anti-hotlinking
+        download_headers = {
+            "Referer": "https://www.google.com/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        }
+        response = requests.get(image_url, timeout=10, headers=download_headers)
         response.raise_for_status()
         
         image_bytes = response.content
@@ -449,8 +453,12 @@ def generate_decorated_image_tool(
             api_key=api_key
         )
         
-        # Download original image
-        response = requests.get(image_url, timeout=10)
+        # Download original image with browser-like headers to bypass anti-hotlinking
+        download_headers = {
+            "Referer": "https://www.google.com/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        }
+        response = requests.get(image_url, timeout=10, headers=download_headers)
         response.raise_for_status()
         
         # Convert image bytes to base64
