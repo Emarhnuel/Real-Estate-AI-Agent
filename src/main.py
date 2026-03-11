@@ -49,10 +49,14 @@ app.add_middleware(
 
 
 def extract_final_report(state: dict, thread_id: str) -> dict | None:
-    """Extract report from submit_final_report_tool or build from filesystem as fallback."""
+    """Extract report from submit_final_report_tool response.
+    
+    Returns the tool response directly — the 'summary' field contains
+    a full markdown report that the frontend renders with react-markdown.
+    """
     messages = state.get("messages", [])
     
-    # First, try to find submit_final_report_tool response
+    # Find submit_final_report_tool response in messages
     for msg in reversed(messages):
         if hasattr(msg, "name") and msg.name == "submit_final_report_tool":
             content = msg.content
@@ -62,15 +66,12 @@ def extract_final_report(state: dict, thread_id: str) -> dict | None:
                 except json.JSONDecodeError:
                     continue
             if isinstance(content, dict) and content.get("status") == "success":
-                # Tool was called - build full report from filesystem using the summary
-                return build_report_from_filesystem(thread_id, content)
-    
-    # Fallback: Check if all todos are complete but tool wasn't called
-    todos = state.get("todos", [])
-    all_complete = todos and all(t.get("status") == "completed" for t in todos)
-    if all_complete:
-        logger.info("[REPORT] Todos complete but tool not called - building from filesystem")
-        return build_report_from_filesystem(thread_id, None)
+                logger.info(f"[REPORT] Found submit_final_report_tool response")
+                return {
+                    "summary": content.get("summary", ""),
+                    "property_ids": content.get("property_ids", []),
+                    "search_criteria": content.get("search_criteria", {}),
+                }
     
     return None
 
