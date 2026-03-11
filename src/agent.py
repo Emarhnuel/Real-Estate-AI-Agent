@@ -6,11 +6,12 @@ and location analysis using the Deep Agents framework.
 """
 
 import os
+from pathlib import Path
 from langchain_aws import ChatBedrockConverse
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.store.memory import InMemoryStore
 from deepagents import create_deep_agent
-from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
+from deepagents.backends import FilesystemBackend, CompositeBackend, StoreBackend
 from dotenv import load_dotenv
 
 
@@ -31,7 +32,6 @@ from src.tools import (
     google_places_geocode_tool,
     google_places_nearby_tool,
     present_properties_for_review_tool,
-    submit_final_report_tool,
     analyze_property_images_tool,
     generate_decorated_image_tool,
 )
@@ -62,14 +62,18 @@ model1 = ChatBedrockConverse(
 
 checkpointer = MemorySaver()
 
-# CompositeBackend: hybrid storage for ephemeral + persistent data
-# - StateBackend (default): ephemeral per-thread storage for /properties/, /locations/, /decorations/
-#   → Automatically cleaned up when the thread ends. No data leaks between sessions.
-# - StoreBackend (/memories/): persistent cross-thread storage for user preferences
-#   → Remembers user preferences across sessions (e.g., "I prefer 3-bedroom apartments")
+# Agent data directory - all sub-agent files land here on actual disk
+AGENT_DATA_DIR = Path("agent_data")
+AGENT_DATA_DIR.mkdir(exist_ok=True)
+
+# FilesystemBackend: writes real files to ./agent_data on disk.
+# virtual_mode=True prevents path traversal (../ or ~/ escapes).
+# CompositeBackend routes /memories/ to StoreBackend for cross-session user preferences.
+_fs_backend = FilesystemBackend(root_dir=str(AGENT_DATA_DIR), virtual_mode=True)
+
 def make_backend(runtime):
     return CompositeBackend(
-        default=StateBackend(runtime),
+        default=_fs_backend,
         routes={
             "/memories/": StoreBackend(runtime),
         }
@@ -117,7 +121,7 @@ supervisor = create_deep_agent(
     model=model1,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     subagents=[property_search_agent, location_analysis_agent, interior_decorator_agent],
-    tools=[submit_final_report_tool],
+    tools=[],
     checkpointer=checkpointer,
     backend=make_backend,
     store=InMemoryStore(),  # For local dev; swap for PostgresStore in production
