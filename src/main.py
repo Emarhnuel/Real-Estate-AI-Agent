@@ -48,31 +48,33 @@ app.add_middleware(
 )
 
 
+AGENT_DATA_DIR = Path("agent_data")
+
 def extract_final_report(state: dict, thread_id: str) -> dict | None:
-    """Extract report from submit_final_report_tool response.
+    """Read final_report.md from disk (written by the agent via write_file).
     
-    Returns the tool response directly — the 'summary' field contains
-    a full markdown report that the frontend renders with react-markdown.
+    The FilesystemBackend saves agent files to ./agent_data/ on real disk.
+    The supervisor writes the full markdown report to /final_report.md.
+    We read it here and pass the markdown text to the frontend.
     """
-    messages = state.get("messages", [])
+    report_path = AGENT_DATA_DIR / "final_report.md"
     
-    # Find submit_final_report_tool response in messages
-    for msg in reversed(messages):
-        if hasattr(msg, "name") and msg.name == "submit_final_report_tool":
-            content = msg.content
-            if isinstance(content, str):
-                try:
-                    content = json.loads(content)
-                except json.JSONDecodeError:
-                    continue
-            if isinstance(content, dict) and content.get("status") == "success":
-                logger.info(f"[REPORT] Found submit_final_report_tool response")
+    if report_path.exists():
+        try:
+            markdown_text = report_path.read_text(encoding="utf-8")
+            if markdown_text.strip():
+                logger.info(f"[REPORT] Read final_report.md from disk ({len(markdown_text)} chars)")
+                # Clean up after reading so next run starts fresh
+                report_path.unlink(missing_ok=True)
                 return {
-                    "summary": content.get("summary", ""),
-                    "property_ids": content.get("property_ids", []),
-                    "search_criteria": content.get("search_criteria", {}),
+                    "summary": markdown_text,
+                    "property_ids": [],
+                    "search_criteria": {},
                 }
+        except Exception as e:
+            logger.error(f"[REPORT] Error reading final_report.md: {e}")
     
+    logger.info("[REPORT] final_report.md not found on disk yet")
     return None
 
 
