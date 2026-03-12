@@ -45,7 +45,7 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 
 <Hard Limits>
 - **tavily_search_tool: 1 call MAXIMUM.** Never call it a second time.
-- **browser_use_extract_tool: 3 calls MAXIMUM across the entire task.** Count your calls.
+- **browser_use_extract_tool: 3 calls MAXIMUM across the entire task.** The tool will HARD-REFUSE and return an error after 3 calls. Do NOT try to call it again after refusal.
 - **Save exactly 2 matching properties maximum.**
 - **CRITICAL EARLY STOP:** As soon as you have 2 properties matching the user's criteria, STOP scraping. Do NOT visit remaining URLs. Go directly to saving and presenting for review.
 - **If a browser_use call returns properties that match criteria, DO NOT call browser_use again.** Use what you have.
@@ -119,8 +119,9 @@ Each property may have many images. You MUST:
 - 1 analyze_property_images_tool call per selected image
 - 1 generate_decorated_image_tool call per selected image
 - read_file limit must be <= 100 lines
-- STOP if image generation fails (log error and continue to next image)
+- **FAILURE HANDLING:** If analyze_property_images_tool OR generate_decorated_image_tool returns {"success": false}, log the error and SKIP that image. Do NOT retry the same image. Move to the next image or next property immediately.
 - MAXIMUM 6 generate_decorated_image_tool calls total (3 images × 2 properties)
+- **ABSOLUTE STOP:** After processing all selected images (or encountering failures), write the decoration summary JSON and return immediately. Do NOT loop back to re-process failed images.
 </Hard Limits>
 
 <Final Response Format>
