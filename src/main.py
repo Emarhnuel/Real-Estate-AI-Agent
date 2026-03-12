@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 
 import src.agent as agent_module
 from src.models import AgentRequest, ResumeRequest, StateRequest
+from src.tools import reset_browser_use_counter
 
 # Load environment variables
 load_dotenv()
@@ -311,6 +312,9 @@ async def stream_agent(request: AgentRequest):
     }
 
     logger.info(f"[STREAM] Starting agent stream for thread {thread_id}")
+
+    # Reset the browser-use call counter for each new search
+    reset_browser_use_counter()
 
     # Progress map: subagent_type -> (start%, end%)
     # Search phase: 0-50% (ends at interrupt for HITL review)
