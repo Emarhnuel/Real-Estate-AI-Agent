@@ -1,0 +1,25 @@
+{
+  "property_id": "property_003",
+  "coordinates": {
+    "latitude": 52.9129079,
+    "longitude": -1.5279604
+  },
+  "nearby_pois": {
+    "restaurant": 10,
+    "park": 10,
+    "shopping_mall": 10,
+    "transit_station": 10,
+    "hospital": 10
+  },
+  "pros": [
+    "Good access to restaurants and dining options",
+    "Multiple parks nearby for recreation",
+    "Convenient shopping mall access",
+    "Good public transportation options",
+    "Proximity to Royal Derby Hospital"
+  ],
+  "cons": [
+    "Some amenities are slightly further away (3-5km)",
+    "Limited direct park access very close to property"
+  ]
+}
