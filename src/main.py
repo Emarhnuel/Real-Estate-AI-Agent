@@ -51,30 +51,35 @@ app.add_middleware(
 AGENT_DATA_DIR = Path("agent_data")
 
 def extract_final_report(state: dict, thread_id: str) -> dict | None:
-    """Read final_report.md from disk (written by the agent via write_file).
+    """Read final_report.json from disk (written by the agent via write_file).
     
     The FilesystemBackend saves agent files to ./agent_data/ on real disk.
-    The supervisor writes the full markdown report to /final_report.md.
-    We read it here and pass the markdown text to the frontend.
+    The supervisor writes the full JSON report to /final_report.json.
+    We read it here, parse it, and pass the structured data to the frontend.
     """
-    report_path = AGENT_DATA_DIR / "final_report.md"
+    report_path = AGENT_DATA_DIR / "final_report.json"
     
     if report_path.exists():
         try:
-            markdown_text = report_path.read_text(encoding="utf-8")
-            if markdown_text.strip():
-                logger.info(f"[REPORT] Read final_report.md from disk ({len(markdown_text)} chars)")
+            import json
+            json_text = report_path.read_text(encoding="utf-8")
+            if json_text.strip():
+                # Sometimes the model writes markdown code blocks around the JSON
+                if json_text.strip().startswith("```"):
+                    import re
+                    match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', json_text, re.DOTALL)
+                    if match:
+                        json_text = match.group(1)
+
+                report_data = json.loads(json_text)
+                logger.info(f"[REPORT] Read final_report.json from disk with {len(report_data.get('properties', []))} properties")
                 # Clean up after reading so next run starts fresh
                 report_path.unlink(missing_ok=True)
-                return {
-                    "summary": markdown_text,
-                    "property_ids": [],
-                    "search_criteria": {},
-                }
+                return report_data
         except Exception as e:
-            logger.error(f"[REPORT] Error reading final_report.md: {e}")
+            logger.error(f"[REPORT] Error reading final_report.json: {e}")
     
-    logger.info("[REPORT] final_report.md not found on disk yet")
+    logger.info("[REPORT] final_report.json not found on disk yet")
     return None
 
 
