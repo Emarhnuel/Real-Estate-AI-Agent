@@ -29,6 +29,16 @@ from src.models import PropertyForReview, PropertyReport
 # Shared disk directory for all agents
 AGENT_DATA_DIR = os.path.abspath("./agent_data")
 
+# Module-level call counter for browser_use_extract_tool
+# Prevents the LLM from ignoring the "max 3 calls" prompt instruction
+_browser_use_call_count = 0
+_BROWSER_USE_MAX_CALLS = 3
+
+def reset_browser_use_counter():
+    """Reset the browser_use call counter. Call this at the start of each new search session."""
+    global _browser_use_call_count
+    _browser_use_call_count = 0
+
 
 
 @tool(parse_docstring=True)
@@ -41,6 +51,13 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         url: The property URL to visit and extract data from.
         extraction_prompt: Specific instructions on what to extract from the page (e.g., 'Extract price, bedrooms, and description').
     """
+    global _browser_use_call_count
+    _browser_use_call_count += 1
+    if _browser_use_call_count > _BROWSER_USE_MAX_CALLS:
+        return (f"REFUSED: browser_use_extract_tool has already been called "
+                f"{_browser_use_call_count - 1} times (limit is {_BROWSER_USE_MAX_CALLS}). "
+                f"Use the properties you already have and proceed to the next step.")
+    
     api_key = os.getenv("BROWSER_USE_API_KEY")
     if not api_key:
         return "Error: BROWSER_USE_API_KEY environment variable is not set"
@@ -69,7 +86,7 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         )
         # Using AWS Bedrock Anthropic model directly
         llm = ChatAnthropicBedrock(
-            model="us.anthropic.claude-opus-4-6-v1", 
+            model="us.anthropic.claude-sonnet-4-6", 
             aws_region=os.getenv("AWS_REGION", "us-east-1") 
         )
         
@@ -82,11 +99,29 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
             use_vision=True # Allows the LLM to visually see the property listing layout
         )
         
-        history = await agent.run(max_steps=15)
+        history = await agent.run(max_steps=10)
         return history.final_result()
 
     try:
-        return asyncio.run(run_extraction())
+        import json as _json
+        raw_result = asyncio.run(run_extraction())
+        
+        # --- Deduplication: strip duplicate properties by URL or address ---
+        try:
+            parsed = _json.loads(raw_result) if isinstance(raw_result, str) else raw_result
+            if isinstance(parsed, list):
+                seen = set()
+                unique = []
+                for prop in parsed:
+                    key = prop.get("listing_url") or prop.get("url") or prop.get("address", "")
+                    if key and key not in seen:
+                        seen.add(key)
+                        unique.append(prop)
+                return _json.dumps(unique)
+        except (_json.JSONDecodeError, TypeError, AttributeError):
+            pass  # Not valid JSON, return raw
+        
+        return raw_result
     except Exception as e:
         return f"Extraction failed: {str(e)}"
 
