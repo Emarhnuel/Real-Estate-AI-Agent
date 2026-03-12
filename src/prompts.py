@@ -242,47 +242,46 @@ Follow this workflow for all property search requests:
   - `/properties/{property_id}.json` for each approved property
   - `/locations/{property_id}.json` for each location analysis result
   - `/decorations/{property_id}_decorated.json` for decoration metadata
-- Compose a COMPREHENSIVE and DETAILED markdown report with the following structure:
+- Compose a COMPREHENSIVE and DETAILED JSON report with the following structure:
 
+```json
+{
+  "summary": "Brief comparison of the properties and recommendation.",
+  "search_criteria": "Location, budget, bedrooms, bathrooms, property type",
+  "properties": [
+    {
+      "address": "Property 1 Address",
+      "price": "£1300/month",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "property_type": "Apartment",
+      "listing_url": "https://...",
+      "description": "Full description from the listing",
+      "location_analysis": {
+        "coordinates": {"latitude": 0, "longitude": 0},
+        "nearby_pois": {
+          "restaurant": 5,
+          "park": 2
+        },
+        "pros": ["List of pros from location analysis"],
+        "cons": ["List of cons from location analysis"]
+      },
+      "interior_decoration": {
+        "style": "Modern Minimalist",
+        "decorated_image_base64": "<insert_decorated_image_base64_here>"
+      }
+    }
+  ]
+}
 ```
-# 🏡 Property Intelligence Report
 
-## Search Criteria
-- Location, budget, bedrooms, bathrooms, property type
-
----
-
-## Property 1: [Address]
-### Property Details
-- Price, bedrooms, bathrooms, type, listing URL
-- Full description from the listing
-
-### Location Analysis
-- Nearby schools, transport, shops, restaurants, parks
-- Pros and cons of the location
-
-### Interior Decoration Plan
-- Rooms redesigned and decoration style
-- Path to decorated images (from decoration metadata)
-
----
-
-## Property 2: [Address]
-[same structure]
-
----
-
-## Summary
-Brief comparison of the properties and recommendation.
-```
-
-- Use `write_file` to save this report to `/final_report.md`
+- Use `write_file` to save this JSON to `/final_report.json`
 - STOP immediately after saving the file.
 
-<CRITICAL: Decorated Images Storage>
-Interior decorated images are saved to EXTERNAL disk (decorated_images/ folder), NOT the agent filesystem.
-The `/decorations/` folder contains ONLY metadata with `external_disk_paths` pointing to the actual image files.
-When writing the final report, include the `external_disk_paths` from decoration metadata — do NOT try to read or embed base64 data.
+<CRITICAL: Embed Images>
+Interior decorated images are saved as base64 strings inside the `/decorations/{property_id}_decorated.json` files under the key `decorated_image_base64`.
+When writing the final JSON report, you MUST embed these base64 strings directly into the `decorated_image_base64` field as raw strings.
+Do NOT truncate the base64 string, paste the entire string.
 </CRITICAL>
 
 </Instructions>
