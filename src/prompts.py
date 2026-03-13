@@ -306,7 +306,7 @@ Follow this workflow for all property search requests:
       },
       "interior_decoration": {
         "style": "Modern Minimalist",
-        "decorated_image_base64": "<insert_decorated_image_base64_here>"
+        "decorated_image_paths": ["decorated_images/property_001_decorated.json"]
       }
     }
   ]
@@ -316,11 +316,13 @@ Follow this workflow for all property search requests:
 - Use `write_file` to save this JSON to `/final_report.json`
 - STOP immediately after saving the file.
 
-<CRITICAL: Embed Images>
-Interior decorated images are saved as base64 strings inside the `/decorations/{property_id}_decorated.json` files under the key `decorated_image_base64`.
-When writing the final JSON report, you MUST embed these base64 strings directly into the `decorated_image_base64` field as raw strings.
-Do NOT truncate the base64 string, paste the entire string.
-</CRITICAL>
+
+<CRITICAL RULES>
+- The interior decoration JSON files (e.g. `decorations/property_001_decorated.json`) do NOT contain base64 image data.
+- They contain a field called `external_disk_paths` which is a list of file paths where the generated images and their metadata are stored.
+- When writing the final JSON report, you MUST put this exact list of paths into the `decorated_image_paths` field.
+- DO NOT invent, guess, or hallucinate base64 strings.
+</CRITICAL RULES>
 
 </Instructions>
 
