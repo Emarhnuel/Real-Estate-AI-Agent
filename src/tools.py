@@ -67,12 +67,13 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         f"1. Go to the URL: {url}\n"
         f"2. {extraction_prompt}\n"
         "3. Wait up to 3 seconds for the page to load. If not loaded, refresh ONCE.\n"
-        "4. Extract up to 2 properties that match the user's search criteria from this page.\n"
+        "4. **CRITICAL:** You MUST extract exactly 2 properties that match the user's search criteria from this page. Do not stop at 1.\n"
         "5. For EACH property, you MUST extract: price, bedrooms, bathrooms, address, property URL, description, and at least 3 image URLs.\n"
-        "6. If images are not visible, scroll down ONCE to trigger lazy-loading. Do NOT scroll more than once per property.\n"
-        "7. If a modal or pop-up appears, close it and continue.\n"
-        "8. As soon as you have extracted 2 matching properties with all required fields, use the 'done' action IMMEDIATELY to return the JSON array. Do NOT continue browsing.\n"
-        "9. If after reasonable effort you can only find 1 matching property, return that 1 property. Do NOT keep searching endlessly.\n"
+        "6. IMPORTANT FOR IMAGES: You MUST strictly extract ONLY interior room images (living rooms, bedrooms, kitchens, bathrooms). Do NOT extract exterior shots, building facades, or floor plans.\n"
+        "7. If you only see 1 matching property initially, scroll down MULTIPLE TIMES and wait for the page to lazy-load more listings until you find a 2nd one.\n"
+        "8. If a modal or pop-up appears, close it and continue.\n"
+        "9. As soon as you have extracted 2 matching properties with all required fields, use the 'done' action IMMEDIATELY to return the JSON array. Do NOT continue browsing after finding 2.\n"
+        "10. Only as an absolute last resort, if you have scrolled to the absolute bottom of the page and there are no more listings anywhere, return 1 property.\n"
     )
     
     async def run_extraction():
