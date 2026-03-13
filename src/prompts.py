@@ -153,10 +153,13 @@ You will receive a property_id and address to analyze.
 1. **Geocode** - Call google_places_geocode_tool with the address
 2. **Search POIs** - Call google_places_nearby_tool for each category:
    - restaurant, park, shopping_mall, transit_station, hospital
-3. **Count results** - Note how many POIs found per category
-4. **Identify pros/cons**:
-   - PROS: "3 restaurants within 500m", "Transit nearby"
-   - CONS: "No parks within 1km", "Far from hospitals"
+3. **Extract DETAILED results** - For each category, pick the TOP 3 CLOSEST results and record their **name** and **distance_meters**.
+4. **Write SPECIFIC pros/cons** using real POI names and distances:
+   - PROS example: "3 restaurants within 1km including The Ivy (350m) and Nando's (600m)"
+   - PROS example: "Markeaton Park (800m) and Darley Park (1.2km) nearby"
+   - CONS example: "Nearest hospital is Royal Derby Hospital (4.5km away)"
+   - CONS example: "No shopping malls within 2km"
+   **Always mention specific place names and distances. Never write generic statements like 'Good access to restaurants'.**
 5. **SAVE TO DISK** - Use write_file to save JSON:
    - File path: /locations/{property_id}_location.json
    - JSON content:
@@ -165,14 +168,33 @@ You will receive a property_id and address to analyze.
        "property_id": "property_001",
        "coordinates": {"latitude": 6.123, "longitude": 3.456},
        "nearby_pois": {
-         "restaurant": 5,
-         "park": 2,
-         "shopping_mall": 1,
-         "transit_station": 3,
-         "hospital": 1
+         "restaurant": [
+           {"name": "The Ivy", "distance_meters": 350},
+           {"name": "Nando's", "distance_meters": 600},
+           {"name": "Pizza Express", "distance_meters": 900}
+         ],
+         "park": [
+           {"name": "Markeaton Park", "distance_meters": 800},
+           {"name": "Darley Park", "distance_meters": 1200}
+         ],
+         "shopping_mall": [
+           {"name": "Derbion Shopping Centre", "distance_meters": 2500}
+         ],
+         "transit_station": [
+           {"name": "Derby Midland Station", "distance_meters": 3000}
+         ],
+         "hospital": [
+           {"name": "Royal Derby Hospital", "distance_meters": 4500}
+         ]
        },
-       "pros": ["3 restaurants within 500m", "Transit nearby"],
-       "cons": ["No parks within 1km"]
+       "pros": [
+         "3 restaurants within 1km: The Ivy (350m), Nando's (600m), Pizza Express (900m)",
+         "Markeaton Park within walking distance (800m)"
+       ],
+       "cons": [
+         "Nearest hospital is Royal Derby Hospital (4.5km away)",
+         "Only 1 shopping mall nearby: Derbion Shopping Centre (2.5km)"
+       ]
      }
      ```
 
@@ -180,6 +202,7 @@ You will receive a property_id and address to analyze.
 - 1 geocode call per property
 - 5 nearby search calls per property (one per category)
 - MUST use write_file at the end
+- **Every pro/con MUST mention at least one specific place name and its distance**
 
 <Final Response>
 After saving, return: "Location analysis saved for {property_id}"
@@ -261,11 +284,25 @@ Follow this workflow for all property search requests:
       "location_analysis": {
         "coordinates": {"latitude": 0, "longitude": 0},
         "nearby_pois": {
-          "restaurant": 5,
-          "park": 2
+          "restaurant": [
+            {"name": "The Ivy", "distance_meters": 350},
+            {"name": "Nando's", "distance_meters": 600}
+          ],
+          "park": [
+            {"name": "Markeaton Park", "distance_meters": 800}
+          ],
+          "shopping_mall": [
+            {"name": "Derbion", "distance_meters": 2500}
+          ],
+          "transit_station": [
+            {"name": "Derby Midland", "distance_meters": 3000}
+          ],
+          "hospital": [
+            {"name": "Royal Derby Hospital", "distance_meters": 4500}
+          ]
         },
-        "pros": ["List of pros from location analysis"],
-        "cons": ["List of cons from location analysis"]
+        "pros": ["3 restaurants within 1km: The Ivy (350m), Nando's (600m)", "Markeaton Park (800m)"],
+        "cons": ["Royal Derby Hospital is 4.5km away", "Only 1 shopping mall: Derbion (2.5km)"]
       },
       "interior_decoration": {
         "style": "Modern Minimalist",
