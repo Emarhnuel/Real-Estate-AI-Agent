@@ -50,6 +50,28 @@ app.add_middleware(
 
 
 AGENT_DATA_DIR = Path("agent_data")
+DECORATED_IMAGES_DIR = Path("decorated_images")
+
+def clear_previous_agent_data():
+    """Delete previously saved properties, locations, and decorations from disk."""
+    directories_to_clear = [
+        AGENT_DATA_DIR / "properties",
+        AGENT_DATA_DIR / "locations",
+        AGENT_DATA_DIR / "decorations",
+        DECORATED_IMAGES_DIR
+    ]
+    
+    deleted_count = 0
+    for directory in directories_to_clear:
+        if directory.exists():
+            for file_path in directory.glob("*.json"):
+                try:
+                    file_path.unlink()
+                    deleted_count += 1
+                except Exception as e:
+                    logger.error(f"[CLEANUP] Failed to delete {file_path}: {e}")
+                    
+    logger.info(f"[CLEANUP] Deleted {deleted_count} stale JSON output files.")
 
 def extract_final_report(state: dict, thread_id: str) -> dict | None:
     """Read final_report.json from disk (written by the agent via write_file).
@@ -273,6 +295,7 @@ async def invoke_agent(request: AgentRequest) -> dict[str, Any]:
     }
 
     logger.info(f"[INVOKE] Starting agent for thread {thread_id}")
+    clear_previous_agent_data()
 
     try:
         result = agent_module.supervisor.invoke(
@@ -312,6 +335,7 @@ async def stream_agent(request: AgentRequest):
     }
 
     logger.info(f"[STREAM] Starting agent stream for thread {thread_id}")
+    clear_previous_agent_data()
 
     # Reset the browser-use call counter for each new search
     reset_browser_use_counter()
