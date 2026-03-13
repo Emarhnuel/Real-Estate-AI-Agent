@@ -1,0 +1,76 @@
+{
+  "property_id": "property_002",
+  "coordinates": {
+    "latitude": 52.909805,
+    "longitude": -1.5369795
+  },
+  "nearby_pois": {
+    "restaurant": [
+      {
+        "name": "Derby Mickleover Hotel",
+        "distance_meters": 1297.49
+      },
+      {
+        "name": "The Great Northern",
+        "distance_meters": 1215.63
+      },
+      {
+        "name": "Binary Bar & Restaurants",
+        "distance_meters": 823.74
+      }
+    ],
+    "park": [
+      {
+        "name": "Mickleover Meadows",
+        "distance_meters": 871.83
+      },
+      {
+        "name": "Bramblebrook Park",
+        "distance_meters": 479.72
+      },
+      {
+        "name": "Hospital Island",
+        "distance_meters": 1388.14
+      }
+    ],
+    "shopping_mall": [],
+    "transit_station": [
+      {
+        "name": "East Avenue",
+        "distance_meters": 672.4
+      },
+      {
+        "name": "Kings Treatment Centre",
+        "distance_meters": 1356.16
+      },
+      {
+        "name": "Tesco",
+        "distance_meters": 703.48
+      }
+    ],
+    "hospital": [
+      {
+        "name": "Mickleover Medical Centre.",
+        "distance_meters": 703.48
+      },
+      {
+        "name": "Pride Pharmacy Ltd",
+        "distance_meters": 1347.3
+      },
+      {
+        "name": "Coronary Care Unit",
+        "distance_meters": 1435.17
+      }
+    ]
+  },
+  "pros": [
+    "Bramblebrook Park within walking distance (480m)",
+    "Mickleover Medical Centre just 704m away",
+    "Tesco supermarket only 703m away for convenience shopping"
+  ],
+  "cons": [
+    "No major shopping malls within 1.5km radius",
+    "Restaurants are relatively far (minimum 824m)",
+    "Limited public transport options with only local bus stops nearby"
+  ]
+}
