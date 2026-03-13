@@ -48,6 +48,9 @@ Thumbs.db
 .coverage
 htmlcov/
 tests/
+test_*.py
+test_output/
+decorated_images/
 
 WARP.md
 
