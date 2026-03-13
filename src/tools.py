@@ -401,7 +401,7 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
         import base64
         
         model = ChatOpenRouter(
-            model="google/gemini-2.5-flash",
+            model="google/gemini-3-flash-preview",
             api_key=api_key
         )
         
@@ -476,28 +476,26 @@ def generate_decorated_image_tool(
         raise ValueError("OPENROUTER_API_KEY environment variable is not set")
     
     try:
-        from langchain_openrouter import ChatOpenRouter
-        from langchain_core.messages import HumanMessage
         import base64
         import json
         import re
         from pathlib import Path
-        
-        model = ChatOpenRouter(
-            model="google/gemini-3.1-flash-image-preview",
-            api_key=api_key
-        )
         
         # Download original image with browser-like headers to bypass anti-hotlinking
         download_headers = {
             "Referer": "https://www.google.com/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         }
-        response = requests.get(image_url, timeout=10, headers=download_headers)
-        response.raise_for_status()
+        img_response = requests.get(image_url, timeout=15, headers=download_headers)
+        img_response.raise_for_status()
+        
+        # Detect content type from response headers, default to jpeg
+        content_type = img_response.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+        if content_type not in ("image/jpeg", "image/png", "image/webp", "image/gif"):
+            content_type = "image/jpeg"
         
         # Convert image bytes to base64
-        image_base64 = base64.b64encode(response.content).decode('utf-8')
+        image_base64 = base64.b64encode(img_response.content).decode('utf-8')
         
         # Create prompt for image editing
         prompt = f"""Using the provided property image, add tasteful interior decorations to create a beautiful and inviting atmosphere.
@@ -511,38 +509,103 @@ def generate_decorated_image_tool(
         
         Keep the original room structure unchanged."""
         
-        message = HumanMessage(
-            content=[
-                {"type": "text", "text": prompt},
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{image_base64}"
+        # === Use raw HTTP request to OpenRouter API ===
+        # The langchain-openrouter wrapper's _convert_dict_to_message() silently drops
+        # the 'images' array from the response, making image generation impossible.
+        # We must call the API directly to access choices[0].message.images.
+        api_response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://github.com/real-estate-ai-agent",
+                "X-Title": "Real Estate AI Agent"
+            },
+            json={
+                "model": "sourceful/riverflow-v2-pro",
+                "modalities": ["image"],
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{content_type};base64,{image_base64}"
+                                }
+                            }
+                        ]
                     }
-                }
-            ]
+                ]
+            },
+            timeout=120
         )
+        api_response.raise_for_status()
+        result = api_response.json()
         
-        llm_response = model.invoke([message])
-        
-        # Extract base64 image from markdown response
-        # OpenRouter models often return images in format: ![image](data:image/png;base64,iVBORw0KG...)
-        decorated_image_base64 = None
-        
-        # Look for data URI pattern
-        match = re.search(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)', llm_response.content)
-        if match:
-            decorated_image_base64 = match.group(1)
-        else:
-            # Fallback if bare base64 string is returned
-            pure_b64 = re.sub(r'[^a-zA-Z0-9+/=]', '', llm_response.content)
-            if len(pure_b64) > 1000: # Heuristic to check if it's a large block string
-                decorated_image_base64 = pure_b64
-        
-        if not decorated_image_base64:
+        # Check for API-level errors
+        if "error" in result:
+            error_msg = result["error"].get("message", str(result["error"]))
             return {
                 "success": False,
-                "error": "No image was generated by the model"
+                "error": f"OpenRouter API error: {error_msg}"
+            }
+        
+        # Extract the generated image from the response
+        # Per OpenRouter docs: images are in choices[0].message.images[]
+        # Each item: {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}
+        decorated_image_base64 = None
+        
+        choices = result.get("choices", [])
+        if not choices:
+            return {
+                "success": False,
+                "error": f"No choices in API response. Full response keys: {list(result.keys())}"
+            }
+        
+        message_data = choices[0].get("message", {})
+        images_list = message_data.get("images", [])
+        
+        if images_list:
+            # Extract base64 from the first image in the images array
+            first_image = images_list[0]
+            image_url_data = None
+            if isinstance(first_image, dict):
+                # Format: {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}
+                img_obj = first_image.get("image_url", {})
+                image_url_data = img_obj.get("url", "")
+            elif isinstance(first_image, str):
+                image_url_data = first_image
+            
+            if image_url_data:
+                # Extract base64 from data URI
+                b64_match = re.search(r'base64,(.+)', image_url_data)
+                if b64_match:
+                    decorated_image_base64 = b64_match.group(1)
+                elif len(image_url_data) > 1000:
+                    # Might be raw base64 without data URI prefix
+                    decorated_image_base64 = image_url_data
+        
+        # Fallback: check if image data is in the content field (some models do this)
+        if not decorated_image_base64:
+            content_text = message_data.get("content", "")
+            if content_text:
+                match = re.search(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)', content_text)
+                if match:
+                    decorated_image_base64 = match.group(1)
+        
+        if not decorated_image_base64:
+            # Provide debug info about the response structure
+            debug_info = {
+                "message_keys": list(message_data.keys()),
+                "images_count": len(images_list),
+                "content_preview": str(message_data.get("content", ""))[:200],
+                "has_choices": len(choices) > 0,
+            }
+            return {
+                "success": False,
+                "error": f"No image was generated by the model. Debug: {json.dumps(debug_info)}"
             }
         
         # Save the decorated image to disk (outside agent context)
@@ -568,6 +631,16 @@ def generate_decorated_image_tool(
             "decorations_added": decoration_description,
             "saved_to_disk": str(output_file),
             "message": f"Decorated image generated and saved to {output_file}. Do NOT try to read this file."
+        }
+    except requests.exceptions.HTTPError as e:
+        error_body = ""
+        try:
+            error_body = e.response.text[:500]
+        except Exception:
+            pass
+        return {
+            "success": False,
+            "error": f"Image generation HTTP error: {str(e)}. Response: {error_body}"
         }
     except Exception as e:
         return {
