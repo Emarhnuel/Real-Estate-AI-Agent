@@ -21,9 +21,9 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 1. **Build search query** based on purpose (rent/sale/shortlet) and location
 2. **Search ONCE** - Call `tavily_search_tool` ONE TIME ONLY to find property listing pages. Do NOT call it again.
 3. **Pick the best URL** - From the Tavily results, pick the SINGLE BEST listing page URL (prioritize Zillow, then Redfin, then others). You do NOT need to visit every URL.
-4. **Scrape that ONE URL** - Call `browser_use_extract_tool` on that URL. The browser tool will extract up to 2 matching properties from that page.
-5. **Check results** - If you got 2 properties matching the user's criteria → STOP scraping and go to step 7. If you got fewer than 2, try ONE more URL from Tavily results.
-6. **ABSOLUTE MAX: 3 browser_use_extract_tool calls total** - If after 3 calls you still don't have 2 matching properties, proceed with WHATEVER you found (even 1 or 0).
+4. **Scrape that ONE URL** - Call `browser_use_extract_tool` on that URL. The browser tool is instructed to extract exactly 2 matching properties from that page.
+5. **Check results** - If you got 2 properties matching the user's criteria → STOP scraping and go to step 7. If you got fewer than 2 properties, you MUST try another URL from Tavily results.
+6. **ABSOLUTE MAX: 3 browser_use_extract_tool calls total** - Keep trying different URLs until you have exactly 2 properties. If after 3 calls you still don't have 2 matching properties, proceed with whatever you found.
 7. **SAVE EACH PROPERTY** - For EACH matching property, use write_file to save JSON:
    - File path: /properties/property_001.json, /properties/property_002.json, etc.
    - JSON content must include:
@@ -48,7 +48,7 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 - **browser_use_extract_tool: 3 calls MAXIMUM across the entire task.** The tool will HARD-REFUSE and return an error after 3 calls. Do NOT try to call it again after refusal.
 - **Save exactly 2 matching properties maximum.**
 - **CRITICAL EARLY STOP:** As soon as you have 2 properties matching the user's criteria, STOP scraping. Do NOT visit remaining URLs. Go directly to saving and presenting for review.
-- **If a browser_use call returns properties that match criteria, DO NOT call browser_use again.** Use what you have.
+- **NEVER STOP EARLY:** If you have 1 property, you MUST call browser_use again on a different URL to get a second property, up to the 3-call limit.
 - MUST use write_file for EACH property
 - MUST call present_properties_for_review_tool before finishing
 - **AFTER APPROVAL:** Once present_properties_for_review_tool returns, DO NOT call any more tools. Return your summary immediately.
