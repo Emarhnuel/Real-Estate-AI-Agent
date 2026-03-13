@@ -84,21 +84,47 @@ def extract_final_report(state: dict, thread_id: str) -> dict | None:
     
     if report_path.exists():
         try:
-            import json
-            json_text = report_path.read_text(encoding="utf-8")
-            if json_text.strip():
-                # Sometimes the model writes markdown code blocks around the JSON
-                if json_text.strip().startswith("```"):
-                    import re
-                    match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', json_text, re.DOTALL)
+            import re as _re
+            json_text = report_path.read_text(encoding="utf-8").strip()
+            
+            if json_text:
+                # Strip markdown code fences if present
+                if json_text.startswith("```"):
+                    match = _re.search(r'```(?:json)?\s*(.+?)\s*```', json_text, _re.DOTALL)
                     if match:
-                        json_text = match.group(1)
+                        json_text = match.group(1).strip()
 
-                report_data = json.loads(json_text)
-                logger.info(f"[REPORT] Read final_report.json from disk with {len(report_data.get('properties', []))} properties")
-                # Clean up after reading so next run starts fresh
-                report_path.unlink(missing_ok=True)
-                return report_data
+                # Attempt 1: direct parse
+                report_data = None
+                try:
+                    report_data = json.loads(json_text)
+                except json.JSONDecodeError:
+                    pass
+
+                # Attempt 2: truncate at last valid closing brace (handles "Extra data" errors)
+                if report_data is None:
+                    try:
+                        last_brace = json_text.rfind('}')
+                        if last_brace != -1:
+                            report_data = json.loads(json_text[:last_brace + 1])
+                    except json.JSONDecodeError:
+                        pass
+
+                # Attempt 3: regex-extract the outermost JSON object
+                if report_data is None:
+                    match = _re.search(r'(\{.*\})', json_text, _re.DOTALL)
+                    if match:
+                        try:
+                            report_data = json.loads(match.group(1))
+                        except json.JSONDecodeError:
+                            pass
+
+                if report_data:
+                    logger.info(f"[REPORT] Read final_report.json with {len(report_data.get('properties', []))} properties")
+                    report_path.unlink(missing_ok=True)
+                    return report_data
+                else:
+                    logger.error("[REPORT] All JSON parse attempts failed — file may be completely malformed")
         except Exception as e:
             logger.error(f"[REPORT] Error reading final_report.json: {e}")
     
@@ -353,18 +379,25 @@ async def stream_agent(request: AgentRequest):
             current_subagent = None
             subagent_steps = 0
 
-            for namespace, chunk in agent_module.supervisor.stream(
+            # v2 streaming format per Deep Agents docs: yields dicts with type/ns/data keys
+            for chunk in agent_module.supervisor.stream(
                 {"messages": request.messages},
                 config,
                 stream_mode="updates",
                 subgraphs=True,
+                version="v2",
             ):
-                is_subagent = any(s.startswith("tools:") for s in namespace)
+                if chunk.get("type") != "updates":
+                    continue
 
-                for node_name, data in chunk.items():
-                    # Subagent started
-                    if not namespace and node_name == "model_request":
-                        for msg in data.get("messages", []):
+                ns = chunk.get("ns", ())
+                data = chunk.get("data", {})
+                is_subagent = any(s.startswith("tools:") for s in ns)
+
+                for node_name, node_data in data.items():
+                    # Subagent started (main agent model_request with task tool calls)
+                    if not ns and node_name == "model_request":
+                        for msg in node_data.get("messages", []):
                             for tc in getattr(msg, "tool_calls", []):
                                 if tc["name"] == "task":
                                     current_subagent = tc["args"].get("subagent_type", "unknown")
@@ -376,13 +409,12 @@ async def stream_agent(request: AgentRequest):
                     elif is_subagent and current_subagent:
                         subagent_steps += 1
                         start_pct, end_pct = PROGRESS_MAP.get(current_subagent, (10, 40))
-                        # Estimate progress (cap at 90% of range, final 10% on completion)
                         step_pct = min(start_pct + (subagent_steps * 3), end_pct - 5)
                         yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent, 'progress': step_pct})}\n\n"
 
-                    # Subagent completed
-                    elif not namespace and node_name == "tools":
-                        for msg in data.get("messages", []):
+                    # Subagent result returned to main agent
+                    elif not ns and node_name == "tools":
+                        for msg in node_data.get("messages", []):
                             if hasattr(msg, "type") and msg.type == "tool":
                                 end_pct = PROGRESS_MAP.get(current_subagent, (10, 40))[1]
                                 yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent or 'supervisor', 'progress': end_pct})}\n\n"
@@ -394,7 +426,6 @@ async def stream_agent(request: AgentRequest):
                 if state_snapshot.tasks:
                     for task in state_snapshot.tasks:
                         if hasattr(task, "interrupts") and task.interrupts:
-                            # Extract properties from the nested interrupt structure
                             properties = []
                             for interrupt in task.interrupts:
                                 if hasattr(interrupt, "value"):
@@ -403,7 +434,6 @@ async def stream_agent(request: AgentRequest):
                                             args = action.get("args") or action.get("arguments") or {}
                                             properties = args.get("properties", [])
                                             break
-                                
                             yield f"data: {json.dumps({'type': 'interrupt', 'progress': 50, 'properties': properties, 'data': serialize_interrupt(task.interrupts)})}\n\n"
                             yield "data: [DONE]\n\n"
                             return
@@ -481,17 +511,24 @@ async def stream_resume(request: ResumeRequest):
             current_subagent = None
             subagent_steps = 0
 
-            for namespace, chunk in agent_module.supervisor.stream(
+            # v2 streaming format per Deep Agents docs
+            for chunk in agent_module.supervisor.stream(
                 resume_command,
                 config,
                 stream_mode="updates",
                 subgraphs=True,
+                version="v2",
             ):
-                is_subagent = any(s.startswith("tools:") for s in namespace)
+                if chunk.get("type") != "updates":
+                    continue
 
-                for node_name, data in chunk.items():
-                    if not namespace and node_name == "model_request":
-                        for msg in data.get("messages", []):
+                ns = chunk.get("ns", ())
+                data = chunk.get("data", {})
+                is_subagent = any(s.startswith("tools:") for s in ns)
+
+                for node_name, node_data in data.items():
+                    if not ns and node_name == "model_request":
+                        for msg in node_data.get("messages", []):
                             for tc in getattr(msg, "tool_calls", []):
                                 if tc["name"] == "task":
                                     current_subagent = tc["args"].get("subagent_type", "unknown")
@@ -505,19 +542,21 @@ async def stream_resume(request: ResumeRequest):
                         step_pct = min(start_pct + (subagent_steps * 2), end_pct - 5)
                         yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent, 'progress': step_pct})}\n\n"
 
-                    elif not namespace and node_name == "tools":
-                        for msg in data.get("messages", []):
+                    elif not ns and node_name == "tools":
+                        for msg in node_data.get("messages", []):
                             if hasattr(msg, "type") and msg.type == "tool":
                                 end_pct = RESUME_PROGRESS.get(current_subagent, (55, 75))[1]
                                 yield f"data: {json.dumps({'type': 'progress', 'agent': current_subagent or 'supervisor', 'progress': end_pct})}\n\n"
                                 current_subagent = None
 
-            # Final report
+            # Final report — read from disk (agent writes /final_report.json)
             final_state = agent_module.supervisor.get_state(config)
             if final_state and final_state.values:
                 report = extract_final_report(final_state.values, request.thread_id)
                 if report:
                     yield f"data: {json.dumps({'type': 'report', 'progress': 100, 'data': report})}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
 
             yield "data: [DONE]\n\n"
 
