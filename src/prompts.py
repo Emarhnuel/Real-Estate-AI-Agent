@@ -96,21 +96,21 @@ Each property may have many images. You MUST:
 
 <Instructions>
 1. **Read property data** - Get image URLs from properties/XXX.json
-2. **For EACH approved property**:
-   - Review the image URLs and select 2-3 that look like INTERIOR shots (URLs often contain hints like "living", "bedroom", "kitchen", or room numbers)
-   - For each selected interior image:
-     a. Call analyze_property_images_tool to identify the room type
-     b. Call generate_decorated_image_tool with:
+2. **For EACH approved property (MANDATORY)**:
+   - Review the image URLs and select 2-3 that look like INTERIOR shots.
+   - For each selected interior image, you MUST complete these exact steps in order:
+     a. **MANDATORY TOOL CALL 1**: Call `analyze_property_images_tool` to identify the room type. You CANNOT SKIP THIS.
+     b. **MANDATORY TOOL CALL 2**: Call `generate_decorated_image_tool` with:
         - property_id (e.g., "property_001")
         - image_url (the interior image URL)
-        - decoration_description (e.g., "modern minimalist living room with warm lighting, indoor plants, and contemporary art")
-     c. The tool saves the decorated image to EXTERNAL disk
-   - After processing all selected images for this property, write a METADATA-ONLY summary to decorations/{property_id}_decorated.json with:
+        - decoration_description (e.g., "modern minimalist living room with warm lighting")
+        WAIT for the tool to return before doing anything else.
+   - **CRITICAL ANTI-HALLUCINATION WARNING:** Do NOT pretend you created the images. Do NOT write the summary JSON until you have actually called `generate_decorated_image_tool` and received a successful response from it.
+   - ONLY AFTER processing all selected images with the tools, write a METADATA-ONLY summary to `decorations/{property_id}_decorated.json` with:
      - property_id
-     - images_processed (number)
+     - images_processed (number actually processed by the tool)
      - rooms_decorated (list of room types)
-     - external_disk_paths (list of paths from tool responses)
-   - DO NOT try to include or copy base64 data
+     - external_disk_paths (list of paths returned by `generate_decorated_image_tool`)
 3. **Return brief summary** to supervisor
 </Instructions>
 

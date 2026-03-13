@@ -523,7 +523,7 @@ def generate_decorated_image_tool(
                 "X-Title": "Real Estate AI Agent"
             },
             json={
-                "model": "sourceful/riverflow-v2-pro",
+                "model": "bytedance-seed/seedream-4.5",
                 "modalities": ["image"],
                 "messages": [
                     {
