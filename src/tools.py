@@ -91,16 +91,15 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
             aws_region=os.getenv("AWS_REGION", "us-east-1") 
         )
         
-        # Max failures set to 3 for resilience as per browser-use docs
         agent = Agent(
-            task=task, 
-            browser=browser, 
+            task=task,
+            browser=browser,
             llm=llm,
-            max_failures=3,
-            use_vision=True # Allows the LLM to visually see the property listing layout
+            max_failures=5,
+            use_vision=True  # Allows the LLM to visually see the property listing layout
         )
         
-        history = await agent.run(max_steps=10)
+        history = await agent.run(max_steps=13)
         return history.final_result()
 
     try:
@@ -125,6 +124,7 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         return raw_result
     except Exception as e:
         return f"Extraction failed: {str(e)}"
+
 
 
 @tool(parse_docstring=True)
