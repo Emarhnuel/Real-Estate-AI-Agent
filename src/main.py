@@ -121,6 +121,22 @@ def extract_final_report(state: dict, thread_id: str) -> dict | None:
 
                 if report_data:
                     logger.info(f"[REPORT] Read final_report.json with {len(report_data.get('properties', []))} properties")
+                    # Inject property `id` from disk files if the agent omitted it
+                    props_on_disk = {}
+                    props_dir = AGENT_DATA_DIR / "properties"
+                    if props_dir.exists():
+                        for pf in sorted(props_dir.glob("*.json")):
+                            try:
+                                pd = json.loads(pf.read_text(encoding="utf-8"))
+                                if pd.get("id"):
+                                    props_on_disk[pd["id"]] = pd
+                            except Exception:
+                                pass
+                    disk_ids = list(props_on_disk.keys())
+                    for i, prop in enumerate(report_data.get("properties", [])):
+                        if not prop.get("id") and i < len(disk_ids):
+                            prop["id"] = disk_ids[i]
+                            logger.info(f"[REPORT] Injected id={disk_ids[i]} into property[{i}]")
                     report_path.unlink(missing_ok=True)
                     return report_data
                 else:
