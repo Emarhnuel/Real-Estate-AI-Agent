@@ -1,1 +1,35 @@
-{"property_id": "property_002", "images_processed": 2, "rooms_decorated": ["Exterior Balcony and Entrance Porch", "Exterior Porch and Balcony"], "external_disk_paths": ["decorated_images\\property_002_decorated.json", "decorated_images\\property_002_decorated.json"]}
+{
+  "property_id": "property_002",
+  "address": "Alausa, Ikeja, Lagos",
+  "images_processed": 3,
+  "rooms_decorated": [
+    "hallway/living area",
+    "kitchen",
+    "bedroom"
+  ],
+  "decoration_summary": {
+    "image_1": {
+      "original_url": "https://images.nigeriapropertycentre.com/properties/images/3349095/06995d3c1f0b4b-spacious-2-bedroom-apartment-all-ensuite-upstairs-for-rent-alausa-ikeja-lagos.jpeg",
+      "room_type": "hallway/living area",
+      "decorations_added": "Modern hallway with slim white console table along the wall holding decorative items and a small tray, gallery wall of framed black and white photos above the console, modern wall sconces providing warm lighting, tall Snake Plant in the corner adding greenery, and a decorative runner rug with geometric pattern on the tiled floor. Clean and welcoming entrance.",
+      "style": "Modern"
+    },
+    "image_2": {
+      "original_url": "https://images.nigeriapropertycentre.com/properties/images/3349095/06995d3c2d0d54-spacious-2-bedroom-apartment-all-ensuite-upstairs-for-rent-alausa-ikeja-lagos.jpeg",
+      "room_type": "kitchen",
+      "decorations_added": "Modern minimalist kitchen with under-cabinet LED strip lighting illuminating the workspace, small potted herbs (basil and rosemary) on the window sill, coordinating black and stainless steel kitchen canisters on the countertop, modern soap dispenser by the sink, small framed minimalist print on the wall, and a sleek kitchen cart with wine rack in the under-counter space. Clean and functional design.",
+      "style": "Modern Minimalist"
+    },
+    "image_3": {
+      "original_url": "https://images.nigeriapropertycentre.com/properties/images/3349095/06995d3b31903f-spacious-2-bedroom-apartment-all-ensuite-upstairs-for-rent-alausa-ikeja-lagos.jpeg",
+      "room_type": "bedroom",
+      "decorations_added": "Modern bedroom with queen-sized bed with upholstered headboard against the left wall, white bedding with grey accent pillows, matching nightstands with modern table lamps, large abstract canvas art above the bed, tall Fiddle Leaf Fig plant in the sunlit corner by the window, sheer white curtains on the window, small desk with chair in the corner, modern ceiling light fixture, and a plush area rug defining the bed space. Warm and inviting atmosphere.",
+      "style": "Modern"
+    }
+  },
+  "external_disk_paths": [
+    "decorated_images\\property_002_decorated.json"
+  ],
+  "generation_date": "2026-03-11",
+  "status": "completed"
+}
