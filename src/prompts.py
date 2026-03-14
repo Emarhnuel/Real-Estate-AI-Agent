@@ -280,6 +280,7 @@ Follow this workflow for all property search requests:
   "search_criteria": "Location, budget, bedrooms, bathrooms, property type",
   "properties": [
     {
+      "id": "property_001",
       "address": "Property 1 Address",
       "price": "£1300/month",
       "bedrooms": 2,
