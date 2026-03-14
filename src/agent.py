@@ -167,12 +167,13 @@ location_analysis_agent = {
     "model": model1
 }
 
+
 interior_decorator_agent = {
     "name": "interior_decorator",
     "description": "Analyzes property images and creates interior decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
     "system_prompt": INTERIOR_DECORATOR_SYSTEM_PROMPT,
     "tools": [analyze_property_images_tool, generate_decorated_image_tool],
-    "model": model1,
+    "model": model2,
     "hooks": {
         "after_model": [interior_decorator_step_limiter]
     }
