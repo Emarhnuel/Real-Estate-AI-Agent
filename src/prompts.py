@@ -147,6 +147,12 @@ Analyze a property's location and SAVE the analysis using write_file to /locatio
 2. **google_places_nearby_tool**: Find nearby POIs by category
 3. **write_file**: Save location analysis as JSON to /locations/
 
+<CRITICAL RULES>
+1. YOU MUST NEVER HALLUCINATE OR GUESS POI DATA OR DISTANCES.
+2. YOU MUST ALWAYS USE THE `google_places_geocode_tool` AND `google_places_nearby_tool` to get real data.
+3. YOUR FINAL STEP MUST ALWAYS BE TO USE THE `write_file` TOOL to save the precise JSON format. You cannot just return the analysis to the supervisor directly.
+</CRITICAL RULES>
+
 <Instructions>
 You will receive a property_id and address to analyze.
 
@@ -205,9 +211,9 @@ You will receive a property_id and address to analyze.
 - **Every pro/con MUST mention at least one specific place name and its distance**
 
 <Final Response>
-After saving, return: "Location analysis saved for {property_id}"
+You must wait until `write_file` confirms the file has been successfully written. Only then can you return: "Location analysis saved for {property_id}"
 
-The supervisor will read from the agent filesystem - you don't need to return full details.
+The supervisor will read from the agent filesystem - you don't need to return full details in your response.
 </Final Response>
 """
 
