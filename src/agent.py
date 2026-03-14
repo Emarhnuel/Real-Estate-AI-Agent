@@ -58,6 +58,16 @@ model1 = ChatBedrockConverse(
     max_tokens=40960,
 )
 
+
+model2 = ChatBedrockConverse( 
+    model_id="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    region_name=os.getenv("AWS_REGION", "us-east-1"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    temperature=0.0,
+    max_tokens=63000,
+)
+
 # =============================================================================
 # BACKEND CONFIGURATION
 # =============================================================================
@@ -156,7 +166,6 @@ location_analysis_agent = {
     "tools": [google_places_geocode_tool, google_places_nearby_tool],
     "model": model1
 }
-
 
 interior_decorator_agent = {
     "name": "interior_decorator",
