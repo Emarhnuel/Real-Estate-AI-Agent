@@ -1,0 +1,89 @@
+{
+  "property_id": "property_002",
+  "coordinates": {
+    "latitude": 6.6211078,
+    "longitude": 3.3609343
+  },
+  "nearby_pois": {
+    "restaurant": [
+      {
+        "name": "Mega Chicken",
+        "distance_meters": 991.27
+      },
+      {
+        "name": "THE RM PLACE",
+        "distance_meters": 598.35
+      },
+      {
+        "name": "De Rembrandt Hotel",
+        "distance_meters": 931.96
+      }
+    ],
+    "park": [
+      {
+        "name": "Johnson Jakande Tinubu (JJT) Park",
+        "distance_meters": 737.98
+      },
+      {
+        "name": "Ndubuisi Kanu Park",
+        "distance_meters": 932.25
+      },
+      {
+        "name": "Lateef Jakande Park",
+        "distance_meters": 921.27
+      }
+    ],
+    "shopping_mall": [
+      {
+        "name": "Ikeja City Mall",
+        "distance_meters": 812.0
+      },
+      {
+        "name": "ADDAS MALL",
+        "distance_meters": 907.01
+      },
+      {
+        "name": "Town Square",
+        "distance_meters": 812.52
+      }
+    ],
+    "transit_station": [
+      {
+        "name": "Alausa",
+        "distance_meters": 436.08
+      },
+      {
+        "name": "Alausa Secretariat",
+        "distance_meters": 741.6
+      },
+      {
+        "name": "Magodo Gate 2 (Shangisha)",
+        "distance_meters": 674.42
+      }
+    ],
+    "hospital": [
+      {
+        "name": "Queens Specialist Hospital Lagos",
+        "distance_meters": 608.64
+      },
+      {
+        "name": "The Humana Hospital",
+        "distance_meters": 661.6
+      },
+      {
+        "name": "The Fertility & Gynaecology Centre (THE HOSPITAL)",
+        "distance_meters": 637.16
+      }
+    ]
+  },
+  "pros": [
+    "3 restaurants within 1km: THE RM PLACE (598m), Mega Chicken (991m), De Rembrandt Hotel (932m)",
+    "Johnson Jakande Tinubu (JJT) Park within walking distance (738m)",
+    "Ikeja City Mall (812m) and ADDAS MALL (907m) nearby",
+    "Alausa transit station just 436m away"
+  ],
+  "cons": [
+    "Hospitals within 1km have mixed ratings (2.8-4.3)",
+    "Only 3 hospitals within 1km distance"
+  ]
+}
