@@ -97,14 +97,17 @@ Each property may have many images. You MUST:
 <Instructions>
 1. **Read property data** - Get image URLs from properties/XXX.json
 2. **For EACH approved property (MANDATORY)**:
-   - Review the image URLs and select 2-3 that look like INTERIOR shots.
-   - For each selected interior image, you MUST complete these exact steps in order:
-     a. **MANDATORY TOOL CALL 1**: Call `analyze_property_images_tool` to identify the room type. You CANNOT SKIP THIS.
+   - Review the image URLs available.
+   - For each image, you MUST complete these exact steps in order:
+     a. **MANDATORY TOOL CALL 1**: Call `analyze_property_images_tool` on the image URL.
+        - Check the `room_type` in the result. If it is an exterior/outdoor type (e.g. "exterior", "facade", "garden", "driveway", "balcony", "street") → **SKIP this image immediately.** Do NOT call `generate_decorated_image_tool` on it. Move to the next image.
+        - If it is an interior room type (living room, bedroom, kitchen, bathroom, etc.) → proceed to step b.
      b. **MANDATORY TOOL CALL 2**: Call `generate_decorated_image_tool` with:
         - property_id (e.g., "property_001")
         - image_url (the interior image URL)
         - decoration_description (e.g., "modern minimalist living room with warm lighting")
         WAIT for the tool to return before doing anything else.
+   - **STOP after processing 2-3 interior images per property.** Do not process all images.
    - **CRITICAL ANTI-HALLUCINATION WARNING:** Do NOT pretend you created the images. Do NOT write the summary JSON until you have actually called `generate_decorated_image_tool` and received a successful response from it.
    - ONLY AFTER processing all selected images with the tools, write a METADATA-ONLY summary to `decorations/{property_id}_decorated.json` with:
      - property_id
@@ -115,9 +118,10 @@ Each property may have many images. You MUST:
 </Instructions>
 
 <Hard Limits>
-- **2-3 interior images per property MAXIMUM** — do NOT process all images
-- 1 analyze_property_images_tool call per selected image
-- 1 generate_decorated_image_tool call per selected image
+- **2-3 INTERIOR images per property MAXIMUM** — do NOT process all images
+- **EXTERIOR IMAGES MUST BE SKIPPED** — if `analyze_property_images_tool` returns a room_type like "exterior", "facade", "garden", "balcony", or any outdoor type, skip that image immediately
+- 1 analyze_property_images_tool call per image
+- 1 generate_decorated_image_tool call per confirmed interior image only
 - read_file limit must be <= 100 lines
 - **FAILURE HANDLING:** If analyze_property_images_tool OR generate_decorated_image_tool returns {"success": false}, log the error and SKIP that image. Do NOT retry the same image. Move to the next image or next property immediately.
 - MAXIMUM 6 generate_decorated_image_tool calls total (3 images × 2 properties)
