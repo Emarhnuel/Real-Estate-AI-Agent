@@ -21,8 +21,6 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 
-
-
 # Import the Pydantic models needed for tool schemas
 from src.models import PropertyForReview, PropertyReport
 
@@ -32,7 +30,8 @@ AGENT_DATA_DIR = os.path.abspath("./agent_data")
 # Module-level call counter for browser_use_extract_tool
 # Prevents the LLM from ignoring the "max 3 calls" prompt instruction
 _browser_use_call_count = 0
-_BROWSER_USE_MAX_CALLS = 3
+_BROWSER_USE_MAX_CALLS = 7
+
 
 def reset_browser_use_counter():
     """Reset the browser_use call counter. Call this at the start of each new search session."""
@@ -80,7 +79,13 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         # use_cloud=True enables stealth and anti-bot bypass
         # cloud_proxy_country_code='us' uses a US residential proxy to further bypass Zillow blocks
         # cloud_timeout=30 gives the CDP protocol up to 30 mins to serialize large DOM trees without TimeoutErrors
+    
+        
         browser = Browser(
+            headless=True,
+            minimum_wait_page_load_time=3.0,
+            wait_for_network_idle_page_load_time=5.0,
+            wait_between_actions=2.0,
             use_cloud=True,
             cloud_proxy_country_code='us',
             cloud_timeout=30
