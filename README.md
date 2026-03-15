@@ -31,7 +31,7 @@ Property Nova features a team of specialized AI Agents acting as your personal r
 We've made running Property Nova as easy as humanly possible using Docker Compose. A single command spins up both the React frontend and the FastAPI backend.
 
 ### Prerequisites
-- Docker & Docker Compose installed on your machine.
+- Docker & Docker Desktop must be downloaded, installed, and **opened/running** on your machine.
 - Your own API keys for the third-party services.
 
 ### Step 1: Setup API Keys
@@ -46,6 +46,9 @@ AWS_SECRET_ACCESS_KEY=your_secret_key
 # External Services
 TAVILY_API_KEY=your_tavily_key
 GOOGLE_MAPS_API_KEY=your_google_maps_key
+BROWSER_USE_API_KEY=your_browser_use_key
+OPENAI_API_KEY=your_openai_key
+OPENROUTER_API_KEY=your_openrouter_key
 ```
 
 ### Step 2: Spin it up!
