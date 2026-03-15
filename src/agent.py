@@ -68,6 +68,15 @@ model2 = ChatBedrockConverse(
     max_tokens=63000,
 )
 
+model3 = ChatBedrockConverse( 
+    model_id="us.amazon.nova-pro-v1:0",
+    region_name=os.getenv("AWS_REGION", "us-east-1"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    temperature=0.0,
+    max_tokens=300000,
+)
+
 # =============================================================================
 # BACKEND CONFIGURATION
 # =============================================================================
@@ -154,7 +163,7 @@ property_search_agent = {
     ),
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT, 
     "tools": [tavily_search_tool, browser_use_extract_tool, present_properties_for_review_tool],
-    "model": model1,
+    "model": model3,
     "interrupt_on": {"present_properties_for_review_tool": True},
 }
 
@@ -164,7 +173,7 @@ location_analysis_agent = {
     "description": "Analyzes property locations and nearby amenities. Saves analysis to /locations/ using write_file.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
     "tools": [google_places_geocode_tool, google_places_nearby_tool],
-    "model": model1
+    "model": model3
 }
 
 
@@ -173,7 +182,7 @@ interior_decorator_agent = {
     "description": "Analyzes property images and creates interior decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
     "system_prompt": INTERIOR_DECORATOR_SYSTEM_PROMPT,
     "tools": [analyze_property_images_tool, generate_decorated_image_tool],
-    "model": model2,
+    "model": model3,
     "hooks": {
         "after_model": [interior_decorator_step_limiter]
     }
@@ -182,7 +191,7 @@ interior_decorator_agent = {
  
 # Create the supervisor agent
 supervisor = create_deep_agent(
-    model=model1,
+    model=model3,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     subagents=[property_search_agent, location_analysis_agent, interior_decorator_agent],
     tools=[],

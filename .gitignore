@@ -20,10 +20,8 @@ err.txt
 .next/
 out/
 node_modules/
+dist/
 *.log
-package-lock.json
-package.json
-tsconfig.json
 
 # Vercel
 .vercel
@@ -37,7 +35,6 @@ tsconfig.json
 
 # Project specific
 Example/
-frontend/
 
 # OS
 .DS_Store

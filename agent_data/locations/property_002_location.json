@@ -1,89 +1,108 @@
 {
   "property_id": "property_002",
+  "address": "Venneit Close, Roger Dudman Way, Oxford",
   "coordinates": {
-    "latitude": 6.6211078,
-    "longitude": 3.3609343
+    "latitude": 51.757341,
+    "longitude": -1.2722937
   },
   "nearby_pois": {
     "restaurant": [
       {
-        "name": "Mega Chicken",
-        "distance_meters": 991.27
+        "name": "The Four Candles - JD Wetherspoon",
+        "distance_meters": 822
       },
       {
-        "name": "THE RM PLACE",
-        "distance_meters": 598.35
+        "name": "The White Rabbit",
+        "distance_meters": 859
       },
       {
-        "name": "De Rembrandt Hotel",
-        "distance_meters": 931.96
+        "name": "Malmaison Oxford",
+        "distance_meters": 919
       }
     ],
     "park": [
       {
-        "name": "Johnson Jakande Tinubu (JJT) Park",
-        "distance_meters": 737.98
+        "name": "The University Parks",
+        "distance_meters": 1384
       },
       {
-        "name": "Ndubuisi Kanu Park",
-        "distance_meters": 932.25
+        "name": "Grandpont Nature Park",
+        "distance_meters": 1393
       },
       {
-        "name": "Lateef Jakande Park",
-        "distance_meters": 921.27
+        "name": "The Grove",
+        "distance_meters": 1788
       }
     ],
     "shopping_mall": [
       {
-        "name": "Ikeja City Mall",
-        "distance_meters": 812.0
+        "name": "Meadowside Retail Park",
+        "distance_meters": 1093
       },
       {
-        "name": "ADDAS MALL",
-        "distance_meters": 907.01
+        "name": "Botley Road Retail Park (East)",
+        "distance_meters": 1103
       },
       {
-        "name": "Town Square",
-        "distance_meters": 812.52
+        "name": "Westgate Oxford",
+        "distance_meters": 1101
       }
     ],
     "transit_station": [
       {
-        "name": "Alausa",
-        "distance_meters": 436.08
+        "name": "Oxford",
+        "distance_meters": 460
       },
       {
-        "name": "Alausa Secretariat",
-        "distance_meters": 741.6
+        "name": "Osney Island",
+        "distance_meters": 545
       },
       {
-        "name": "Magodo Gate 2 (Shangisha)",
-        "distance_meters": 674.42
+        "name": "Gloucester Green",
+        "distance_meters": 770
       }
     ],
     "hospital": [
       {
-        "name": "Queens Specialist Hospital Lagos",
-        "distance_meters": 608.64
+        "name": "Jericho Health Centre",
+        "distance_meters": 551
       },
       {
-        "name": "The Humana Hospital",
-        "distance_meters": 661.6
+        "name": "Northgate Health Centre",
+        "distance_meters": 1109
       },
       {
-        "name": "The Fertility & Gynaecology Centre (THE HOSPITAL)",
-        "distance_meters": 637.16
+        "name": "Elms Road Medical Centre",
+        "distance_meters": 1910
+      }
+    ],
+    "school": [
+      {
+        "name": "Activate Learning",
+        "distance_meters": 991
+      },
+      {
+        "name": "Dragon School",
+        "distance_meters": 1593
+      },
+      {
+        "name": "Examination Schools, University of Oxford",
+        "distance_meters": 1629
       }
     ]
   },
   "pros": [
-    "3 restaurants within 1km: THE RM PLACE (598m), Mega Chicken (991m), De Rembrandt Hotel (932m)",
-    "Johnson Jakande Tinubu (JJT) Park within walking distance (738m)",
-    "Ikeja City Mall (812m) and ADDAS MALL (907m) nearby",
-    "Alausa transit station just 436m away"
+    "Excellent public transport access: Oxford Railway Station just 460m away (5-minute walk)",
+    "Multiple bus stops nearby: Osney Island (545m) and Gloucester Green (770m)",
+    "Good selection of restaurants within walking distance: The Four Candles (822m), The White Rabbit (859m), and Malmaison Oxford (919m)",
+    "Close to major shopping centers: Westgate Oxford (1.1km), Meadowside Retail Park (1.1km), and Botley Road Retail Park (1.1km)",
+    "Healthcare facilities nearby: Jericho Health Centre (551m) and Northgate Health Centre (1.1km)",
+    "Educational institutions accessible: Activate Learning (991m), Dragon School (1.6km), and University of Oxford Examination Schools (1.6km)",
+    "Access to green spaces: The University Parks (1.4km) and Grandpont Nature Park (1.4km)"
   ],
   "cons": [
-    "Hospitals within 1km have mixed ratings (2.8-4.3)",
-    "Only 3 hospitals within 1km distance"
+    "Major hospitals are distant: Churchill Hospital (4.0km), John Radcliffe Hospital (3.6km), and Nuffield Orthopaedic Centre (4.4km)",
+    "Parks require a walk: Nearest parks The University Parks (1.4km) and Grandpont Nature Park (1.4km) are not within immediate walking distance",
+    "Limited immediate green space: Closest significant park is over 1.3km away"
   ]
 }

@@ -1,16 +1,16 @@
-# 🏠 Property Gemini: AI-Powered Real Estate Intelligence
+# 🏠 Property Nova: AI-Powered Real Estate Intelligence
 
-Welcome to **Property Gemini!** Built entirely upon the powerful reasoning and multimodal capabilities of **Amazon Nova 2** models via AWS Bedrock, this autonomous multi-agent system takes the guesswork out of property investment. 
+Welcome to **Property Nova!** Built entirely upon the powerful reasoning and multimodal capabilities of **Amazon Nova 2** models via AWS Bedrock, this autonomous multi-agent system takes the guesswork out of property investment. 
 
 Have you ever looked at a boring, outdated house listing and wondered, *"Could this be a modern masterpiece?"* Or looked at a neighborhood and asked, *"Is this actually a good area to invest in?"*
 
-Property Gemini answers those questions instantly. We leverage advanced LLMs to analyze a property's location, assess its raw potential, and literally **reimagine its interior design** right before your eyes. It's like having a top-tier real estate agent, investment analyst, and interior designer working together for you around the clock.
+Property Nova answers those questions instantly. We leverage advanced LLMs to analyze a property's location, assess its raw potential, and literally **reimagine its interior design** right before your eyes. It's like having a top-tier real estate agent, investment analyst, and interior designer working together for you around the clock.
 
 ---
 
 ## ✨ What it Does (The Magic)
 
-Property Gemini features a team of specialized AI Agents acting as your personal real estate firm. When you input a location, the magic begins:
+Property Nova features a team of specialized AI Agents acting as your personal real estate firm. When you input a location, the magic begins:
 
 1. **The Search Agent (Data Gathering):** 
    Scours the web (via Tavily) for live, active real estate listings in your desired city or neighborhood, extracting raw listing data like prices, square footage, bedrooms, and property images.
@@ -28,7 +28,7 @@ Property Gemini features a team of specialized AI Agents acting as your personal
 
 ## 🛠️ How to Run It (Docker)
 
-We've made running Property Gemini as easy as humanly possible using Docker Compose. A single command spins up both the React frontend and the FastAPI backend.
+We've made running Property Nova as easy as humanly possible using Docker Compose. A single command spins up both the React frontend and the FastAPI backend.
 
 ### Prerequisites
 - Docker & Docker Compose installed on your machine.
@@ -74,7 +74,7 @@ docker-compose down
 
 ## 🏗️ Architecture Stack
 
-Property Gemini is built with scalability and performance in mind:
+Property Nova is built with scalability and performance in mind:
 
 - **AI/LLM Framework:** Amazon Nova 2 (via AWS Bedrock) & LangChain
 - **Backend Service:** Python, FastAPI, LangGraph (for multi-agent orchestration)

@@ -392,23 +392,23 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 @tool(parse_docstring=True)
 def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
-    """Analyze property images using Gemini Vision to identify rooms and decoration opportunities.
+    """Analyze property images using Amazon Nova Vision to identify rooms and decoration opportunities.
     
     Args:
         image_url: URL of the property image to analyze
     """
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        raise ValueError("OPENROUTER_API_KEY environment variable is not set")
-    
     try:
-        from langchain_openrouter import ChatOpenRouter
+        from langchain_aws import ChatBedrockConverse
         from langchain_core.messages import HumanMessage
         import base64
         
-        model = ChatOpenRouter(
-            model="google/gemini-3-flash-preview",
-            api_key=api_key
+        model = ChatBedrockConverse(
+            model_id="us.amazon.nova-lite-v1:0",
+            region_name=os.getenv("AWS_REGION", "us-east-1"),
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            temperature=0.0,
+            max_tokens=1024,
         )
         
         # Download image with browser-like headers to bypass anti-hotlinking
@@ -416,10 +416,15 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
             "Referer": "https://www.google.com/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         }
-        response = requests.get(image_url, timeout=10, headers=download_headers)
-        response.raise_for_status()
+        img_response = requests.get(image_url, timeout=10, headers=download_headers)
+        img_response.raise_for_status()
         
-        image_bytes = response.content
+        image_bytes = img_response.content
+        
+        # Detect content type
+        content_type = img_response.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+        if content_type not in ("image/jpeg", "image/png", "image/gif", "image/webp"):
+            content_type = "image/jpeg"
         
         # Convert image bytes to base64
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
@@ -427,7 +432,7 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
         prompt = """Analyze this property image for interior decoration opportunities.
         
         Identify:
-        1. Room type (living room, bedroom, porch, entryway, etc.)
+        1. Room type (living room, bedroom, kitchen, bathroom, porch, entryway, exterior, facade, garden, driveway, etc.)
         2. Available spaces for decorations (walls, corners, windows, doorways)
         3. Existing furniture and layout
         4. Style and color scheme
@@ -435,13 +440,16 @@ def analyze_property_images_tool(image_url: str) -> Dict[str, Any]:
         
         Return a JSON object with: room_type, decoration_spaces, style_notes, suggestions"""
         
+        # Bedrock-native image block format
         message = HumanMessage(
             content=[
                 {"type": "text", "text": prompt},
                 {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{image_base64}"
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": content_type,
+                        "data": image_base64,
                     }
                 }
             ]
