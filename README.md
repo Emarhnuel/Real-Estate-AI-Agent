@@ -1,282 +1,84 @@
-# langsmith-cli
+# 🏠 Property Gemini: AI-Powered Real Estate Intelligence
 
-> **Alpha** — This CLI is under active development. Commands, flags, and output schemas may change between releases. Feedback and bug reports welcome via [GitHub Issues](https://github.com/langchain-ai/langsmith-cli/issues).
+Welcome to **Property Gemini!** Built entirely upon the powerful reasoning and multimodal capabilities of **Amazon Nova 2** models via AWS Bedrock, this autonomous multi-agent system takes the guesswork out of property investment. 
 
-An agent-first CLI for querying and managing [LangSmith](https://smith.langchain.com) resources.
+Have you ever looked at a boring, outdated house listing and wondered, *"Could this be a modern masterpiece?"* Or looked at a neighborhood and asked, *"Is this actually a good area to invest in?"*
 
-Built for AI coding agents (deepagents, Claude Code, Cursor, etc.) and developers who need fast, scriptable access to projects, traces, runs, datasets, evaluators, experiments, and threads.
+Property Gemini answers those questions instantly. We leverage advanced LLMs to analyze a property's location, assess its raw potential, and literally **reimagine its interior design** right before your eyes. It's like having a top-tier real estate agent, investment analyst, and interior designer working together for you around the clock.
 
-## Installation
+---
 
-### Install script (recommended)
+## ✨ What it Does (The Magic)
 
-```bash
-curl -sSL https://raw.githubusercontent.com/langchain-ai/langsmith-cli/main/scripts/install.sh | sh
+Property Gemini features a team of specialized AI Agents acting as your personal real estate firm. When you input a location, the magic begins:
+
+1. **The Search Agent (Data Gathering):** 
+   Scours the web (via Tavily) for live, active real estate listings in your desired city or neighborhood, extracting raw listing data like prices, square footage, bedrooms, and property images.
+
+2. **The Location Analyst Agent (Intelligence):** 
+   Uses Google Places API to calculate a comprehensive "livability grade". It looks beyond the property lines right into the neighborhood, evaluating proximity to amenities, public transit, gyms, groceries, and airports to generate a definitive Location Score.
+
+3. **The Interior Decorator Agent (Vision Analysis):** 
+   Powered directly by `us.amazon.nova-lite-v1:0` via AWS Bedrock, this agent looks at the actual listing photos. It intelligently identifies room types (smartly ignoring exterior shots, facades, and gardens!) and assesses available spaces, existing furniture, and current color schemes. It then suggests a stunning "Modern Minimalist" design overhaul tailored exactly to the geometry of the room.
+
+4. **The Render Agent (Generation):** 
+   Takes the Interior Decorator's curated design suggestions and generates photorealistic mockup images of what the property *could* look like after renovations.
+
+---
+
+## 🛠️ How to Run It (Docker)
+
+We've made running Property Gemini as easy as humanly possible using Docker Compose. A single command spins up both the React frontend and the FastAPI backend.
+
+### Prerequisites
+- Docker & Docker Compose installed on your machine.
+- Your own API keys for the third-party services.
+
+### Step 1: Setup API Keys
+In the root directory of the project, create a file named `.env`. Depending on what agents you are running, you will need the appropriate keys:
+
+```env
+# AWS credentials for Amazon Nova (Bedrock) - Required for Vision & Reasoning
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+
+# External Services
+TAVILY_API_KEY=your_tavily_key
+GOOGLE_MAPS_API_KEY=your_google_maps_key
 ```
 
-### GitHub releases
-
-Download the latest binary for your platform from [GitHub Releases](https://github.com/langchain-ai/langsmith-cli/releases).
-
-## Authentication
-
-Set your API key as an environment variable:
+### Step 2: Spin it up!
+Open your terminal in the project root and run this single magical command:
 
 ```bash
-export LANGSMITH_API_KEY="lsv2_pt_..."
+docker-compose up --build -d
 ```
+*(Wait a few moments while Docker automatically downloads dependencies, builds the Node.js frontend, and sets up the Python backend containers.)*
 
-Optionally set defaults:
+### Step 3: Explore
+Once the containers are running:
+1. Open your browser and navigate to **[http://localhost:3000](http://localhost:3000)**
+2. Click **Start Analysis** on the landing page.
+3. Type in a location (e.g., "Austin TX" or "San Francisco") and watch the AI agents go to work!
 
+*(Note: The FastAPI backend runs silently on `localhost:8000`, but you interact entirely through the sleek React frontend on port `3000`.)*
+
+### Stopping the App
+When you're done analyzing properties, simply run:
 ```bash
-export LANGSMITH_ENDPOINT="https://api.smith.langchain.com"  # For self-hosted
-export LANGSMITH_PROJECT="my-default-project"                 # Default project for queries
+docker-compose down
 ```
 
-Or pass them as flags:
+---
 
-```bash
-langsmith --api-key lsv2_pt_... trace list --project my-app
-```
+## 🏗️ Architecture Stack
 
-## Quick Start
+Property Gemini is built with scalability and performance in mind:
 
-```bash
-# List tracing projects
-langsmith project list
+- **AI/LLM Framework:** Amazon Nova 2 (via AWS Bedrock) & LangChain
+- **Backend Service:** Python, FastAPI, LangGraph (for multi-agent orchestration)
+- **Frontend App:** React, Vite, TailwindCSS (for the beautiful design system), Framer Motion (for animations)
+- **Deployment & Infra:** Docker & Docker Compose
 
-# List recent traces in a project
-langsmith trace list --project my-app --limit 5
-
-# Get a specific trace with full detail
-langsmith trace get <trace-id> --project my-app --full
-
-# List LLM calls with token counts
-langsmith run list --project my-app --run-type llm --include-metadata
-
-# List datasets
-langsmith dataset list
-
-# List experiments for a dataset
-langsmith experiment list --dataset my-eval-set
-```
-
-## Output Formats
-
-All commands default to **JSON** output for agent consumption:
-
-```bash
-langsmith trace list --project my-app  # JSON array to stdout
-```
-
-Use `--format pretty` for human-readable tables and trees:
-
-```bash
-langsmith --format pretty trace list --project my-app
-```
-
-Write to a file with `-o`:
-
-```bash
-langsmith trace list --project my-app -o traces.json
-```
-
-## Command Reference
-
-### `project` — List tracing projects
-
-A tracing project (session) is a namespace that groups related traces together. This lists only tracing projects, not experiments — use `experiment list` for those.
-
-```bash
-# List tracing projects (default limit: 20)
-langsmith project list
-langsmith project list --limit 50
-
-# Filter by name
-langsmith project list --name-contains chatbot
-
-# Human-readable table
-langsmith --format pretty project list
-```
-
-### `trace` — Query and export traces
-
-A trace is a tree of runs representing one end-to-end invocation of your application.
-
-```bash
-# List recent traces (default limit: 20)
-langsmith trace list --project my-app
-langsmith trace list --project my-app --limit 50 --last-n-minutes 60
-
-# Filter traces
-langsmith trace list --project my-app --error           # Only errors
-langsmith trace list --project my-app --min-latency 5   # Slow traces (>5s)
-langsmith trace list --project my-app --tags production  # By tag
-langsmith trace list --project my-app --name "agent"     # By name
-
-# Include additional fields
-langsmith trace list --project my-app --include-metadata   # + status, duration, tokens, costs
-langsmith trace list --project my-app --include-io         # + inputs, outputs, error
-langsmith trace list --project my-app --include-feedback   # + feedback_stats
-langsmith trace list --project my-app --full               # All fields (metadata + io + feedback)
-
-# Show trace hierarchy (fetches full run tree for each trace)
-langsmith trace list --project my-app --show-hierarchy --limit 3
-
-# Get a specific trace
-langsmith trace get <trace-id> --project my-app --full
-
-# Export traces to JSONL files (one per trace)
-langsmith trace export ./traces --project my-app --limit 20 --full
-
-# Custom filename pattern (supports {trace_id} and {name} placeholders)
-langsmith trace export ./traces --project my-app --filename-pattern "{name}_{trace_id}.jsonl"
-```
-
-### `run` — Query individual runs
-
-A run is a single step within a trace (LLM call, tool call, chain step, etc.).
-
-```bash
-# List LLM calls (default limit: 50)
-langsmith run list --project my-app --run-type llm
-langsmith run list --project my-app --run-type tool --name search
-
-# Find expensive calls
-langsmith run list --project my-app --run-type llm --min-tokens 1000 --include-metadata
-
-# Include feedback scores
-langsmith run list --project my-app --include-feedback
-
-# Get a specific run
-langsmith run get <run-id> --full
-
-# Export to JSONL (default limit: 100)
-langsmith run export llm_calls.jsonl --project my-app --run-type llm --full
-```
-
-### `thread` — Query conversation threads
-
-A thread groups multiple root runs sharing a thread_id (multi-turn conversations).
-
-```bash
-# List threads (requires --project)
-langsmith thread list --project my-chatbot
-langsmith thread list --project my-chatbot --last-n-minutes 120
-
-# Get all turns in a thread
-langsmith thread get <thread-id> --project my-chatbot --full
-```
-
-### `dataset` — Manage evaluation datasets
-
-```bash
-# List datasets
-langsmith dataset list
-langsmith dataset list --name-contains eval
-
-# Get dataset details
-langsmith dataset get my-dataset
-
-# Create and delete
-langsmith dataset create --name my-eval-set --description "QA pairs for v2"
-langsmith dataset delete my-old-dataset --yes
-
-# Export examples to JSON
-langsmith dataset export my-dataset ./data.json --limit 500
-
-# Upload from JSON file
-langsmith dataset upload data.json --name new-dataset
-```
-
-### `example` — Manage dataset examples
-
-```bash
-# List examples
-langsmith example list --dataset my-dataset
-langsmith example list --dataset my-dataset --split test --limit 50
-
-# Paginate through examples
-langsmith example list --dataset my-dataset --limit 20 --offset 20
-
-# Create an example
-langsmith example create --dataset my-dataset \
-  --inputs '{"question": "What is LangSmith?"}' \
-  --outputs '{"answer": "A platform for LLM observability"}'
-
-# Create with metadata and split assignment
-langsmith example create --dataset my-dataset \
-  --inputs '{"question": "What is tracing?"}' \
-  --outputs '{"answer": "Recording LLM application execution"}' \
-  --metadata '{"source": "manual", "version": 2}' \
-  --split test
-
-# Delete an example
-langsmith example delete <example-id> --yes
-```
-
-### `evaluator` — Manage evaluator rules
-
-```bash
-# List evaluators
-langsmith evaluator list
-
-# Upload an offline evaluator (for experiments)
-langsmith evaluator upload evals.py \
-  --name accuracy --function check_accuracy --dataset my-eval-set
-
-# Upload an online evaluator (for production monitoring)
-langsmith evaluator upload evals.py \
-  --name latency-check --function check_latency --project my-app
-
-# Set sampling rate (evaluate a fraction of runs, 0.0-1.0)
-langsmith evaluator upload evals.py \
-  --name latency-check --function check_latency --project my-app --sampling-rate 0.5
-
-# Replace an existing evaluator
-langsmith evaluator upload evals.py \
-  --name accuracy --function check_accuracy_v2 --dataset my-eval-set --replace --yes
-
-# Delete an evaluator
-langsmith evaluator delete accuracy --yes
-```
-
-### `experiment` — Query experiment results
-
-```bash
-# List experiments
-langsmith experiment list
-langsmith experiment list --dataset my-eval-set
-
-# Get experiment results (feedback stats, run stats)
-langsmith experiment get my-experiment-2024-01-15
-```
-
-## Filter Options
-
-Most `trace` and `run` commands share these filter options:
-
-| Flag | Description | Example |
-|------|-------------|---------|
-| `--project` | Project name | `--project my-app` |
-| `--limit, -n` | Max results | `-n 10` |
-| `--last-n-minutes` | Time window | `--last-n-minutes 60` |
-| `--since` | After ISO timestamp | `--since 2024-01-15T00:00:00Z` |
-| `--error / --no-error` | Error status | `--error` |
-| `--name` | Name search (case-insensitive) | `--name ChatOpenAI` |
-| `--run-type` | Run type (run commands only) | `--run-type llm` |
-| `--min-latency` | Min latency (seconds) | `--min-latency 2.5` |
-| `--max-latency` | Max latency (seconds) | `--max-latency 10` |
-| `--min-tokens` | Min total tokens | `--min-tokens 1000` |
-| `--tags` | Tags (comma-separated, OR logic) | `--tags prod,v2` |
-| `--filter` | Raw LangSmith filter DSL | `--filter 'eq(status, "error")'` |
-| `--trace-ids` | Specific trace IDs | `--trace-ids abc123,def456` |
-
-### Requirements
-
-- Go 1.23+
-- golangci-lint (for linting)
-
-## License
-
-MIT
+***Stop guessing. Start knowing. Welcome to the future of real estate investing.***
