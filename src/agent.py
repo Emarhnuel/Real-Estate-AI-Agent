@@ -74,7 +74,7 @@ model3 = ChatBedrockConverse(
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     temperature=0.0,
-    max_tokens=300000,
+    max_tokens=10000,
 )
 
 # =============================================================================
