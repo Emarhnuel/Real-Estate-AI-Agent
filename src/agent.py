@@ -74,7 +74,7 @@ model3 = ChatBedrockConverse(
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     temperature=0.0,
-    max_tokens=300000,
+    max_tokens=10000,
 )
 
 # =============================================================================
@@ -163,7 +163,7 @@ property_search_agent = {
     ),
     "system_prompt": PROPERTY_SEARCH_SYSTEM_PROMPT, 
     "tools": [tavily_search_tool, browser_use_extract_tool, present_properties_for_review_tool],
-    "model": model3,
+    "model": model1,
     "interrupt_on": {"present_properties_for_review_tool": True},
 }
 
@@ -191,7 +191,7 @@ interior_decorator_agent = {
  
 # Create the supervisor agent
 supervisor = create_deep_agent(
-    model=model3,
+    model=model1,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     subagents=[property_search_agent, location_analysis_agent, interior_decorator_agent],
     tools=[],
