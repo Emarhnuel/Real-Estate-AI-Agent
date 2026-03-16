@@ -59,15 +59,6 @@ model1 = ChatBedrockConverse(
 )
 
 
-model2 = ChatBedrockConverse( 
-    model_id="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    region_name=os.getenv("AWS_REGION", "us-east-1"),
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    temperature=0.0,
-    max_tokens=63000,
-)
-
 model3 = ChatBedrockConverse( 
     model_id="us.amazon.nova-pro-v1:0",
     region_name=os.getenv("AWS_REGION", "us-east-1"),
@@ -182,7 +173,7 @@ interior_decorator_agent = {
     "description": "Analyzes property images and creates interior decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
     "system_prompt": INTERIOR_DECORATOR_SYSTEM_PROMPT,
     "tools": [analyze_property_images_tool, generate_decorated_image_tool],
-    "model": model3,
+    "model": model1,
     "hooks": {
         "after_model": [interior_decorator_step_limiter]
     }
