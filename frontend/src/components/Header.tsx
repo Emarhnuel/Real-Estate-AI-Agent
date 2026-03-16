@@ -19,8 +19,8 @@ export function Header() {
             <div className="container mx-auto px-6 flex items-center justify-between">
                 {/* Logo - Always links to Home */}
                 <Link to="/" className="flex items-center gap-3 group cursor-pointer">
-                    <div className="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden shadow-soft group-hover:scale-105 transition-transform bg-white border border-slate-100 p-1">
-                        <img src="/logo.png" alt="Property Nova Logo" className="w-full h-full object-cover" />
+                    <div className="w-80 h-28 rounded-xl flex items-center justify-center overflow-hidden shadow-soft group-hover:scale-105 transition-transform bg-white border border-slate-100 p-1">
+                        <img src="/logo.png" alt="Property Nova Logo" className="w-full h-full object-contain" />
                     </div>
                 </Link>
 
