@@ -19,8 +19,7 @@ dependencies = [
     "adapter>=0.1",
     "langchain-aws>=1.4.4",
     "langsmith-fetch>=0.3.1", 
-    "browser-use>=0.12.6",
-    "browser-use-sdk>=2.0.15",
+    "browser-use-sdk>=3.4.3",
     "google-genai>=1.65.0",
     "langchain-openrouter>=0.2.1",
 ]
