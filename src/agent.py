@@ -68,6 +68,18 @@ model3 = ChatBedrockConverse(
     max_tokens=10000,
 )
 
+
+model4 = ChatBedrockConverse( 
+    model_id="us.anthropic.claude-opus-4-6-v1",
+    region_name=os.getenv("AWS_REGION", "us-east-1"), 
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    temperature=0.0,
+    max_tokens=10000,
+)
+
+
+
 # =============================================================================
 # BACKEND CONFIGURATION
 # =============================================================================
@@ -164,7 +176,7 @@ location_analysis_agent = {
     "description": "Analyzes property locations and nearby amenities. Saves analysis to /locations/ using write_file.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
     "tools": [google_places_geocode_tool, google_places_nearby_tool],
-    "model": model3
+    "model": model4
 }
 
 
@@ -173,7 +185,7 @@ interior_decorator_agent = {
     "description": "Analyzes property images and creates interior decoration plans with AI-generated decorated images. Searches for decoration products and provides budget estimates.",
     "system_prompt": INTERIOR_DECORATOR_SYSTEM_PROMPT,
     "tools": [analyze_property_images_tool, generate_decorated_image_tool],
-    "model": model1,
+    "model": model4,
     "hooks": {
         "after_model": [interior_decorator_step_limiter]
     }
