@@ -66,7 +66,7 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         f"1. Go to the URL: {url}\n"
         f"2. {extraction_prompt}\n"
         "3. Wait up to 3 seconds for the page to load. If not loaded, refresh ONCE.\n"
-        "4. **CRITICAL:** You MUST extract exactly 2 properties that match the user's search criteria from this page. Do not stop at 1.\n"
+        "4. **CRITICAL:** You MUST extract exactly 2 properties that match the user's search criteria from this page. Note: Ensure the properties extracted are ONLY FOR RENT, do not extract properties for sale or purchase. Do not stop at 1.\n"
         "5. For EACH property, you MUST extract: price, bedrooms, bathrooms, address, property URL, description, and at least 3 image URLs.\n"
         "6. IMPORTANT FOR IMAGES: You MUST strictly extract ONLY interior room images (living rooms, bedrooms, kitchens, bathrooms). Do NOT extract exterior shots, building facades, or floor plans.\n"
         "7. If you only see 1 matching property initially, scroll down MULTIPLE TIMES and wait for the page to lazy-load more listings until you find a 2nd one.\n"
