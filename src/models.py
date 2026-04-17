@@ -147,8 +147,21 @@ class ResumeRequest(BaseModel):
     )
 
 
-# CHANGE: Added a specific Pydantic model for the /api/state endpoint request.
-class StateRequest(BaseModel):
-    """Request model for getting agent state."""
+# Models for Browser Use Cloud V3 Structured Extraction
+class ExtractedProperty(BaseModel):
+    """Refined property model for structured extraction."""
     
-    thread_id: str = Field(..., description="Thread ID to get state for")
+    address: str = Field(..., description="Full property address")
+    price: str = Field(..., description="Monthly rent or purchase price with currency")
+    bedrooms: int = Field(..., description="Number of bedrooms")
+    bathrooms: float = Field(..., description="Number of bathrooms")
+    listing_url: str = Field(..., description="Direct URL to the property listing")
+    description: str = Field(..., description="Brief property description")
+    interior_image_urls: list[str] = Field(
+        ..., 
+        description="Minimum of 3 URLs for high-quality interior images (kitchen, living room, bedroom, etc.)"
+    )
+
+class ExtractedPropertyList(BaseModel):
+    """List of extracted properties for bulk return."""
+    properties: list[ExtractedProperty] = Field(..., description="List of properties found on the page")
