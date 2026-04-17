@@ -59,15 +59,19 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         # V3 Cloud SDK automatically handles stealth and proxies
         client = AsyncBrowserUse() 
         
+        # Use the specific workspace provided by the user
+        workspace_id = "b072cafe-45ad-47d6-b514-abdcce75a532"
+
+        # Run the extraction with the established workspace_id
         result = await client.run(
             task=task,
             output_schema=ExtractedPropertyList,
+            workspace_id=workspace_id,
             cache_script=True  # Enables $0 LLM reruns for the same task
         )
         
         # Return the structured data as a JSON string for tool consistency
         if result.output and result.output.properties:
-            # We filter or deduplicate here if needed, but the list is already limited to 2
             return result.output.model_dump_json()
         
         return "[]"
