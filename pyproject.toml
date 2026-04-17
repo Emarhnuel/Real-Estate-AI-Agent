@@ -17,9 +17,10 @@ dependencies = [
     "pillow>=12.2.0",
     "mcp>=1.26.0",
     "adapter>=0.1",
-    "langchain-aws>=1.4.4", 
-    "langsmith-fetch>=0.3.1",
+    "langchain-aws>=1.4.4",
+    "langsmith-fetch>=0.3.1", 
     "browser-use>=0.12.6",
+    "browser-use-sdk>=2.0.15",
     "google-genai>=1.65.0",
     "langchain-openrouter>=0.2.1",
 ]
