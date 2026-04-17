@@ -27,16 +27,8 @@ from src.models import PropertyForReview, PropertyReport
 # Shared disk directory for all agents
 AGENT_DATA_DIR = os.path.abspath("./agent_data")
 
-# Module-level call counter for browser_use_extract_tool
-# Prevents the LLM from ignoring the "max 3 calls" prompt instruction
-_browser_use_call_count = 0
-_BROWSER_USE_MAX_CALLS = 7
 
 
-def reset_browser_use_counter():
-    """Reset the browser_use call counter. Call this at the start of each new search session."""
-    global _browser_use_call_count
-    _browser_use_call_count = 0
 
 
 
@@ -50,12 +42,7 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
         url: The property URL to visit and extract data from.
         extraction_prompt: Specific instructions on what to extract from the page (e.g., 'Extract price, bedrooms, and description').
     """
-    global _browser_use_call_count
-    _browser_use_call_count += 1
-    if _browser_use_call_count > _BROWSER_USE_MAX_CALLS:
-        return (f"REFUSED: browser_use_extract_tool has already been called "
-                f"{_browser_use_call_count - 1} times (limit is {_BROWSER_USE_MAX_CALLS}). "
-                f"Use the properties you already have and proceed to the next step.")
+
     
     api_key = os.getenv("BROWSER_USE_API_KEY")
     if not api_key:
