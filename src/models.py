@@ -147,6 +147,12 @@ class ResumeRequest(BaseModel):
     )
 
 
+class StateRequest(BaseModel):
+    """Request model for getting agent state."""
+    
+    thread_id: str = Field(..., description="Thread ID to get state for")
+
+
 # Models for Browser Use Cloud V3 Structured Extraction
 class ExtractedProperty(BaseModel):
     """Refined property model for structured extraction."""
