@@ -642,7 +642,12 @@ def present_properties_for_review_tool(properties: List[Dict[str, Any]]) -> dict
         "status": "approved",
         "approved_property_ids": approved_ids,
         "count": len(approved_ids),
-        "message": f"User approved {len(approved_ids)} properties for analysis"
+        "message": (
+            f"User decision received. ONLY the following IDs were approved: {approved_ids}. "
+            "ALL OTHER properties previously provided are REJECTED and must be ignored. "
+            "Your property search task is now COMPLETE. DO NOT call any more tools (including this one). "
+            "Return your final summary to the supervisor immediately."
+        )
     }
 
 
