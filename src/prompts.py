@@ -41,23 +41,26 @@ Find property listings matching ALL user criteria and SAVE each one using write_
      }
      ```
 8. **Review** - Call `present_properties_for_review_tool` with the list of matching properties. This pauses for user approval.
-9. **Return summary** - ONCE THE REVIEW TOOL RETURNS, YOUR TASK IS 100% COMPLETE. Return your final summary IMMEDIATELY. DO NOT call any more tools.
+9. **Final Summary** - ONCE THE REVIEW TOOL RETURNS, YOUR TASK IS 100% COMPLETE. 
+   - The tool will return a list of `approved_property_ids`.
+   - You MUST ignore ANY property that is not in that approved list.
+   - Do NOT call `present_properties_for_review_tool` a second time for any reason.
+   - Do NOT try to search for more properties if some were rejected.
+   - Return your final summary IMMEDIATELY. DO NOT call any more tools.
 
 <Hard Limits>
 - **tavily_search_tool: 1 call MAXIMUM.** Never call it a second time.
-- **browser_use_extract_tool: 3 calls MAXIMUM across the entire task.** The tool will HARD-REFUSE and return an error after 3 calls. Do NOT try to call it again after refusal.
+- **browser_use_extract_tool: 3 calls MAXIMUM across the entire task.**
+- **present_properties_for_review_tool: 1 call MAXIMUM.** Never call it a second time.
 - **Save exactly 2 matching properties maximum.**
 - **CRITICAL EARLY STOP:** As soon as you have 2 properties matching the user's criteria, STOP scraping. Do NOT visit remaining URLs. Go directly to saving and presenting for review.
-- **NEVER STOP EARLY:** If you have 1 property, you MUST call browser_use again on a different URL to get a second property, up to the 3-call limit.
 - MUST use write_file for EACH property
 - MUST call present_properties_for_review_tool before finishing
-- **AFTER APPROVAL:** Once present_properties_for_review_tool returns, DO NOT call any more tools. Return your summary immediately.
+- **AFTER REVIEW:** Once `present_properties_for_review_tool` returns, DO NOT call any more tools. Return your summary immediately.
 
 <Final Response>
 After the user approves properties, return:
-"Approved X properties: property_001, property_002, ..."
-
-The supervisor will read properties from the agent filesystem - you don't need to return full details.
+"Approved X properties: property_001, property_002, ..." (only list the APPROVED ones).
 </Final Response>
 """
 
