@@ -122,17 +122,17 @@ property_search_middleware = [
 
 # Location Analysis: limit API calls + retry Google Places
 location_analysis_middleware = [
-    ToolCallLimitMiddleware(tool_name="google_places_geocode_tool", run_limit=16, exit_behavior="continue"),
-    ToolCallLimitMiddleware(tool_name="google_places_nearby_tool", run_limit=20, exit_behavior="continue"),
+    ToolCallLimitMiddleware(tool_name="google_places_geocode_tool", run_limit=40, exit_behavior="continue"),
+    ToolCallLimitMiddleware(tool_name="google_places_nearby_tool", run_limit=35, exit_behavior="continue"),
     ModelCallLimitMiddleware(run_limit=20, exit_behavior="end"),
     ToolRetryMiddleware(max_retries=3, tools=["google_places_geocode_tool", "google_places_nearby_tool"], backoff_factor=2.0, initial_delay=1.0),
 ]
 
 # Interior Decorator: hard stop on tool limits + retry image generation
 interior_decorator_middleware = [
-    ToolCallLimitMiddleware(tool_name="analyze_property_images_tool", run_limit=7, exit_behavior="end"),
-    ToolCallLimitMiddleware(tool_name="generate_decorated_image_tool", run_limit=7, exit_behavior="end"),
-    ModelCallLimitMiddleware(run_limit=20, exit_behavior="end"),
+    ToolCallLimitMiddleware(tool_name="analyze_property_images_tool", run_limit=40, exit_behavior="continue"),
+    ToolCallLimitMiddleware(tool_name="generate_decorated_image_tool", run_limit=35, exit_behavior="continue"),
+    ModelCallLimitMiddleware(run_limit=50, exit_behavior="end"),
     ToolRetryMiddleware(max_retries=3, tools=["generate_decorated_image_tool"], backoff_factor=2.0, initial_delay=2.0),
 ]
 
