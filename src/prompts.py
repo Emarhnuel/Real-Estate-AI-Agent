@@ -57,6 +57,7 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 - MUST use write_file for EACH property
 - MUST call present_properties_for_review_tool before finishing
 - **AFTER REVIEW:** Once `present_properties_for_review_tool` returns, DO NOT call any more tools. Return your summary immediately.
+- **TOOL LIMITS:** If you receive a message saying "Tool call limit reached", do NOT attempt to re-call the tool or try other URLs. Immediately proceed to present the properties you HAVE already found (even if it is just one) and return your summary.
 
 <Final Response>
 After the user approves properties, return:
@@ -129,6 +130,7 @@ Each property may have many images. You MUST:
 - **FAILURE HANDLING:** If analyze_property_images_tool OR generate_decorated_image_tool returns {"success": false}, log the error and SKIP that image. Do NOT retry the same image. Move to the next image or next property immediately.
 - MAXIMUM 6 generate_decorated_image_tool calls total (3 images × 2 properties)
 - **ABSOLUTE STOP:** After processing all selected images (or encountering failures), write the decoration summary JSON and return immediately. Do NOT loop back to re-process failed images.
+- **TOOL LIMITS:** If you receive a message saying "Tool call limit reached" for any tool, do NOT attempt to re-call the tool or try other images. Immediately proceed to write the decoration summary JSON for the images you DID successfully process and return your final response to the supervisor.
 </Hard Limits>
 
 <Final Response Format>
@@ -215,6 +217,7 @@ You will receive a property_id and address to analyze.
 - 1 geocode call per property
 - 5 nearby search calls per property (one per category)
 - MUST use write_file at the end
+- **TOOL LIMITS:** If you receive a message saying "Tool call limit reached", do NOT attempt to re-call the tool. Immediately proceed to use `write_file` to save the real data you have already gathered (pros/cons for categories already finished) and return your response.
 - **Every pro/con MUST mention at least one specific place name and its distance**
 
 <Final Response>
