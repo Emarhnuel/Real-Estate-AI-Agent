@@ -11,8 +11,7 @@ import requests
 from typing import Dict, Any, List
 from math import radians, sin, cos, sqrt, atan2
 from tavily import TavilyClient
-from browser_use import Agent, Browser
-from browser_use.llm import ChatAnthropicBedrock
+from browser_use_sdk.v3 import AsyncBrowserUse
 from langchain_core.tools import tool
 from langchain_tavily import TavilyExtract 
 from langchain_tavily import TavilySearch
@@ -22,7 +21,7 @@ load_dotenv(override=True)
 
 
 # Import the Pydantic models needed for tool schemas
-from src.models import PropertyForReview, PropertyReport
+from src.models import PropertyForReview, PropertyReport, ExtractedPropertyList
 
 # Shared disk directory for all agents
 AGENT_DATA_DIR = os.path.abspath("./agent_data")
@@ -40,82 +39,45 @@ def browser_use_extract_tool(url: str, extraction_prompt: str) -> str:
     
     Args:
         url: The property URL to visit and extract data from.
-        extraction_prompt: Specific instructions on what to extract from the page (e.g., 'Extract price, bedrooms, and description').
+        extraction_prompt: Specific instructions on what to extract from the page.
     """
-
     
-    api_key = os.getenv("BROWSER_USE_API_KEY")
-    if not api_key:
-        return "Error: BROWSER_USE_API_KEY environment variable is not set"
-    
-    # Advanced Prompting Strategy based on official docs
+    # Task construction using V3-optimized wording
     task = (
         f"1. Go to the URL: {url}\n"
         f"2. {extraction_prompt}\n"
-        "3. Wait up to 3 seconds for the page to load. If not loaded, refresh ONCE.\n"
-        "4. **CRITICAL:** You MUST extract exactly 2 properties that match the user's search criteria from this page. Note: Ensure the properties extracted are ONLY FOR RENT, do not extract properties for sale or purchase. Do not stop at 1.\n"
-        "5. For EACH property, you MUST extract: price, bedrooms, bathrooms, address, property URL, description, and at least 3 image URLs.\n"
-        "6. IMPORTANT FOR IMAGES: You MUST strictly extract ONLY interior room images (living rooms, bedrooms, kitchens, bathrooms). Do NOT extract exterior shots, building facades, or floor plans.\n"
-        "7. If you only see 1 matching property initially, scroll down MULTIPLE TIMES and wait for the page to lazy-load more listings until you find a 2nd one.\n"
-        "8. If a modal or pop-up appears, close it and continue.\n"
-        "9. As soon as you have extracted 2 matching properties with all required fields, use the 'done' action IMMEDIATELY to return the JSON array. Do NOT continue browsing after finding 2.\n"
-        "10. Only as an absolute last resort, if you have scrolled to the absolute bottom of the page and there are no more listings anywhere, return 1 property.\n"
+        "3. Wait up to 3 seconds for the page to load. If it doesn't load, refresh ONCE.\n"
+        "4. **GOAL:** You MUST extract exactly 2 properties that match the search criteria. "
+        "Each property must be ONLY for rent (no sale/purchase).\n"
+        "5. For EACH property, capture: price, bedrooms, bathrooms, address, listing_url, and description.\n"
+        "6. **IMAGES:** Capture at least 3 HIGH QUALITY interior images for each property (kitchen, living room, bedroom). "
+        "Strictly avoid exterior or facade shots.\n"
+        "7. If you only see 1 property, scroll multiple times to find a second one.\n"
     )
     
-    async def run_extraction():
-        # use_cloud=True enables stealth and anti-bot bypass
-        # cloud_proxy_country_code='us' uses a US residential proxy to further bypass Zillow blocks
-        # cloud_timeout=30 gives the CDP protocol up to 30 mins to serialize large DOM trees without TimeoutErrors
-    
+    async def run_v3_extraction():
+        # V3 Cloud SDK automatically handles stealth and proxies
+        client = AsyncBrowserUse() 
         
-        browser = Browser(
-            headless=True,
-            minimum_wait_page_load_time=3.0,
-            wait_for_network_idle_page_load_time=5.0,
-            wait_between_actions=2.0,
-            use_cloud=True,
-            cloud_proxy_country_code='us',
-            cloud_timeout=30
-        )
-        # Using AWS Bedrock Anthropic model directly
-        llm = ChatAnthropicBedrock(
-            model="us.anthropic.claude-sonnet-4-6", 
-            aws_region=os.getenv("AWS_REGION", "us-east-1") 
-        )
-        
-        agent = Agent(
+        result = await client.run(
             task=task,
-            browser=browser,
-            llm=llm,
-            max_failures=5,
-            use_vision=True  # Allows the LLM to visually see the property listing layout
+            output_schema=ExtractedPropertyList,
+            cache_script=True  # Enables $0 LLM reruns for the same task
         )
         
-        history = await agent.run(max_steps=13)
-        return history.final_result()
+        # Return the structured data as a JSON string for tool consistency
+        if result.output and result.output.properties:
+            # We filter or deduplicate here if needed, but the list is already limited to 2
+            return result.output.model_dump_json()
+        
+        return "[]"
 
     try:
-        import json as _json
-        raw_result = asyncio.run(run_extraction())
-        
-        # --- Deduplication: strip duplicate properties by URL or address ---
-        try:
-            parsed = _json.loads(raw_result) if isinstance(raw_result, str) else raw_result
-            if isinstance(parsed, list):
-                seen = set()
-                unique = []
-                for prop in parsed:
-                    key = prop.get("listing_url") or prop.get("url") or prop.get("address", "")
-                    if key and key not in seen:
-                        seen.add(key)
-                        unique.append(prop)
-                return _json.dumps(unique)
-        except (_json.JSONDecodeError, TypeError, AttributeError):
-            pass  # Not valid JSON, return raw
-        
-        return raw_result
+        # Standard sync wrapper for LangChain tools
+        return asyncio.run(run_v3_extraction())
     except Exception as e:
         return f"Extraction failed: {str(e)}"
+
 
 
 
