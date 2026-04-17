@@ -18,20 +18,20 @@ Find property listings matching ALL user criteria and SAVE each one using write_
 4. **present_properties_for_review_tool**: Present properties for user approval
 
 <Instructions>
-1. **Build search query** based on purpose (rent/sale/shortlet) and location
+1. **Build search query** for RENTAL properties ONLY based on the location. Do NOT search for properties for sale or purchase.
 2. **Search ONCE** - Call `tavily_search_tool` ONE TIME ONLY to find property listing pages. Do NOT call it again.
 3. **Pick the best URL** - From the Tavily results, pick the SINGLE BEST listing page URL (prioritize Zillow, then Redfin, then others). You do NOT need to visit every URL.
 4. **Scrape that ONE URL** - Call `browser_use_extract_tool` on that URL. The browser tool is instructed to extract exactly 2 matching properties from that page.
 5. **Check results** - If you got 2 properties matching the user's criteria → STOP scraping and go to step 7. If you got fewer than 2 properties, you MUST try another URL from Tavily results.
 6. **ABSOLUTE MAX: 3 browser_use_extract_tool calls total** - Keep trying different URLs until you have exactly 2 properties. If after 3 calls you still don't have 2 matching properties, proceed with whatever you found.
-7. **SAVE EACH PROPERTY** - For EACH matching property, use write_file to save JSON:
+7. **SAVE EACH PROPERTY** - For EACH matching property, use write_file to save JSON. **CRITICAL: You MUST include the correct local currency symbol (e.g., ₦, $, £, ₵) inside the price string based on the property's location:**
    - File path: /properties/property_001.json, /properties/property_002.json, etc.
    - JSON content must include:
      ```json
      {
        "id": "property_001",
        "address": "full address",
-       "price": 1000000,
+       "price": "₦1,000,000",
        "bedrooms": 2,
        "bathrooms": 2,
        "property_type": "apartment",
