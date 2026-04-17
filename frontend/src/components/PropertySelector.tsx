@@ -138,7 +138,7 @@ export function PropertySelector({ properties, onApprove, onRetry }: PropertySel
                                 )}
                                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4 pt-12">
                                     <p className="text-white font-bold text-lg drop-shadow-md">
-                                        {typeof prop.price === 'number' ? `£${prop.price.toLocaleString()}` : prop.price}
+                                        {prop.price}
                                         {prop.property_type && (
                                             <span className="ml-2 text-sm font-normal text-white/80 bg-black/30 px-2 py-0.5 rounded capitalize">
                                                 {prop.property_type}
