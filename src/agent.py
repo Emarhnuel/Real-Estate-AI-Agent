@@ -12,8 +12,12 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.store.memory import InMemoryStore
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend, CompositeBackend, StoreBackend
-from langchain_core.messages import AIMessage
-from langgraph.types import Command
+from langchain.agents.middleware import (
+    ToolCallLimitMiddleware,
+    ModelCallLimitMiddleware,
+    ToolRetryMiddleware,
+    ModelRetryMiddleware,
+)
 from dotenv import load_dotenv
 
 
@@ -104,50 +108,39 @@ def make_backend(runtime):
     )
 
 
-# Interior Decorator Sub-Agent Configuration
-# To prevent infinite thought loops, we apply a strict step limit via an after_model hook.
-def interior_decorator_step_limiter(state, response):
-    """Custom middleware to force stop if the agent loops without tools too many times or exceeds strict tool call limits."""
-    messages = state.get("messages", []) + [response]
-    
-    # 1. Check for consecutive "thought" messages without actual tool calls
-    ai_consecutive_count = 0
-    for msg in reversed(messages):
-        if getattr(msg, "type", "") == "human":
-            break
-        if getattr(msg, "type", "") == "ai":
-            # If it has tool calls, it's actually doing work, not just looping thoughts
-            if hasattr(msg, "tool_calls") and msg.tool_calls:
-                continue
-            ai_consecutive_count += 1
-            
-    # If the LLM has pontificated 4 times in a row without making progress, kill it
-    if ai_consecutive_count >= 4:
-        print("[WARNING] Interior Decorator hit thought loop limit. Forcing stop.")
-        from langgraph.types import Command
-        return Command(goto="__end__")
+# =============================================================================
+# MIDDLEWARE CONFIGURATION
+# =============================================================================
 
-    # 2. Check for hard limits on specific tool executions over the entire thread
-    analyze_calls = 0
-    generate_calls = 0
-    
-    for msg in messages:
-        if getattr(msg, "type", "") == "ai" and hasattr(msg, "tool_calls") and msg.tool_calls:
-            for tool_call in msg.tool_calls:
-                name = tool_call.get("name", "")
-                if name == "analyze_property_images_tool":
-                    analyze_calls += 1
-                elif name == "generate_decorated_image_tool":
-                    generate_calls += 1
+# Property Search: strict tool limits + retry for web APIs
+property_search_middleware = [
+    ToolCallLimitMiddleware(tool_name="tavily_search_tool", run_limit=2, exit_behavior="continue"),
+    ToolCallLimitMiddleware(tool_name="browser_use_extract_tool", run_limit=4, exit_behavior="continue"),
+    ModelCallLimitMiddleware(run_limit=7, exit_behavior="end"),
+    ToolRetryMiddleware(max_retries=2, tools=["tavily_search_tool"], backoff_factor=2.0, initial_delay=1.0),
+]
 
-    # Apply limits: 6 for analyze, 4 for generate
-    if analyze_calls > 6 or generate_calls > 4:
-        print(f"[WARNING] Interior Decorator tool limits reached ({analyze_calls}/6 analyze, {generate_calls}/4 generate). Forcing stop.")
-        from langgraph.types import Command
-        return Command(goto="__end__")
-        
-    # Return the normal model response if limits are not reached
-    return {"messages": [response]}
+# Location Analysis: limit API calls + retry Google Places
+location_analysis_middleware = [
+    ToolCallLimitMiddleware(tool_name="google_places_geocode_tool", run_limit=2, exit_behavior="continue"),
+    ToolCallLimitMiddleware(tool_name="google_places_nearby_tool", run_limit=4, exit_behavior="continue"),
+    ModelCallLimitMiddleware(run_limit=7, exit_behavior="end"),
+    ToolRetryMiddleware(max_retries=3, tools=["google_places_geocode_tool", "google_places_nearby_tool"], backoff_factor=2.0, initial_delay=1.0),
+]
+
+# Interior Decorator: hard stop on tool limits + retry image generation
+interior_decorator_middleware = [
+    ToolCallLimitMiddleware(tool_name="analyze_property_images_tool", run_limit=6, exit_behavior="end"),
+    ToolCallLimitMiddleware(tool_name="generate_decorated_image_tool", run_limit=4, exit_behavior="end"),
+    ModelCallLimitMiddleware(run_limit=20, exit_behavior="end"),
+    ToolRetryMiddleware(max_retries=3, tools=["generate_decorated_image_tool"], backoff_factor=2.0, initial_delay=2.0),
+]
+
+# Supervisor: overall model limit + retry for Bedrock transient errors
+supervisor_middleware = [
+    ModelCallLimitMiddleware(run_limit=30, exit_behavior="end"),
+    ModelRetryMiddleware(max_retries=3, backoff_factor=2.0, initial_delay=1.0),
+]
 
 
 
@@ -168,6 +161,7 @@ property_search_agent = {
     "tools": [tavily_search_tool, browser_use_extract_tool, present_properties_for_review_tool],
     "model": model1,
     "interrupt_on": {"present_properties_for_review_tool": True},
+    "middleware": property_search_middleware,
 }
 
 # Location Analysis Sub-Agent Configuration
@@ -176,7 +170,8 @@ location_analysis_agent = {
     "description": "Analyzes property locations and nearby amenities. Saves analysis to /locations/ using write_file.",
     "system_prompt": LOCATION_ANALYSIS_SYSTEM_PROMPT,
     "tools": [google_places_geocode_tool, google_places_nearby_tool],
-    "model": model4
+    "model": model4,
+    "middleware": location_analysis_middleware,
 }
 
 
@@ -186,21 +181,20 @@ interior_decorator_agent = {
     "system_prompt": INTERIOR_DECORATOR_SYSTEM_PROMPT,
     "tools": [analyze_property_images_tool, generate_decorated_image_tool],
     "model": model4,
-    "hooks": {
-        "after_model": [interior_decorator_step_limiter]
-    }
+    "middleware": interior_decorator_middleware,
 }
 
  
 # Create the supervisor agent
 supervisor = create_deep_agent(
-    model=model1,
+    model=model4,
     system_prompt=SUPERVISOR_SYSTEM_PROMPT,
     subagents=[property_search_agent, location_analysis_agent, interior_decorator_agent],
     tools=[],
     checkpointer=checkpointer,
     backend=make_backend,
-    store=InMemoryStore(),  # For local dev; swap for PostgresStore in production
+    store=InMemoryStore(),
+    middleware=supervisor_middleware,
 )
 
 print("[INFO] Supervisor agent created successfully")
