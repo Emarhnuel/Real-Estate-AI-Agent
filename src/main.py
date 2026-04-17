@@ -61,6 +61,12 @@ def clear_previous_agent_data():
         DECORATED_IMAGES_DIR
     ]
     
+    # Reports can be in the root AGENT_DATA_DIR
+    report_files = [
+        AGENT_DATA_DIR / "final_report.json",
+        AGENT_DATA_DIR / "final_report_v2.json"
+    ]
+    
     deleted_count = 0
     for directory in directories_to_clear:
         if directory.exists():
@@ -71,7 +77,15 @@ def clear_previous_agent_data():
                 except Exception as e:
                     logger.error(f"[CLEANUP] Failed to delete {file_path}: {e}")
                     
-    logger.info(f"[CLEANUP] Deleted {deleted_count} stale JSON output files.")
+    for report_file in report_files:
+        if report_file.exists():
+            try:
+                report_file.unlink()
+                deleted_count += 1
+            except Exception as e:
+                logger.error(f"[CLEANUP] Failed to delete report {report_file}: {e}")
+
+    logger.info(f"[CLEANUP] Deleted {deleted_count} stale files (JSONs and Reports).")
 
 def extract_final_report(state: dict, thread_id: str) -> dict | None:
     """Read final_report.json from disk (written by the agent via write_file).
@@ -80,71 +94,89 @@ def extract_final_report(state: dict, thread_id: str) -> dict | None:
     The supervisor writes the full JSON report to /final_report.json.
     We read it here, parse it, and pass the structured data to the frontend.
     """
-    report_path = AGENT_DATA_DIR / "final_report.json"
+    # Attempt to read both possible report paths
+    report_paths = [
+        AGENT_DATA_DIR / "final_report_v2.json",
+        AGENT_DATA_DIR / "final_report.json"
+    ]
     
-    if report_path.exists():
+    for report_path in report_paths:
+        if not report_path.exists():
+            continue
+            
         try:
             import re as _re
             json_text = report_path.read_text(encoding="utf-8").strip()
             
-            if json_text:
-                # Strip markdown code fences if present
-                if json_text.startswith("```"):
-                    match = _re.search(r'```(?:json)?\s*(.+?)\s*```', json_text, _re.DOTALL)
-                    if match:
-                        json_text = match.group(1).strip()
+            # Always delete the file once we've read it (even if we fail to parse it)
+            # to prevent it from blocking/confusing future runs.
+            report_path.unlink(missing_ok=True)
+            
+            if not json_text:
+                continue
 
-                # Attempt 1: direct parse
-                report_data = None
+            # Strip markdown code fences if present
+            if json_text.startswith("```"):
+                match = _re.search(r'```(?:json)?\s*(.+?)\s*```', json_text, _re.DOTALL)
+                if match:
+                    json_text = match.group(1).strip()
+
+            report_data = None
+            
+            # Attempt 1: direct parse
+            try:
+                report_data = json.loads(json_text)
+            except json.JSONDecodeError:
+                pass
+
+            # Attempt 2: truncate at last valid closing brace (handles "Extra data" errors)
+            if report_data is None:
                 try:
-                    report_data = json.loads(json_text)
+                    last_brace = json_text.rfind('}')
+                    if last_brace != -1:
+                        report_data = json.loads(json_text[:last_brace + 1])
                 except json.JSONDecodeError:
                     pass
 
-                # Attempt 2: truncate at last valid closing brace (handles "Extra data" errors)
-                if report_data is None:
+            # Attempt 3: more aggressive regex-extract the outermost main object
+            if report_data is None:
+                # Look for the first '{' and last '}'
+                first_brace = json_text.find('{')
+                last_brace = json_text.rfind('}')
+                if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
                     try:
-                        last_brace = json_text.rfind('}')
-                        if last_brace != -1:
-                            report_data = json.loads(json_text[:last_brace + 1])
+                        report_data = json.loads(json_text[first_brace : last_brace + 1])
                     except json.JSONDecodeError:
                         pass
 
-                # Attempt 3: regex-extract the outermost JSON object
-                if report_data is None:
-                    match = _re.search(r'(\{.*\})', json_text, _re.DOTALL)
-                    if match:
+            if report_data:
+                logger.info(f"[REPORT] Successfully parsed {report_path.name} with {len(report_data.get('properties', []))} properties")
+                
+                # Metadata Injection (IDs)
+                props_on_disk = {}
+                props_dir = AGENT_DATA_DIR / "properties"
+                if props_dir.exists():
+                    for pf in sorted(props_dir.glob("*.json")):
                         try:
-                            report_data = json.loads(match.group(1))
-                        except json.JSONDecodeError:
+                            pd = json.loads(pf.read_text(encoding="utf-8"))
+                            if pd.get("id"):
+                                props_on_disk[pd["id"]] = pd
+                        except Exception:
                             pass
-
-                if report_data:
-                    logger.info(f"[REPORT] Read final_report.json with {len(report_data.get('properties', []))} properties")
-                    # Inject property `id` from disk files if the agent omitted it
-                    props_on_disk = {}
-                    props_dir = AGENT_DATA_DIR / "properties"
-                    if props_dir.exists():
-                        for pf in sorted(props_dir.glob("*.json")):
-                            try:
-                                pd = json.loads(pf.read_text(encoding="utf-8"))
-                                if pd.get("id"):
-                                    props_on_disk[pd["id"]] = pd
-                            except Exception:
-                                pass
-                    disk_ids = list(props_on_disk.keys())
-                    for i, prop in enumerate(report_data.get("properties", [])):
-                        if not prop.get("id") and i < len(disk_ids):
-                            prop["id"] = disk_ids[i]
-                            logger.info(f"[REPORT] Injected id={disk_ids[i]} into property[{i}]")
-                    report_path.unlink(missing_ok=True)
-                    return report_data
-                else:
-                    logger.error("[REPORT] All JSON parse attempts failed — file may be completely malformed")
+                
+                disk_ids = list(props_on_disk.keys())
+                for i, prop in enumerate(report_data.get("properties", [])):
+                    if not prop.get("id") and i < len(disk_ids):
+                        prop["id"] = disk_ids[i]
+                
+                return report_data
+            else:
+                logger.error(f"[REPORT] Parsing {report_path.name} failed after multiple attempts")
         except Exception as e:
-            logger.error(f"[REPORT] Error reading final_report.json: {e}")
+            logger.error(f"[REPORT] Error processing {report_path.name}: {e}")
+            # Try to unlink if not already done
+            report_path.unlink(missing_ok=True)
     
-    logger.info("[REPORT] final_report.json not found on disk yet")
     return None
 
 
