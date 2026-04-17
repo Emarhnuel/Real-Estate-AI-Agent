@@ -18,7 +18,7 @@ class Property(BaseModel):
     city: str = Field(default="Unknown", description="City where property is located")
     state: str = Field(default="Unknown", description="State where property is located")
     zip_code: str = Field(default="Unknown", description="ZIP code of the property")
-    price: Optional[float] = Field(None, description="Listing price in USD")
+    price: Optional[str] = Field(None, description="Listing price with currency symbol (e.g. '$1000', '£800', '₦1,000,000')")
     bedrooms: Optional[int] = Field(None, description="Number of bedrooms")
     bathrooms: Optional[float] = Field(None, description="Number of bathrooms")
     square_feet: Optional[int] = Field(None, description="Total square footage")
@@ -91,7 +91,7 @@ class PropertyForReview(BaseModel):
     
     id: str = Field(..., description="Property identifier")
     address: str = Field(..., description="Full property address")
-    price: float = Field(..., description="Listing price")
+    price: str = Field(..., description="Listing price with currency symbol")
     bedrooms: int = Field(..., description="Number of bedrooms")
     bathrooms: float = Field(..., description="Number of bathrooms")
     listing_url: str = Field(..., description="URL to the property listing")
